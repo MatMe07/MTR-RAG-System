@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MatMe07/MTR-RAG-System/schemas/match_result.schema.json",
+  "title": "MatchResult",
+  "description": "Результат рекомендательного подбора кандидата МТР/КСМ для эксперта.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["rank", "status", "matched_params", "warnings", "sources"],
+  "properties": {
+    "rank": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Позиция кандидата в выдаче."
+    },
+    "mtr_code": {
+      "type": ["string", "null"],
+      "description": "Код МТР кандидата."
+    },
+    "ksm_code": {
+      "type": ["string", "null"],
+      "description": "Код КСМ кандидата."
+    },
+    "candidate_name": {
+      "type": ["string", "null"],
+      "description": "Наименование кандидата."
+    },
+    "match_percent": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Оценка близости кандидата. Не является финальным инженерным решением."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "соответствует",
+        "потенциальный аналог",
+        "требует проверки",
+        "низкая релевантность",
+        "нет данных"
+      ],
+      "description": "Рекомендательный статус для эксперта."
+    },
+    "matched_params": {
+      "type": "array",
+      "description": "Параметры, которые совпали или близки.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mismatched_params": {
+      "type": "array",
+      "description": "Параметры, по которым есть расхождения.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missing_params": {
+      "type": "array",
+      "description": "Параметры, которые не удалось найти или подтвердить.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "description": "Предупреждения для эксперта. Они не всегда исключают кандидата из выдачи.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expert_comment": {
+      "type": ["string", "null"],
+      "description": "Короткий комментарий о том, что эксперту нужно проверить."
+    },
+    "rule_trace": {
+      "type": "array",
+      "description": "Какие правила сработали при расчете результата.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "rule_id": {
+            "type": "string"
+          },
+          "reaction": {
+            "type": "string",
+            "enum": ["hard_filter", "warning", "expert_comment", "score_penalty"]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "description": "Источники, на основании которых сформирован результат.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "examples": ["passport", "excel", "lnd", "rule"]
+          },
+          "file": {
+            "type": ["string", "null"]
+          },
+          "page": {
+            "type": ["integer", "null"]
+          },
+          "row": {
+            "type": ["integer", "null"]
+          },
+          "fragment": {
+            "type": ["string", "null"]
+          }
+        }
+      }
+    }
+  }
+}
