@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MatMe07/MTR-RAG-System/schemas/item_card.schema.json",
+  "title": "ItemCard",
+  "description": "Единая карточка изделия. К ней приводятся пользовательский запрос, паспорт, Excel-строка и кандидат МТР/КСМ.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["item_type", "sources"],
+  "properties": {
+    "card_id": {
+      "type": ["string", "null"],
+      "description": "Внутренний идентификатор карточки, если она уже сохранена в системе."
+    },
+    "mtr_code": {
+      "type": ["string", "null"],
+      "description": "Код МТР, если известен."
+    },
+    "ksm_code": {
+      "type": ["string", "null"],
+      "description": "Код КСМ или код потенциального аналога, если известен."
+    },
+    "item_type": {
+      "type": "string",
+      "description": "Базовый тип изделия.",
+      "examples": ["отвод", "труба", "задвижка", "заглушка", "переход", "тройник"]
+    },
+    "subtype": {
+      "type": ["string", "null"],
+      "description": "Подтип или конструктивное исполнение.",
+      "examples": ["ОКШ", "ОГ", "клиновая", "поворотная", "концентрический"]
+    },
+    "designation": {
+      "type": ["string", "null"],
+      "description": "Условное обозначение изделия из паспорта, Excel или запроса."
+    },
+    "name": {
+      "type": ["string", "null"],
+      "description": "Человекочитаемое наименование изделия."
+    },
+    "geometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dn": {
+          "type": ["number", "null"],
+          "description": "Условный проход или основной диаметр."
+        },
+        "d1": {
+          "type": ["number", "null"],
+          "description": "Первый/больший диаметр для переходов и тройников."
+        },
+        "d2": {
+          "type": ["number", "null"],
+          "description": "Второй/меньший диаметр для переходов и тройников."
+        },
+        "wall_thickness": {
+          "type": ["number", "null"],
+          "description": "Основная толщина стенки."
+        },
+        "wall_thickness_2": {
+          "type": ["number", "null"],
+          "description": "Дополнительная толщина стенки, если применимо."
+        },
+        "angle": {
+          "type": ["number", "null"],
+          "description": "Угол для отводов: 30, 45, 60, 90."
+        },
+        "radius": {
+          "type": ["string", "null"],
+          "description": "Радиус или геометрический признак, например 1.5D или 5D."
+        }
+      }
+    },
+    "pressure": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pn": {
+          "type": ["number", "null"],
+          "description": "Номинальное давление PN/Ру в нормализованном виде."
+        },
+        "working_pressure_mpa": {
+          "type": ["number", "null"],
+          "description": "Рабочее давление в МПа."
+        },
+        "test_pressure_mpa": {
+          "type": ["number", "null"],
+          "description": "Испытательное давление в МПа."
+        },
+        "raw_value": {
+          "type": ["string", "null"],
+          "description": "Исходная запись давления из источника."
+        }
+      }
+    },
+    "material": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "steel_grade": {
+          "type": ["string", "null"],
+          "description": "Марка стали, например 09Г2С."
+        },
+        "strength_class": {
+          "type": ["string", "null"],
+          "description": "Класс прочности, например К48."
+        },
+        "standard": {
+          "type": ["string", "null"],
+          "description": "ГОСТ/ТУ на материал, если указан."
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "medium": {
+          "type": ["string", "null"],
+          "description": "Рабочая среда: газ, нефть, вода, H2S, CO2 и т.д."
+        },
+        "h2s_confirmed": {
+          "type": ["boolean", "null"],
+          "description": "Подтверждена ли пригодность для H2S."
+        },
+        "co2_confirmed": {
+          "type": ["boolean", "null"],
+          "description": "Подтверждена ли пригодность для CO2."
+        },
+        "temperature_min_c": {
+          "type": ["number", "null"],
+          "description": "Минимальная температура эксплуатации."
+        },
+        "climate_version": {
+          "type": ["string", "null"],
+          "description": "Климатическое исполнение: У, ХЛ, УХЛ."
+        }
+      }
+    },
+    "coating": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inner_coating": {
+          "type": ["boolean", "null"],
+          "description": "Есть ли внутреннее покрытие."
+        },
+        "outer_coating": {
+          "type": ["boolean", "null"],
+          "description": "Есть ли наружное покрытие."
+        },
+        "coating_type": {
+          "type": ["string", "null"],
+          "description": "Тип покрытия, если указан."
+        },
+        "coating_standard": {
+          "type": ["string", "null"],
+          "description": "ГОСТ/ТУ на покрытие, если указан."
+        }
+      }
+    },
+    "normative": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gost_tu": {
+          "type": ["string", "null"],
+          "description": "ГОСТ или ТУ на изготовление изделия."
+        },
+        "lnd_sections": {
+          "type": "array",
+          "description": "Ссылки на разделы ЛНД, если применимо.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Общая уверенность извлечения карточки."
+        },
+        "method": {
+          "type": ["string", "null"],
+          "description": "Источник извлечения: user_query, excel, ocr, llm, expert_edit."
+        },
+        "missing_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "description": "Ссылки на источники данных, из которых собрана карточка.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "examples": ["passport", "excel", "lnd", "user_query"]
+          },
+          "file": {
+            "type": ["string", "null"]
+          },
+          "page": {
+            "type": ["integer", "null"]
+          },
+          "row": {
+            "type": ["integer", "null"]
+          },
+          "fragment": {
+            "type": ["string", "null"]
+          }
+        }
+      }
+    }
+  }
+}
