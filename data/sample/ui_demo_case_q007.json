@@ -1,0 +1,353 @@
+{
+  "case_id": "Q007",
+  "mode": "гибридный поиск",
+  "query": "Отвод ОКШ 90 DN159 стенка 10 К48 для газа с H2S и внутренним покрытием",
+  "query_card": {
+    "card_id": "QUERY-Q007",
+    "mtr_code": null,
+    "ksm_code": null,
+    "item_type": "отвод",
+    "subtype": "ОКШ",
+    "designation": null,
+    "name": "Отвод ОКШ 90 DN159 стенка 10 К48 для H2S",
+    "geometry": {
+      "dn": 159,
+      "d1": null,
+      "d2": null,
+      "wall_thickness": 10,
+      "wall_thickness_2": null,
+      "angle": 90,
+      "radius": null
+    },
+    "pressure": {
+      "pn": 160,
+      "working_pressure_mpa": null,
+      "test_pressure_mpa": null,
+      "raw_value": null
+    },
+    "material": {
+      "steel_grade": "09Г2С",
+      "strength_class": "К48",
+      "standard": null
+    },
+    "environment": {
+      "medium": "природный газ с H2S",
+      "h2s_confirmed": true,
+      "co2_confirmed": null,
+      "temperature_min_c": null,
+      "climate_version": null
+    },
+    "coating": {
+      "inner_coating": true,
+      "outer_coating": null,
+      "coating_type": null,
+      "coating_standard": null
+    },
+    "normative": {
+      "gost_tu": null,
+      "lnd_sections": []
+    },
+    "extraction": {
+      "confidence": 0.94,
+      "method": "user_query",
+      "missing_fields": [
+        "material.standard",
+        "environment.co2_confirmed",
+        "coating.outer_coating",
+        "normative.gost_tu"
+      ]
+    },
+    "sources": [
+      {
+        "type": "user_query",
+        "file": null,
+        "page": null,
+        "row": null,
+        "fragment": "Отвод ОКШ 90 DN159 стенка 10 К48 для газа с H2S и внутренним покрытием"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "rank": 1,
+      "mtr_code": "MTR-0013",
+      "ksm_code": "KSM-0013",
+      "candidate_name": "Отвод ОКШ 90 DN159 стенка 10 К48 H2S",
+      "match_percent": 98,
+      "status": "соответствует",
+      "matched_params": [
+        "тип: отвод",
+        "подтип: ОКШ",
+        "DN: 159 мм",
+        "угол: 90 градусов",
+        "толщина стенки: 10 мм",
+        "PN: 160",
+        "марка стали: 09Г2С",
+        "класс прочности: К48",
+        "пригодность к H2S подтверждена",
+        "внутреннее покрытие подтверждено"
+      ],
+      "mismatched_params": [],
+      "missing_params": [
+        "применимость к CO2 не запрашивалась и не подтверждена"
+      ],
+      "warnings": [],
+      "expert_comment": "Наиболее близкий кандидат. Перед подтверждением проверьте применимость указанного ТУ к объекту.",
+      "rule_trace": [
+        {
+          "rule_id": "TYPE-001",
+          "reaction": "expert_comment",
+          "message": "Тип, геометрия, материал, H2S и внутреннее покрытие совпали."
+        }
+      ],
+      "sources": [
+        {
+          "type": "passport",
+          "file": "passport_013_oksh90_h2s.md",
+          "page": 1,
+          "row": null,
+          "fragment": "DN 159 мм. Стенка 10 мм. PN 160."
+        },
+        {
+          "type": "passport",
+          "file": "passport_013_oksh90_h2s.md",
+          "page": 2,
+          "row": null,
+          "fragment": "Рабочая среда: природный газ с H2S. Пригодность к H2S подтверждена."
+        },
+        {
+          "type": "passport",
+          "file": "passport_013_oksh90_h2s.md",
+          "page": 3,
+          "row": null,
+          "fragment": "Внутреннее защитное покрытие: эпоксидное, нанесено и принято ОТК."
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "mtr_code": "MTR-0001",
+      "ksm_code": "KSM-0001",
+      "candidate_name": "Отвод ОКШ 90 DN159 стенка 10 К48",
+      "match_percent": 84,
+      "status": "требует проверки",
+      "matched_params": [
+        "тип: отвод",
+        "подтип: ОКШ",
+        "DN: 159 мм",
+        "угол: 90 градусов",
+        "толщина стенки: 10 мм",
+        "PN: 160",
+        "марка стали: 09Г2С",
+        "класс прочности: К48"
+      ],
+      "mismatched_params": [],
+      "missing_params": [
+        "пригодность к H2S",
+        "внутреннее покрытие"
+      ],
+      "warnings": [
+        "Пригодность к H2S в паспорте не подтверждена.",
+        "Сведения о внутреннем покрытии отсутствуют."
+      ],
+      "expert_comment": "Геометрия и материал совпадают, но H2S и внутреннее покрытие необходимо проверить по дополнительным документам.",
+      "rule_trace": [
+        {
+          "rule_id": "ENV-H2S-001",
+          "reaction": "warning",
+          "message": "Запрошена среда H2S, подтверждение кандидата отсутствует."
+        },
+        {
+          "rule_id": "COAT-IN-001",
+          "reaction": "warning",
+          "message": "Внутреннее покрытие запрошено, но не подтверждено."
+        }
+      ],
+      "sources": [
+        {
+          "type": "passport",
+          "file": "passport_001_oksh90_dn159.md",
+          "page": 1,
+          "row": null,
+          "fragment": "DN 159 мм, толщина стенки 10 мм, угол 90 градусов, PN 160."
+        },
+        {
+          "type": "passport",
+          "file": "passport_001_oksh90_dn159.md",
+          "page": 2,
+          "row": null,
+          "fragment": "Применимость к H2S и CO2 настоящим паспортом не подтверждена."
+        },
+        {
+          "type": "passport",
+          "file": "passport_001_oksh90_dn159.md",
+          "page": 3,
+          "row": null,
+          "fragment": "Сведения о внутреннем покрытии отсутствуют."
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "mtr_code": "MTR-0012",
+      "ksm_code": "KSM-0012",
+      "candidate_name": "Отвод ОКШ 90 DN159 стенка 10 К52",
+      "match_percent": 76,
+      "status": "потенциальный аналог",
+      "matched_params": [
+        "тип: отвод",
+        "подтип: ОКШ",
+        "DN: 159 мм",
+        "угол: 90 градусов",
+        "толщина стенки: 10 мм",
+        "PN: 160",
+        "марка стали: 09Г2С"
+      ],
+      "mismatched_params": [
+        "класс прочности: требуется К48, у кандидата К52"
+      ],
+      "missing_params": [
+        "пригодность к H2S",
+        "внутреннее покрытие"
+      ],
+      "warnings": [
+        "Замена класса прочности К48 на К52 требует экспертной проверки.",
+        "Пригодность к H2S и внутреннее покрытие не подтверждены."
+      ],
+      "expert_comment": "Не считать более высокий класс прочности автоматическим разрешением на замену.",
+      "rule_trace": [
+        {
+          "rule_id": "MAT-STRENGTH-001",
+          "reaction": "warning",
+          "message": "Класс прочности кандидата отличается от запроса."
+        }
+      ],
+      "sources": [
+        {
+          "type": "passport",
+          "file": "passport_012_oksh90_k52.md",
+          "page": 1,
+          "row": null,
+          "fragment": "Отвод ОКШ 90 градусов. DN 159 мм. Толщина стенки 10 мм. PN 160."
+        },
+        {
+          "type": "passport",
+          "file": "passport_012_oksh90_k52.md",
+          "page": 2,
+          "row": null,
+          "fragment": "Класс прочности К52. Применимость К52 вместо К48 должна оцениваться экспертом."
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "mtr_code": "MTR-0014",
+      "ksm_code": "KSM-0014",
+      "candidate_name": "Отвод ОКШ 90 DN159 стенка 8 К48",
+      "match_percent": 70,
+      "status": "требует проверки",
+      "matched_params": [
+        "тип: отвод",
+        "подтип: ОКШ",
+        "DN: 159 мм",
+        "угол: 90 градусов",
+        "PN: 160",
+        "марка стали: 09Г2С",
+        "класс прочности: К48"
+      ],
+      "mismatched_params": [
+        "толщина стенки: требуется 10 мм, у кандидата 8 мм"
+      ],
+      "missing_params": [
+        "пригодность к H2S",
+        "внутреннее покрытие"
+      ],
+      "warnings": [
+        "Толщина стенки кандидата меньше требуемой.",
+        "Пригодность к H2S и внутреннее покрытие не подтверждены."
+      ],
+      "expert_comment": "Расхождение толщины стенки может быть блокирующим после утверждения инженерного регламента.",
+      "rule_trace": [
+        {
+          "rule_id": "GEO-WALL-001",
+          "reaction": "score_penalty",
+          "message": "Толщина стенки 8 мм вместо требуемых 10 мм."
+        }
+      ],
+      "sources": [
+        {
+          "type": "passport",
+          "file": "passport_014_oksh90_wall8.md",
+          "page": 1,
+          "row": null,
+          "fragment": "DN 159 мм. Фактическая толщина стенки 8 мм. PN 160."
+        },
+        {
+          "type": "passport",
+          "file": "passport_014_oksh90_wall8.md",
+          "page": 2,
+          "row": null,
+          "fragment": "H2S и внутреннее покрытие не подтверждены."
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "mtr_code": "MTR-0002",
+      "ksm_code": "KSM-0002",
+      "candidate_name": "Отвод ОКШ 45 DN159 стенка 10 К48",
+      "match_percent": 62,
+      "status": "низкая релевантность",
+      "matched_params": [
+        "тип: отвод",
+        "подтип: ОКШ",
+        "DN: 159 мм",
+        "толщина стенки: 10 мм",
+        "PN: 160",
+        "марка стали: 09Г2С",
+        "класс прочности: К48"
+      ],
+      "mismatched_params": [
+        "угол: требуется 90 градусов, у кандидата 45 градусов"
+      ],
+      "missing_params": [
+        "пригодность к H2S",
+        "внутреннее покрытие"
+      ],
+      "warnings": [
+        "Угол кандидата отличается от запрошенного.",
+        "Использование двух отводов 45 градусов является отдельной составной заменой и требует расчета эксперта.",
+        "Пригодность к H2S и внутреннее покрытие не подтверждены."
+      ],
+      "expert_comment": "Кандидат оставлен в выдаче только для рассмотрения составной замены; автоматического допуска нет.",
+      "rule_trace": [
+        {
+          "rule_id": "GEO-ANGLE-001",
+          "reaction": "score_penalty",
+          "message": "Угол 45 градусов вместо 90 градусов."
+        },
+        {
+          "rule_id": "COMPOSITE-001",
+          "reaction": "expert_comment",
+          "message": "Возможная составная замена вынесена на решение эксперта."
+        }
+      ],
+      "sources": [
+        {
+          "type": "passport",
+          "file": "passport_002_oksh45_dn159.md",
+          "page": 1,
+          "row": null,
+          "fragment": "Отвод ОКШ 45 градусов. DN 159 мм. Толщина стенки 10 мм."
+        },
+        {
+          "type": "passport",
+          "file": "passport_002_oksh45_dn159.md",
+          "page": 2,
+          "row": null,
+          "fragment": "H2S не подтвержден. Наружное покрытие есть, внутреннее покрытие не указано."
+        }
+      ]
+    }
+  ]
+}
