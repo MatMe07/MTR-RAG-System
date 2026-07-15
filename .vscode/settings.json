@@ -1,3 +1,16 @@
 {
-    "sqltools.useNodeRuntime": true
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "MTR Local",
+            "group": "127.0.0.1",
+            "database": "mtr",
+            "username": "postgres"
+        }
+    ]
 }

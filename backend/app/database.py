@@ -1,25 +1,32 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-import os
+from sqlalchemy.orm import sessionmaker, Session
+from typing import Generator
+from dotenv import load_dotenv
 
-DATABASE_URL = 'postgresql://postgres:xoxot3041@127.0.0.1:5432/mtr' 
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 
 engine = create_engine(
     DATABASE_URL,
-    echo=True 
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+    echo=False
 )
-
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def get_db():
+Base = declarative_base()
+
+
+def get_db() -> Generator[Session, None, None]: 
     db = SessionLocal()
-    print(db)
     try:
         yield db
     finally:
         db.close()
-
-
