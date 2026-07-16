@@ -3,7 +3,7 @@ from sqlalchemy import (
     ForeignKey, Index, UniqueConstraint
 )
 from sqlalchemy.orm import relationship, declarative_base
-from datetime import datetime
+from datetime import timezone
 
 Base = declarative_base()
 
@@ -100,7 +100,7 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     file_name = Column(String(255), nullable=False)
     file_type = Column(String(20), nullable=False)  # excel, passport, lnd
-    upload_date = Column(DateTime, default=datetime.utcnow)
+    upload_date = Column(DateTime, default=timezone.utc)
     page_count = Column(Integer, nullable=True)
     ocr_status = Column(String(20), default="pending")
     ocr_confidence = Column(Float, nullable=True)
@@ -175,7 +175,7 @@ class MTRItem(Base):
     
     source_excel_row = Column(Integer, nullable=True)
     source_document_id = Column(Integer, ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=timezone.utc)
     
     source_document = relationship("Document")
     
@@ -216,7 +216,7 @@ class KSMItem(Base):
     climate_version = Column(String(10), nullable=True, index=True)
     gost_or_tu = Column(String(50), nullable=True)
     
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=timezone.utc)
 
 
 class ExpertMatch(Base):
@@ -229,7 +229,7 @@ class ExpertMatch(Base):
     expert_status = Column(String(50), nullable=False)
     expert_reason = Column(Text, nullable=True)
     confirmed_by = Column(String(100), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=timezone.utc)
     
     requested_item = relationship("MTRItem", foreign_keys=[requested_mtr_code])
     candidate_item = relationship("KSMItem", foreign_keys=[candidate_ksm_code])
@@ -247,7 +247,7 @@ class MatchingRule(Base):
     condition = Column(Text, nullable=True)
     penalty = Column(Integer, default=0)
     source = Column(String(255), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=timezone.utc)
 
 
 class ReplacementSet(Base):
@@ -255,15 +255,15 @@ class ReplacementSet(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     target_item_type = Column(String(20), nullable=False)
-    target_angle = Column(Integer, nullable=False)
+    target_angle = Column(Float, nullable=False)
     target_dn = Column(Float, nullable=True)
     component_item_type = Column(String(20), nullable=False)
-    component_angle = Column(Integer, nullable=False)
+    component_angle = Column(Float, nullable=False)
     component_dn = Column(Float, nullable=True)
     quantity = Column(Integer, nullable=False)
     condition = Column(Text, nullable=True)
     source = Column(String(255), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=timezone.utc)
 
 
 class TestCase(Base):
@@ -282,7 +282,7 @@ class TestCase(Base):
     passed = Column(Boolean, default=False)
     error_message = Column(Text, nullable=True)
     tested_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=timezone.utc)
 
 
 class ExpertReviewLog(Base):
@@ -294,7 +294,7 @@ class ExpertReviewLog(Base):
     user_comment = Column(Text, nullable=True)
     expert_decision = Column(String(50), nullable=False)
     reviewed_by = Column(String(100), nullable=True)
-    reviewed_at = Column(DateTime, default=datetime.utcnow)
+    reviewed_at = Column(DateTime, default=timezone.utc)
     
 class SearchLog(Base):
     __tablename__ = "search_logs"
@@ -304,9 +304,9 @@ class SearchLog(Base):
     query_text = Column(Text, nullable=False)
     query_type = Column(String(20), nullable=False)  # text, passport, excel
     result_count = Column(Integer, nullable=True)
-    top_mtr_codes = Column(JSON, nullable=True)  # первые 5-10 результатов
+    top_mtr_codes = Column(JSON, nullable=True)  
     response_time_ms = Column(Integer, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=timezone.utc)
     
     __table_args__ = (
         Index("idx_search_logs_user_id", "user_id"),

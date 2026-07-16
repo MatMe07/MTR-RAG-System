@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -80,7 +80,7 @@ class ItemCard(BaseModel):
     extraction: Optional[Extraction] = Field(None, description="Метаданные извлечения")
     sources: List[Source] = Field(..., description="Ссылки на источники данных")
 
-    @validator("item_type")
+    @field_validator("item_type")
     def validate_item_type(cls, v):
         allowed = ["отвод", "труба", "задвижка", "заглушка", "переход", "тройник"]
         if v.lower() not in allowed:
@@ -119,7 +119,7 @@ class MatchResult(BaseModel):
     rule_trace: List[RuleTrace] = Field(default_factory=list, description="Сработавшие правила")
     sources: List[Source] = Field(default_factory=list, description="Источники")
 
-    @validator("status")
+    @field_validator("status")
     def validate_status(cls, v):
         allowed = ["соответствует", "потенциальный аналог", "требует проверки", "низкая релевантность", "нет данных"]
         if v not in allowed:
