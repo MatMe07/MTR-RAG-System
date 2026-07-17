@@ -1,6 +1,7 @@
 {
     "sqltools.useNodeRuntime": true,
     "sqltools.connections": [
+
         {
             "ssh": "Disabled",
             "previewLimit": 50,
@@ -10,7 +11,8 @@
             "name": "MTR Local",
             "group": "127.0.0.1",
             "database": "mtr",
-            "username": "postgres"
+            "username": "postgres",
+            "password": "xoxot3041"
         }
     ]
 }
