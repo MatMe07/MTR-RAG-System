@@ -260,70 +260,97 @@ def load_expected_cards(file_path: str):
     count = 0
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
-            
             if not line.strip():
                 continue
-            
             card_data = json.loads(line)
-            if not card_data.get('mtr_code'):
+
+            sources = card_data.get('sources', [])
+            passport_source = None
+            for src in sources:
+                if src.get('type') == 'passport' and src.get('file'):
+                    passport_source = src
+                    break
+
+            if not passport_source:
                 continue
 
+            file_name = passport_source.get('file')
             doc = db.query(Document).filter(
-                Document.file_name.like(f'%{card_data.get("sources", [{}])[0].get("file", "")}%')
+                Document.file_name.like(f'%{file_name}%')
             ).first()
 
             if not doc:
+                print(f"Документ не найден: {file_name}")
                 continue
 
-            for source in card_data.get('sources', []):
-                if source.get('type') != 'passport':
-                    continue
+            fields = []
+            
+            geo = card_data.get('geometry', {})
+            if geo.get('dn') is not None:
+                fields.append(('dn', str(geo['dn']), 'мм'))
+            if geo.get('wall_thickness') is not None:
+                fields.append(('wall_thickness', str(geo['wall_thickness']), 'мм'))
+            if geo.get('angle') is not None:
+                fields.append(('angle', str(geo['angle']), '°'))
+            if geo.get('d1') is not None:
+                fields.append(('d1', str(geo['d1']), 'мм'))
+            if geo.get('d2') is not None:
+                fields.append(('d2', str(geo['d2']), 'мм'))
 
-                fields = []
-                geo = card_data.get('geometry', {})
-                if geo.get('dn'):
-                    fields.append(('dn', str(geo['dn'])))
-                if geo.get('wall_thickness'):
-                    fields.append(('wall_thickness', str(geo['wall_thickness'])))
-                if geo.get('angle'):
-                    fields.append(('angle', str(geo['angle'])))
+            if card_data.get('pressure') and card_data['pressure'].get('pn') is not None:
+                fields.append(('pressure', str(card_data['pressure']['pn']), 'МПа'))
 
-                if card_data.get('pressure') and card_data['pressure'].get('pn'):
-                    fields.append(('pressure', str(card_data['pressure']['pn'])))
+            mat = card_data.get('material', {})
+            if mat.get('steel_grade'):
+                fields.append(('steel_grade', mat['steel_grade'], None))
+            if mat.get('strength_class'):
+                fields.append(('strength_class', mat['strength_class'], None))
 
-                mat = card_data.get('material', {})
-                if mat.get('steel_grade'):
-                    fields.append(('steel_grade', mat['steel_grade']))
-                if mat.get('strength_class'):
-                    fields.append(('strength_class', mat['strength_class']))
+            env = card_data.get('environment', {})
+            if env.get('medium'):
+                fields.append(('medium', env['medium'], None))
+            if env.get('climate_version'):
+                fields.append(('climate_version', env['climate_version'], None))
+            if env.get('h2s_confirmed') is not None:
+                fields.append(('h2s_confirmed', str(env['h2s_confirmed']), None))
+            if env.get('co2_confirmed') is not None:
+                fields.append(('co2_confirmed', str(env['co2_confirmed']), None))
 
-                env = card_data.get('environment', {})
-                if env.get('medium'):
-                    fields.append(('medium', env['medium']))
-                if env.get('climate_version'):
-                    fields.append(('climate_version', env['climate_version']))
+            coat = card_data.get('coating', {})
+            if coat.get('inner_coating') is not None:
+                fields.append(('inner_coating', str(coat.get('inner_coating', False)), None))
+            if coat.get('outer_coating') is not None:
+                fields.append(('outer_coating', str(coat.get('outer_coating', False)), None))
+            if coat.get('coating_type'):
+                fields.append(('coating_type', coat['coating_type'], None))
 
-                coat = card_data.get('coating', {})
-                if coat.get('inner_coating') is not None:
-                    fields.append(('inner_coating', str(coat.get('inner_coating', False))))
-                if coat.get('outer_coating') is not None:
-                    fields.append(('outer_coating', str(coat.get('outer_coating', False))))
+            norm = card_data.get('normative', {})
+            if norm.get('gost_tu'):
+                fields.append(('gost_or_tu', norm['gost_tu'], None))
 
-                if card_data.get('normative') and card_data['normative'].get('gost_tu'):
-                    fields.append(('gost_or_tu', card_data['normative']['gost_tu']))
+            if card_data.get('item_type'):
+                fields.append(('item_type', card_data['item_type'], None))
+            if card_data.get('subtype'):
+                fields.append(('subtype', card_data['subtype'], None))
 
-                for field_name, value in fields:
-                    char = ExtractedCharacteristic(
-                        document_id=doc.id,
-                        page_number=source.get('page', 1),
-                        field_name=field_name,
-                        normalized_value=value,
-                        confidence=card_data.get('extraction', {}).get('confidence', 0.95)
-                    )
-                    # db.add(char)
+            if card_data.get('designation'):
+                fields.append(('designation', card_data['designation'], None))
+
+            for field_name, value, unit in fields:
+                char = ExtractedCharacteristic(
+                    document_id=doc.id,
+                    page_number=passport_source.get('page', 1),
+                    field_name=field_name,
+                    raw_value=value,       
+                    normalized_value=value, 
+                    unit_code=unit, 
+                    confidence=card_data.get('extraction', {}).get('confidence', 0.95),
+                    source_fragment=passport_source.get('fragment', None) 
+                )
+                db.add(char)
                 count += 1
 
-    # db.commit()
+    db.commit()
     db.close()
     print(f"Загружено характеристик: {count} записей")
 
