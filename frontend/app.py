@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import streamlit as st
+import requests
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -33,16 +34,75 @@ STATUS_CLASSES = {
 }
 
 
-def load_search_results(
-    query: str, mode: str, uploaded_file: Any | None = None
-) -> dict[str, Any]:
-    """Load the demo response. Replace only this body when the search API is ready."""
-    del uploaded_file
+def load_search_results(query: str, mode: str, uploaded_file: Any | None = None) -> dict[str, Any]:
+    """Real backend call or demo fallback."""
+    # Если передан файл — эмулируем загрузку
+    if uploaded_file is not None:
+        st.toast(f"Файл {uploaded_file.name} загружен")
+    
+    try:
+        # Реальный запрос к бэкенду
+        url = "http://localhost:8000/search"
+        payload = {
+            "query": query.strip() or "отвод ОКШ 90 DN159 стенка 10 К48 для газа с H2S",
+            "mode": mode,
+            "top_k": 20
+        }
+        response = requests.post(url, json=payload, timeout=150)
+        print(response.status_code, response.text)
+        if response.status_code == 200:
+            data = response.json()
+            # Преобразуем ответ бэкенда в формат фронтенда
+            return transform_backend_response(data, query, mode)
+        else:
+            st.warning(f"Бэкенд вернул ошибку {response.status_code}. Использую демо-данные.")
+    except requests.exceptions.ConnectionError:
+        st.warning("Бэкенд не доступен. Использую демо-данные.")
+    except Exception as e:
+        st.warning(f"Ошибка: {e}. Использую демо-данные.")
+    
+    # Fallback на демо-данные
     with DEMO_DATA_PATH.open(encoding="utf-8") as demo_file:
         result = json.load(demo_file)
     result["query"] = query.strip() or result["query"]
     result["mode"] = mode
     return result
+
+
+def transform_backend_response(data: dict, query: str, mode: str) -> dict:
+    """Преобразует ответ бэкенда в формат фронтенда."""
+    return {
+        "query": query,
+        "mode": mode,
+        "query_card": data.get("requested_card", {}),
+        "candidates": [
+            {
+                "rank": c.get("rank", idx + 1),
+                "mtr_code": c.get("mtr_code", ""),
+                "ksm_code": c.get("ksm_code"),
+                "candidate_name": c.get("candidate_name", ""),
+                "match_percent": c.get("match_percent", 0),
+                "status": c.get("status", "нет данных"),
+                "matched_params": c.get("matched_params", []),
+                "mismatched_params": c.get("mismatched_params", []),
+                "missing_params": c.get("missing_params", []),
+                "warnings": c.get("warnings", []),
+                "expert_comment": c.get("expert_comment"),
+                "rule_trace": c.get("rule_trace", []),
+                "sources": [
+                    {
+                        "type": s.get("type", "unknown"),
+                        "file": s.get("file"),
+                        "page": s.get("page"),
+                        "row": s.get("row"),
+                        "fragment": s.get("fragment")
+                    }
+                    for s in c.get("sources", [])
+                ]
+            }
+            for idx, c in enumerate(data.get("candidates", []))
+        ]
+    }
 
 
 def yes_no_unknown(value: bool | None) -> str:
@@ -151,11 +211,11 @@ def render_candidate_details(candidate: dict[str, Any]) -> None:
 
     with st.expander("Почему кандидат попал в выдачу"):
         for rule in candidate.get("rule_trace", []):
-            st.markdown(f"**{rule['rule_id']}** · {rule['message']}")
-            st.caption(f"Реакция правила: {rule['reaction']}")
+            st.markdown(f"**{rule.get('rule_id', 'правило')}** · {rule.get('message', '')}")
+            st.caption(f"Реакция правила: {rule.get('reaction', 'unknown')}")
 
     with st.expander("Источники", expanded=True):
-        for number, source in enumerate(candidate["sources"], start=1):
+        for number, source in enumerate(candidate.get("sources", []), start=1):
             st.markdown(f"**{number}. {source_location(source)}**")
             st.caption(source.get("fragment") or "Фрагмент источника не сохранен.")
 
@@ -234,7 +294,7 @@ def render_app() -> None:
         )
         query = controls[1].text_area(
             "Запрос",
-            value=current["query"],
+            value=current.get("query", ""),
             height=105,
             help="Опишите изделие и важные условия эксплуатации.",
         )
@@ -252,23 +312,31 @@ def render_app() -> None:
         if uploaded_file is not None:
             st.toast(f"Файл {uploaded_file.name} принят для демонстрации.")
 
-    render_query_card(current["query_card"])
+    if current.get("query_card"):
+        render_query_card(current["query_card"])
 
-    candidates = sorted(current["candidates"], key=lambda item: item["rank"])
+    candidates = sorted(current.get("candidates", []), key=lambda item: item.get("rank", 0))
+    
+    if not candidates:
+        st.info("Нет кандидатов. Попробуйте изменить запрос или режим поиска.")
+        return
+
     st.markdown("### Кандидаты")
     st.caption(f"Показано {len(candidates)} кандидатов из возможного Top-20. Список отсортирован по близости.")
+    
     table_rows = [
         {
-            "Место": item["rank"],
-            "Код МТР": item.get("mtr_code"),
-            "Код КСМ": item.get("ksm_code"),
-            "Наименование": item.get("candidate_name"),
-            "Близость, %": item.get("match_percent"),
-            "Статус": STATUS_LABELS.get(item["status"], item["status"]),
+            "Место": item.get("rank", idx + 1),
+            "Код МТР": item.get("mtr_code", ""),
+            "Код КСМ": item.get("ksm_code", ""),
+            "Наименование": item.get("candidate_name", ""),
+            "Близость, %": item.get("match_percent", 0),
+            "Статус": STATUS_LABELS.get(item.get("status", ""), item.get("status", "нет данных")),
             "Предупреждения": len(item.get("warnings", [])),
         }
-        for item in candidates
+        for idx, item in enumerate(candidates)
     ]
+    
     st.dataframe(
         table_rows,
         hide_index=True,
@@ -285,14 +353,14 @@ def render_app() -> None:
 
     selected_code = st.selectbox(
         "Открыть кандидата",
-        [item["mtr_code"] for item in candidates],
+        [item["mtr_code"] for item in candidates if item.get("mtr_code")],
         format_func=lambda code: next(
-            f"{item['rank']}. {code} · {item['candidate_name']}"
+            f"{item.get('rank', 0)}. {code} · {item.get('candidate_name', '')}"
             for item in candidates
-            if item["mtr_code"] == code
+            if item.get("mtr_code") == code
         ),
     )
-    selected_candidate = next(item for item in candidates if item["mtr_code"] == selected_code)
+    selected_candidate = next(item for item in candidates if item.get("mtr_code") == selected_code)
     render_candidate_details(selected_candidate)
 
     if st.session_state.get("saved_decision"):
