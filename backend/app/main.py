@@ -26,11 +26,11 @@ app = FastAPI(
 
 UPLOAD_DIR = "uploads/passports"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
+print("llm and embeddings")
+llm = LLMService()
+embeddings = EmbeddingService()
 
 def get_search_service(db: Session = Depends(get_db)):
-    llm = LLMService()
-    embeddings = EmbeddingService()
     rules = RulesEngine(db)
     return SearchService(db, rules, llm, embeddings)
 

@@ -47,6 +47,7 @@ class EmbeddingService:
                 )
                 self._client.get_collections()
                 print(f"Подключено к Qdrant: {self.qdrant_url}")
+                print("мы подключаемся к Qdrant")
             except UnexpectedResponse as e:
                 print(f"Ошибка подключения к Qdrant: {e}")
                 print(f"Проверьте, что Qdrant запущен на {self.qdrant_url}")

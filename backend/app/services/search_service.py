@@ -31,6 +31,7 @@ class SearchService:
         start_time = time.time()
         
         requested_card = self._parse_query(request.query)
+        
         print(request.mode)
         if request.mode == "exact":
             candidates = self._exact_search(requested_card)
@@ -70,6 +71,7 @@ class SearchService:
             results = self.db.query(MTRItem).filter(
                 MTRItem.mtr_code == card.mtr_code
             ).all()
+            
             if results:
                 return results
 
@@ -182,7 +184,7 @@ class SearchService:
         doc = self.db.query(Document).filter(Document.id == document_id).first()
         if not doc:
             return []
-
+        
         pages = self.db.query(DocumentPage).filter(
             DocumentPage.document_id == document_id
         ).all()
