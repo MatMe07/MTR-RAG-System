@@ -1,0 +1,14 @@
+{"case_id":"Q001","exact_code_case":true,"required_warning_terms":[],"required_explanation_terms":["точный код","MTR-0013"],"required_sources":[]}
+{"case_id":"Q002","exact_code_case":true,"required_warning_terms":[],"required_explanation_terms":["точный код","KSM-0008"],"required_sources":[]}
+{"case_id":"Q011","exact_code_case":false,"required_warning_terms":["OCR","неоднознач"],"required_explanation_terms":["OCR","провер"],"required_sources":["documents/ocr/ocr_noisy_reducer.txt"]}
+{"case_id":"Q012","exact_code_case":false,"required_warning_terms":[],"required_explanation_terms":["уточн","угол","толщин"],"required_sources":["documents/passport_016_incomplete.md"]}
+{"case_id":"Q013","exact_code_case":false,"required_warning_terms":["К52","К48"],"required_explanation_terms":["класс прочности","эксперт"],"required_sources":["documents/passport_012_oksh90_k52.md"]}
+{"case_id":"Q014","exact_code_case":false,"required_warning_terms":["PN100","PN160"],"required_explanation_terms":["давлен","провер"],"required_sources":["documents/passport_009_plug_dn25_pn100.md"]}
+{"case_id":"Q015","exact_code_case":false,"required_warning_terms":["толщин","8","10"],"required_explanation_terms":["расхожд","толщин"],"required_sources":["documents/passport_014_oksh90_wall8.md"]}
+{"case_id":"Q016","exact_code_case":false,"required_warning_terms":["DN219","DN159"],"required_explanation_terms":["DN","расхожд"],"required_sources":["documents/passport_015_oksh90_dn219.md"]}
+{"case_id":"Q017","exact_code_case":false,"required_warning_terms":["45","90"],"required_explanation_terms":["угол","не прям"],"required_sources":["documents/passport_002_oksh45_dn159.md"]}
+{"case_id":"Q022","exact_code_case":false,"required_warning_terms":["2","45","не прям"],"required_explanation_terms":["составн","эксперт"],"required_sources":["documents/passport_002_oksh45_dn159.md"]}
+{"case_id":"Q023","exact_code_case":false,"required_warning_terms":["3","30","не прям"],"required_explanation_terms":["составн","эксперт"],"required_sources":["documents/passport_003_oksh30_dn159.md"]}
+{"case_id":"Q024","exact_code_case":false,"required_warning_terms":["внутрен","покрыт","не подтверж"],"required_explanation_terms":["не отклон","эксперт"],"required_sources":["documents/passport_001_oksh90_dn159.md"]}
+{"case_id":"Q025","exact_code_case":false,"required_warning_terms":["H2S","не подтверж"],"required_explanation_terms":["провер","паспорт"],"required_sources":["documents/passport_001_oksh90_dn159.md","documents/lnd_extract.md"]}
+{"case_id":"Q026","exact_code_case":false,"required_warning_terms":["CO2","не подтверж"],"required_explanation_terms":["провер","источник"],"required_sources":["documents/passport_013_oksh90_h2s.md","documents/lnd_extract.md"]}
