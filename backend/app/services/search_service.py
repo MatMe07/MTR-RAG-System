@@ -1,6 +1,7 @@
 # backend/app/services/search_service.py
 
 import time
+import uuid
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 
@@ -29,20 +30,22 @@ class SearchService:
 
     def search(self, request: SearchRequest) -> SearchResponse:
         start_time = time.time()
-        
-        requested_card = self._parse_query(request.query)
-        
-        print(request.mode)
-        if request.mode == "exact":
-            candidates = self._exact_search(requested_card)
-        elif request.mode == "filter":
-            candidates = self._filter_search(requested_card)
-        elif request.mode == "vector":
-            candidates = self._vector_search(request.query)
-        elif request.mode == "passport":
-            candidates = self._search_by_passport(request.document_id)
-        else:
+
+        if request.mode == "passport":
+            requested_card = self._passport_to_card(request.document_id)
             candidates = self._hybrid_search(requested_card)
+        else:
+            requested_card = self._parse_query(request.query)
+            if request.mode == "exact":
+                candidates = self._exact_search(requested_card)
+            elif request.mode == "filter":
+                candidates = self._filter_search(requested_card)
+            elif request.mode == "vector":
+                candidates = self._vector_search(request.query)
+            elif request.mode == "hybrid":
+                candidates = self._hybrid_search(requested_card)
+            else:
+                raise ValueError(f"Неизвестный режим поиска: {request.mode}")
 
         scored = self._evaluate_candidates(requested_card, candidates)
         # print(scored)
@@ -51,6 +54,7 @@ class SearchService:
         search_time_ms = (time.time() - start_time) * 1000
 
         searchresponse = SearchResponse(
+            search_id=str(uuid.uuid4()),
             query=request.query,
             requested_card=requested_card,
             candidates=scored[:request.top_k],
@@ -180,10 +184,13 @@ class SearchService:
 
         return [r["item"] for r in sorted_results[:100]]
 
-    def _search_by_passport(self, document_id: int) -> List[MTRItem]:
+    def _passport_to_card(self, document_id: Optional[int]) -> ItemCard:
+        if document_id is None:
+            raise ValueError("Для поиска по паспорту требуется document_id")
+
         doc = self.db.query(Document).filter(Document.id == document_id).first()
         if not doc:
-            return []
+            raise ValueError(f"Документ {document_id} не найден")
         
         pages = self.db.query(DocumentPage).filter(
             DocumentPage.document_id == document_id
@@ -191,14 +198,14 @@ class SearchService:
 
         full_text = "\n".join([p.ocr_text or "" for p in pages])
         if not full_text.strip():
-            return []
+            raise ValueError(
+                "В паспорте пока нет OCR-текста. Дождитесь обработки документа."
+            )
 
-        card = self.llm.extract_card_from_text(
+        return self.llm.extract_card_from_text(
             full_text,
             {"document_id": document_id, "file_name": doc.file_name}
         )
-
-        return self._hybrid_search(card)
 
     def _evaluate_candidates(
         self,
