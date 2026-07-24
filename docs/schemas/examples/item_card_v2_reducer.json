@@ -1,0 +1,112 @@
+{
+  "schema_version": "2.0",
+  "card_id": "item-reducer-001",
+  "card_version": 1,
+  "lifecycle_status": "extracted",
+  "item_type": "переход",
+  "subtype": "концентрический",
+  "name": "Переход концентрический DN219/DN159",
+  "designation": "ПК 219x12-159x10",
+  "codes": {
+    "mtr_code": "MTR-REDUCER-219-159",
+    "ksm_code": null
+  },
+  "dcd": {
+    "domain": {
+      "code": "gas_pipeline",
+      "name": "Газопровод"
+    },
+    "collection": {
+      "code": "pipeline_fittings",
+      "name": "Соединительные детали трубопровода"
+    },
+    "document": {
+      "document_id": "passport-010",
+      "document_type": "passport",
+      "title": "Паспорт перехода DN219/DN159"
+    }
+  },
+  "properties": {
+    "d1": {
+      "value": 219,
+      "value_type": "number",
+      "raw_value": "219 мм",
+      "unit": "mm",
+      "status": "extracted",
+      "confidence": 0.96,
+      "source_fragment_ids": [
+        "fragment-reducer-geometry"
+      ]
+    },
+    "d2": {
+      "value": 159,
+      "value_type": "number",
+      "raw_value": "159 мм",
+      "unit": "mm",
+      "status": "extracted",
+      "confidence": 0.96,
+      "source_fragment_ids": [
+        "fragment-reducer-geometry"
+      ]
+    },
+    "wall_thickness_1": {
+      "value": 12,
+      "value_type": "number",
+      "raw_value": "12 мм",
+      "unit": "mm",
+      "status": "extracted",
+      "confidence": 0.94,
+      "source_fragment_ids": [
+        "fragment-reducer-geometry"
+      ]
+    },
+    "wall_thickness_2": {
+      "value": 10,
+      "value_type": "number",
+      "raw_value": "10 мм",
+      "unit": "mm",
+      "status": "extracted",
+      "confidence": 0.94,
+      "source_fragment_ids": [
+        "fragment-reducer-geometry"
+      ]
+    },
+    "construction": {
+      "value": "концентрический",
+      "value_type": "string",
+      "raw_value": "концентрический",
+      "unit": null,
+      "status": "normalized",
+      "confidence": 0.98,
+      "source_fragment_ids": [
+        "fragment-reducer-geometry"
+      ]
+    },
+    "inner_coating": {
+      "value": null,
+      "value_type": "boolean",
+      "raw_value": null,
+      "unit": null,
+      "status": "unknown",
+      "confidence": null,
+      "source_fragment_ids": []
+    }
+  },
+  "sources": [
+    {
+      "source_id": "source-reducer-passport",
+      "type": "passport",
+      "document_id": "passport-010",
+      "file_name": "passport_010_reducer_219_159.md",
+      "source_fragment": {
+        "fragment_id": "fragment-reducer-geometry",
+        "text": "Переход концентрический 219x12-159x10 мм.",
+        "page": 1,
+        "row": null,
+        "bbox": null
+      }
+    }
+  ],
+  "created_at": "2026-07-24T10:20:00+03:00",
+  "updated_at": "2026-07-24T10:20:00+03:00"
+}

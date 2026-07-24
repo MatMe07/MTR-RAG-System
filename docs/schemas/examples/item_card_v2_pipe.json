@@ -1,0 +1,149 @@
+{
+  "schema_version": "2.0",
+  "card_id": "item-pipe-001",
+  "card_version": 1,
+  "lifecycle_status": "expert_confirmed",
+  "item_type": "труба",
+  "subtype": "прямошовная",
+  "name": "Труба стальная DN159x10",
+  "designation": "159x10-К48-09Г2С-УХЛ",
+  "codes": {
+    "mtr_code": "MTR-PIPE-159-001",
+    "ksm_code": "KSM-PIPE-159-001"
+  },
+  "dcd": {
+    "domain": {
+      "code": "gas_pipeline",
+      "name": "Газопровод"
+    },
+    "collection": {
+      "code": "pipes",
+      "name": "Трубы"
+    },
+    "document": {
+      "document_id": "passport-006",
+      "document_type": "passport",
+      "title": "Паспорт трубы DN159"
+    }
+  },
+  "properties": {
+    "outer_diameter": {
+      "value": 159,
+      "value_type": "number",
+      "raw_value": "159 мм",
+      "unit": "mm",
+      "status": "expert_confirmed",
+      "confidence": 1,
+      "source_fragment_ids": [
+        "fragment-pipe-geometry"
+      ]
+    },
+    "wall_thickness": {
+      "value": 10,
+      "value_type": "number",
+      "raw_value": "10 мм",
+      "unit": "mm",
+      "status": "expert_confirmed",
+      "confidence": 1,
+      "source_fragment_ids": [
+        "fragment-pipe-geometry"
+      ]
+    },
+    "steel_grade": {
+      "value": "09Г2С",
+      "value_type": "string",
+      "raw_value": "09Г2С",
+      "unit": null,
+      "status": "expert_confirmed",
+      "confidence": 1,
+      "source_fragment_ids": [
+        "fragment-pipe-material"
+      ]
+    },
+    "strength_class": {
+      "value": "К48",
+      "value_type": "string",
+      "raw_value": "К48",
+      "unit": null,
+      "status": "expert_confirmed",
+      "confidence": 1,
+      "source_fragment_ids": [
+        "fragment-pipe-material"
+      ]
+    },
+    "h2s_confirmed": {
+      "value": null,
+      "value_type": "boolean",
+      "raw_value": null,
+      "unit": null,
+      "status": "unknown",
+      "confidence": null,
+      "source_fragment_ids": []
+    },
+    "inner_coating": {
+      "value": true,
+      "value_type": "boolean",
+      "raw_value": "Внутреннее эпоксидное покрытие нанесено",
+      "unit": null,
+      "status": "expert_confirmed",
+      "confidence": 1,
+      "source_fragment_ids": [
+        "fragment-pipe-coating"
+      ]
+    },
+    "outer_coating": {
+      "value": false,
+      "value_type": "boolean",
+      "raw_value": "Наружное покрытие отсутствует",
+      "unit": null,
+      "status": "expert_confirmed",
+      "confidence": 1,
+      "source_fragment_ids": [
+        "fragment-pipe-coating"
+      ]
+    }
+  },
+  "sources": [
+    {
+      "source_id": "source-pipe-passport",
+      "type": "passport",
+      "document_id": "passport-006",
+      "file_name": "passport_006_pipe_dn159.md",
+      "source_fragment": {
+        "fragment_id": "fragment-pipe-geometry",
+        "text": "Наружный диаметр 159 мм. Толщина стенки 10 мм.",
+        "page": 1,
+        "row": null,
+        "bbox": null
+      }
+    },
+    {
+      "source_id": "source-pipe-material",
+      "type": "passport",
+      "document_id": "passport-006",
+      "file_name": "passport_006_pipe_dn159.md",
+      "source_fragment": {
+        "fragment_id": "fragment-pipe-material",
+        "text": "Марка стали 09Г2С. Класс прочности К48.",
+        "page": 1,
+        "row": null,
+        "bbox": null
+      }
+    },
+    {
+      "source_id": "source-pipe-coating",
+      "type": "passport",
+      "document_id": "passport-006",
+      "file_name": "passport_006_pipe_dn159.md",
+      "source_fragment": {
+        "fragment_id": "fragment-pipe-coating",
+        "text": "Внутреннее эпоксидное покрытие нанесено. Наружное покрытие отсутствует.",
+        "page": 1,
+        "row": null,
+        "bbox": null
+      }
+    }
+  ],
+  "created_at": "2026-07-24T10:00:00+03:00",
+  "updated_at": "2026-07-24T10:00:00+03:00"
+}
