@@ -135,7 +135,9 @@ class MatchResult(BaseModel):
 
 
 class SearchResponse(BaseModel):
+    search_id: str = Field(..., description="Идентификатор поиска для экспертного решения")
     query: str = Field(..., description="Исходный запрос")
+    requested_card: Any = Field(..., description="Карточка, извлечённая из запроса или паспорта")
     candidates: List[MatchResult] = Field(..., description="Список кандидатов")
     total_found: int = Field(..., description="Всего найдено")
     search_time_ms: float = Field(..., description="Время выполнения поиска, мс")
