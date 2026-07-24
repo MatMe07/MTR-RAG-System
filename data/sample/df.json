@@ -1,0 +1,92 @@
+{
+    "card_id": "1",
+    "item_type": "отвод",
+    "subtype": "ОКШ",
+    "designation": "ОКШ90-159x10-К48-09Г2С-УХЛ",
+    "geometry": {
+        "dn": 159,
+        "angle": 90,
+        "wall_thickness": 10
+    },
+    "pressure": {
+        "pn": 160
+    },
+    "material": {
+        "steel_grade": "09Г2С",
+        "strength_class": "К48"
+    },
+    "environment": {
+        "medium": "газ",
+        "h2s_confirmed": false,
+        "co2_confirmed": false,
+        "climate_version": "УХЛ"
+    },
+    "coating": {
+        "inner_coating": null,
+        "outer_coating": true
+    },
+    "normative": {
+        "gost_tu": "ТУ 1469-048-78795288-2015",
+        "lnd_sections": []
+    },
+    "extraction": {
+        "method": "llm",
+        "missing_fields": [
+            "inner_coating"
+        ]
+    },
+    "sources": [
+        {
+            "type": "passport",
+            "file": "documents/passport_001_oksh90_dn159.md",
+            "page": 1,
+            "fragment": "DN 159 мм, толщина стенки 10 мм, угол 90 градусов, PN 160"
+        }
+    ],
+    "table_json": {
+        "page": 1,
+        "tables": [
+            {
+                "headers": [
+                    "Параметр",
+                    "Значение"
+                ],
+                "rows": [
+                    [
+                        "Параметр",
+                        "Значение"
+                    ],
+                    [
+                        "DN",
+                        "159 мм"
+                    ],
+                    [
+                        "Толщина стенки",
+                        "10 мм"
+                    ],
+                    [
+                        "Угол",
+                        "90°"
+                    ],
+                    [
+                        "PN",
+                        "160"
+                    ],
+                    [
+                        "Материал",
+                        "09Г2С"
+                    ],
+                    [
+                        "Класс прочности",
+                        "К48"
+                    ],
+                    [
+                        "Климатическое исполнение",
+                        "УХЛ"
+                    ]
+                ],
+                "confidence": 0.95
+            }
+        ]
+    }
+}

@@ -1,0 +1,149 @@
+{
+  "schema_version": "2.0",
+  "card_id": "item-valve-001",
+  "card_version": 1,
+  "lifecycle_status": "normalized",
+  "item_type": "задвижка",
+  "subtype": "клиновая",
+  "name": "Задвижка клиновая DN150 PN100",
+  "designation": "ЗК DN150 PN100 ХЛ",
+  "codes": {
+    "mtr_code": "MTR-VALVE-150-100",
+    "ksm_code": "KSM-VALVE-150-100"
+  },
+  "dcd": {
+    "domain": {
+      "code": "gas_pipeline",
+      "name": "Газопровод"
+    },
+    "collection": {
+      "code": "shutoff_valves",
+      "name": "Запорная арматура"
+    },
+    "document": {
+      "document_id": "passport-007",
+      "document_type": "passport",
+      "title": "Паспорт задвижки DN150"
+    }
+  },
+  "properties": {
+    "dn": {
+      "value": 150,
+      "value_type": "number",
+      "raw_value": "DN150",
+      "unit": "mm",
+      "status": "normalized",
+      "confidence": 0.99,
+      "source_fragment_ids": [
+        "fragment-valve-main"
+      ]
+    },
+    "pn": {
+      "value": 100,
+      "value_type": "number",
+      "raw_value": "PN100",
+      "unit": "bar",
+      "status": "normalized",
+      "confidence": 0.99,
+      "source_fragment_ids": [
+        "fragment-valve-main"
+      ]
+    },
+    "drive_type": {
+      "value": "ручной",
+      "value_type": "string",
+      "raw_value": "Привод ручной",
+      "unit": null,
+      "status": "normalized",
+      "confidence": 0.98,
+      "source_fragment_ids": [
+        "fragment-valve-design"
+      ]
+    },
+    "tightness_class": {
+      "value": "A",
+      "value_type": "string",
+      "raw_value": "Класс герметичности А",
+      "unit": null,
+      "status": "normalized",
+      "confidence": 0.98,
+      "source_fragment_ids": [
+        "fragment-valve-design"
+      ]
+    },
+    "climate_version": {
+      "value": "ХЛ",
+      "value_type": "string",
+      "raw_value": "ХЛ",
+      "unit": null,
+      "status": "normalized",
+      "confidence": 0.99,
+      "source_fragment_ids": [
+        "fragment-valve-design"
+      ]
+    },
+    "h2s_confirmed": {
+      "value": false,
+      "value_type": "boolean",
+      "raw_value": "Для сероводородсодержащей среды не предназначена",
+      "unit": null,
+      "status": "expert_confirmed",
+      "confidence": 1,
+      "source_fragment_ids": [
+        "fragment-valve-medium"
+      ]
+    },
+    "inner_coating": {
+      "value": null,
+      "value_type": "boolean",
+      "raw_value": null,
+      "unit": null,
+      "status": "unknown",
+      "confidence": null,
+      "source_fragment_ids": []
+    }
+  },
+  "sources": [
+    {
+      "source_id": "source-valve-main",
+      "type": "passport",
+      "document_id": "passport-007",
+      "file_name": "passport_007_valve_dn150.md",
+      "source_fragment": {
+        "fragment_id": "fragment-valve-main",
+        "text": "Задвижка клиновая DN150 PN100.",
+        "page": 1,
+        "row": null,
+        "bbox": null
+      }
+    },
+    {
+      "source_id": "source-valve-design",
+      "type": "passport",
+      "document_id": "passport-007",
+      "file_name": "passport_007_valve_dn150.md",
+      "source_fragment": {
+        "fragment_id": "fragment-valve-design",
+        "text": "Привод ручной. Класс герметичности А. Климатическое исполнение ХЛ.",
+        "page": 1,
+        "row": null,
+        "bbox": null
+      }
+    },
+    {
+      "source_id": "source-valve-medium",
+      "type": "lnd",
+      "document_id": "lnd-001",
+      "file_name": "lnd_extract.md",
+      "source_fragment": {
+        "fragment_id": "fragment-valve-medium",
+        "text": "Для сероводородсодержащей среды изделие не предназначено.",
+        "page": 4,
+        "row": null,
+        "bbox": null
+      }
+    }
+  ],
+  "created_at": "2026-07-24T10:30:00+03:00",
+  "updated_at": "2026-07-24T10:30:00+03:00"
+}

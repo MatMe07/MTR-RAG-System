@@ -91,11 +91,10 @@ class ItemCard(BaseModel):
 
 class SearchRequest(BaseModel):
     query: str = Field(..., description="Текстовый запрос пользователя")
+    mode: str = Field("hybrid", description="Режим поиска: exact, filter, vector, hybrid, passport")
     filters: Optional[Dict[str, Any]] = Field(None, description="Фильтры: dn, angle, pressure, material")
     top_k: int = Field(20, description="Количество результатов", ge=1, le=100)
-    use_exact: bool = Field(True, description="Использовать точный поиск")
-    use_filter: bool = Field(True, description="Использовать фильтровый поиск")
-    use_vector: bool = Field(True, description="Использовать векторный поиск")
+    document_id: Optional[int] = Field(None, description="ID документа для режима passport")
 
 
 class RuleTrace(BaseModel):
@@ -119,6 +118,14 @@ class MatchResult(BaseModel):
     rule_trace: List[RuleTrace] = Field(default_factory=list, description="Сработавшие правила")
     sources: List[Source] = Field(default_factory=list, description="Источники")
 
+    rank: int
+    mtr_code: str
+    ksm_code: Optional[str]
+    candidate_name: str
+    sources: List[Source]
+    stock_quantity: Optional[float]
+    stock_cost: Optional[float]
+    
     @field_validator("status")
     def validate_status(cls, v):
         allowed = ["соответствует", "потенциальный аналог", "требует проверки", "низкая релевантность", "нет данных"]
@@ -128,7 +135,9 @@ class MatchResult(BaseModel):
 
 
 class SearchResponse(BaseModel):
+    search_id: str = Field(..., description="Идентификатор поиска для экспертного решения")
     query: str = Field(..., description="Исходный запрос")
+    requested_card: Any = Field(..., description="Карточка, извлечённая из запроса или паспорта")
     candidates: List[MatchResult] = Field(..., description="Список кандидатов")
     total_found: int = Field(..., description="Всего найдено")
     search_time_ms: float = Field(..., description="Время выполнения поиска, мс")

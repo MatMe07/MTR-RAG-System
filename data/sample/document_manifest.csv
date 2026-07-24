@@ -1,21 +1,21 @@
-document_id;file_name;pages;item_type;designation;expected_mtr_code;expected_ksm_code;document_quality;expert_comment
-D001;documents/passport_001_oksh90_dn159.md;3;отвод;ОКШ90-159x10-К48-09Г2С-УХЛ;MTR-0001;KSM-0001;хорошее;Базовый отвод 90 без подтверждения H2S и внутреннего покрытия
-D002;documents/passport_002_oksh45_dn159.md;2;отвод;ОКШ45-159x10-К48-09Г2С-УХЛ;MTR-0002;KSM-0002;хорошее;Отличается от базового отвода углом
-D003;documents/passport_003_oksh30_dn159.md;2;отвод;ОКШ30-159x10-К48-09Г2С-УХЛ;MTR-0003;KSM-0003;хорошее;Может участвовать только в составной замене
-D004;documents/passport_004_og90_dn325.md;2;отвод;ОГ90-325x8-К48-09Г2С-УХЛ;MTR-0004;KSM-0004;хорошее;Другой подтип и диаметр
-D005;documents/passport_005_og60_dn325.md;2;отвод;ОГ60-325x8-К48-09Г2С-УХЛ;MTR-0005;KSM-0005;хорошее;Проверка распознавания угла 60
-D006;documents/passport_006_pipe_dn159.md;2;труба;Труба-159x10-09Г2С;MTR-0006;KSM-0006;хорошее;Класс прочности и покрытия не указаны
-D007;documents/passport_007_valve_dn150.md;3;задвижка;ЗК150x40-Ф-Х-К2/6-К52-УХЛ;MTR-0007;KSM-0007;хорошее;Отдельный класс оборудования
-D008;documents/passport_008_plug_dn25_pn160.md;2;заглушка;Заглушка-3-25-16;MTR-0008;KSM-0008;хорошее;Покрытия отсутствуют
-D009;documents/passport_009_plug_dn25_pn100.md;2;заглушка;Заглушка-4-25-10;MTR-0009;KSM-0009;хорошее;PN ниже чем у D008
-D010;documents/passport_010_reducer_219_159.md;2;переход;Переход-К-219x159-09Г2С;MTR-0010;KSM-0010;хорошее;Нужно отдельно извлечь D1 и D2
-D011;documents/passport_011_tee_dn159.md;2;тройник;Тройник-159-09Г2С;MTR-0011;KSM-0011;хорошее;Равнопроходный тройник
-D012;documents/passport_012_oksh90_k52.md;2;отвод;ОКШ90-159x10-К52-09Г2С-УХЛ;MTR-0012;KSM-0012;хорошее;Отличие класса прочности требует пояснения
-D013;documents/passport_013_oksh90_h2s.md;3;отвод;ОКШ90-159x10-К48-09Г2С-H2S-УХЛ;MTR-0013;KSM-0013;хорошее;H2S и оба покрытия подтверждены
-D014;documents/passport_014_oksh90_wall8.md;2;отвод;ОКШ90-159x8-К48-09Г2С-УХЛ;MTR-0014;KSM-0014;хорошее;Толщина 8 вместо 10
-D015;documents/passport_015_oksh90_dn219.md;2;отвод;ОКШ90-219x10-К48-09Г2С-УХЛ;MTR-0015;KSM-0015;хорошее;DN 219 вместо 159
-D016;documents/passport_016_incomplete.md;2;отвод;;;;неполное;Система должна запросить угол толщину PN и класс прочности
-D017;documents/ocr/ocr_noisy_oksh90_h2s.txt;2;отвод;ОКШ90-159x10-К48-09Г2С-H2S-УХЛ;MTR-0013;KSM-0013;OCR с ошибками;Смешаны буквы O и цифры 0 а также I и 1
-D018;documents/ocr/ocr_noisy_reducer.txt;1;переход;Переход-К-219x159-09Г2С;MTR-0010;KSM-0010;OCR с ошибками;Проверка D1 D2 и ГОСТ после плохого OCR
-D019;documents/ocr/ocr_noisy_plug.txt;1;заглушка;Заглушка-3-25-16;MTR-0008;KSM-0008;OCR с ошибками;Значение DN 25 содержит ошибку распознавания
-D020;documents/lnd_extract.md;1;нормативный документ;;;;хорошее;Источник правил а не карточка МТР
+document_id;domain_code;collection_code;document_type;file_name;pages;item_type;designation;expected_mtr_code;expected_ksm_code;document_quality;expert_comment
+DOC-0001;gas_pipeline_mtr;elbows;passport;documents/passport_001_oksh90_dn159.md;3;отвод;ОКШ90-159x10-К48-09Г2С-УХЛ;MTR-0001;KSM-0001;хорошее;Базовый отвод 90 без подтверждения H2S и внутреннего покрытия
+DOC-0002;gas_pipeline_mtr;elbows;passport;documents/passport_002_oksh45_dn159.md;2;отвод;ОКШ45-159x10-К48-09Г2С-УХЛ;MTR-0002;KSM-0002;хорошее;Отличается от базового отвода углом
+DOC-0003;gas_pipeline_mtr;elbows;passport;documents/passport_003_oksh30_dn159.md;2;отвод;ОКШ30-159x10-К48-09Г2С-УХЛ;MTR-0003;KSM-0003;хорошее;Может участвовать только в составной замене
+DOC-0004;gas_pipeline_mtr;elbows;passport;documents/passport_004_og90_dn325.md;2;отвод;ОГ90-325x8-К48-09Г2С-УХЛ;MTR-0004;KSM-0004;хорошее;Другой подтип и диаметр
+DOC-0005;gas_pipeline_mtr;elbows;passport;documents/passport_005_og60_dn325.md;2;отвод;ОГ60-325x8-К48-09Г2С-УХЛ;MTR-0005;KSM-0005;хорошее;Проверка распознавания угла 60
+DOC-0006;gas_pipeline_mtr;pipes;passport;documents/passport_006_pipe_dn159.md;2;труба;Труба-159x10-09Г2С;MTR-0006;KSM-0006;хорошее;Класс прочности и покрытия не указаны
+DOC-0007;gas_pipeline_mtr;valves;passport;documents/passport_007_valve_dn150.md;3;задвижка;ЗК150x40-Ф-Х-К2/6-К52-УХЛ;MTR-0007;KSM-0007;хорошее;Отдельный класс оборудования
+DOC-0008;gas_pipeline_mtr;plugs;passport;documents/passport_008_plug_dn25_pn160.md;2;заглушка;Заглушка-3-25-16;MTR-0008;KSM-0008;хорошее;Покрытия отсутствуют
+DOC-0009;gas_pipeline_mtr;plugs;passport;documents/passport_009_plug_dn25_pn100.md;2;заглушка;Заглушка-4-25-10;MTR-0009;KSM-0009;хорошее;PN ниже чем у 8
+DOC-0010;gas_pipeline_mtr;reducers;passport;documents/passport_010_reducer_219_159.md;2;переход;Переход-К-219x159-09Г2С;MTR-0010;KSM-0010;хорошее;Нужно отдельно извлечь D1 и D2
+DOC-0011;gas_pipeline_mtr;tees;passport;documents/passport_011_tee_dn159.md;2;тройник;Тройник-159-09Г2С;MTR-0011;KSM-0011;хорошее;Равнопроходный тройник
+DOC-0012;gas_pipeline_mtr;elbows;passport;documents/passport_012_oksh90_k52.md;2;отвод;ОКШ90-159x10-К52-09Г2С-УХЛ;MTR-0012;KSM-0012;хорошее;Отличие класса прочности требует пояснения
+DOC-0013;gas_pipeline_mtr;elbows;passport;documents/passport_013_oksh90_h2s.md;3;отвод;ОКШ90-159x10-К48-09Г2С-H2S-УХЛ;MTR-0013;KSM-0013;хорошее;H2S и оба покрытия подтверждены
+DOC-0014;gas_pipeline_mtr;elbows;passport;documents/passport_014_oksh90_wall8.md;2;отвод;ОКШ90-159x8-К48-09Г2С-УХЛ;MTR-0014;KSM-0014;хорошее;Толщина 8 вместо 10
+DOC-0015;gas_pipeline_mtr;elbows;passport;documents/passport_015_oksh90_dn219.md;2;отвод;ОКШ90-219x10-К48-09Г2С-УХЛ;MTR-0015;KSM-0015;хорошее;DN 219 вместо 159
+DOC-0016;gas_pipeline_mtr;elbows;passport;documents/passport_016_incomplete.md;2;отвод;;;;неполное;Система должна запросить угол толщину PN и класс прочности
+DOC-0017;gas_pipeline_mtr;elbows;ocr_text;documents/ocr/ocr_noisy_oksh90_h2s.txt;2;отвод;ОКШ90-159x10-К48-09Г2С-H2S-УХЛ;MTR-0013;KSM-0013;OCR с ошибками;Смешаны буквы O и цифры 0 а также I и 1
+DOC-0018;gas_pipeline_mtr;reducers;ocr_text;documents/ocr/ocr_noisy_reducer.txt;1;переход;Переход-К-219x159-09Г2С;MTR-0010;KSM-0010;OCR с ошибками;Проверка D1 D2 и ГОСТ после плохого OCR
+DOC-0019;gas_pipeline_mtr;plugs;ocr_text;documents/ocr/ocr_noisy_plug.txt;1;заглушка;Заглушка-3-25-16;MTR-0008;KSM-0008;OCR с ошибками;Значение DN 25 содержит ошибку распознавания
+DOC-0020;gas_pipeline_mtr;regulations;lnd;documents/lnd_extract.md;1;нормативный документ;;;;хорошее;Источник правил а не карточка МТР

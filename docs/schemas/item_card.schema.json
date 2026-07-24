@@ -1,227 +1,418 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/MatMe07/MTR-RAG-System/schemas/item_card.schema.json",
-  "title": "ItemCard",
-  "description": "Единая карточка изделия. К ней приводятся пользовательский запрос, паспорт, Excel-строка и кандидат МТР/КСМ.",
+  "title": "ItemCardV2",
+  "description": "Карточка изделия версии 2: строгая шапка и динамические характеристики для хранения в PostgreSQL JSONB.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["item_type", "sources"],
+  "required": [
+    "schema_version",
+    "card_id",
+    "card_version",
+    "lifecycle_status",
+    "item_type",
+    "subtype",
+    "name",
+    "designation",
+    "codes",
+    "dcd",
+    "properties",
+    "sources"
+  ],
   "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "description": "Версия JSON-контракта. Не совпадает с версией конкретной карточки."
+    },
     "card_id": {
-      "type": ["string", "null"],
-      "description": "Внутренний идентификатор карточки, если она уже сохранена в системе."
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "description": "Постоянный идентификатор изделия. Для ещё не сохранённого запроса может быть null."
     },
-    "mtr_code": {
-      "type": ["string", "null"],
-      "description": "Код МТР, если известен."
+    "card_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Номер версии конкретной карточки. Увеличивается при подтверждённом изменении."
     },
-    "ksm_code": {
-      "type": ["string", "null"],
-      "description": "Код КСМ или код потенциального аналога, если известен."
+    "lifecycle_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "extracted",
+        "normalized",
+        "expert_confirmed",
+        "conflict",
+        "archived"
+      ],
+      "description": "Общий статус карточки, не статус отдельной характеристики."
     },
     "item_type": {
       "type": "string",
-      "description": "Базовый тип изделия.",
-      "examples": ["отвод", "труба", "задвижка", "заглушка", "переход", "тройник"]
+      "minLength": 1,
+      "description": "Базовый тип изделия: труба, отвод, переход, задвижка и т.д."
     },
     "subtype": {
-      "type": ["string", "null"],
-      "description": "Подтип или конструктивное исполнение.",
-      "examples": ["ОКШ", "ОГ", "клиновая", "поворотная", "концентрический"]
-    },
-    "designation": {
-      "type": ["string", "null"],
-      "description": "Условное обозначение изделия из паспорта, Excel или запроса."
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Подтип или конструктивное исполнение изделия."
     },
     "name": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Человекочитаемое наименование изделия."
     },
-    "geometry": {
+    "designation": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Условное обозначение изделия из паспорта, каталога или запроса."
+    },
+    "codes": {
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "mtr_code",
+        "ksm_code"
+      ],
       "properties": {
-        "dn": {
-          "type": ["number", "null"],
-          "description": "Условный проход или основной диаметр."
+        "mtr_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Код МТР, если он известен."
         },
-        "d1": {
-          "type": ["number", "null"],
-          "description": "Первый/больший диаметр для переходов и тройников."
-        },
-        "d2": {
-          "type": ["number", "null"],
-          "description": "Второй/меньший диаметр для переходов и тройников."
-        },
-        "wall_thickness": {
-          "type": ["number", "null"],
-          "description": "Основная толщина стенки."
-        },
-        "wall_thickness_2": {
-          "type": ["number", "null"],
-          "description": "Дополнительная толщина стенки, если применимо."
-        },
-        "angle": {
-          "type": ["number", "null"],
-          "description": "Угол для отводов: 30, 45, 60, 90."
-        },
-        "radius": {
-          "type": ["string", "null"],
-          "description": "Радиус или геометрический признак, например 1.5D или 5D."
+        "ksm_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Код КСМ, если он известен."
         }
       }
     },
-    "pressure": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "pn": {
-          "type": ["number", "null"],
-          "description": "Номинальное давление PN/Ру в нормализованном виде."
-        },
-        "working_pressure_mpa": {
-          "type": ["number", "null"],
-          "description": "Рабочее давление в МПа."
-        },
-        "test_pressure_mpa": {
-          "type": ["number", "null"],
-          "description": "Испытательное давление в МПа."
-        },
-        "raw_value": {
-          "type": ["string", "null"],
-          "description": "Исходная запись давления из источника."
-        }
-      }
+    "dcd": {
+      "$ref": "#/$defs/dcdContext"
     },
-    "material": {
+    "properties": {
       "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "steel_grade": {
-          "type": ["string", "null"],
-          "description": "Марка стали, например 09Г2С."
-        },
-        "strength_class": {
-          "type": ["string", "null"],
-          "description": "Класс прочности, например К48."
-        },
-        "standard": {
-          "type": ["string", "null"],
-          "description": "ГОСТ/ТУ на материал, если указан."
-        }
-      }
-    },
-    "environment": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "medium": {
-          "type": ["string", "null"],
-          "description": "Рабочая среда: газ, нефть, вода, H2S, CO2 и т.д."
-        },
-        "h2s_confirmed": {
-          "type": ["boolean", "null"],
-          "description": "Подтверждена ли пригодность для H2S."
-        },
-        "co2_confirmed": {
-          "type": ["boolean", "null"],
-          "description": "Подтверждена ли пригодность для CO2."
-        },
-        "temperature_min_c": {
-          "type": ["number", "null"],
-          "description": "Минимальная температура эксплуатации."
-        },
-        "climate_version": {
-          "type": ["string", "null"],
-          "description": "Климатическое исполнение: У, ХЛ, УХЛ."
-        }
-      }
-    },
-    "coating": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "inner_coating": {
-          "type": ["boolean", "null"],
-          "description": "Есть ли внутреннее покрытие."
-        },
-        "outer_coating": {
-          "type": ["boolean", "null"],
-          "description": "Есть ли наружное покрытие."
-        },
-        "coating_type": {
-          "type": ["string", "null"],
-          "description": "Тип покрытия, если указан."
-        },
-        "coating_standard": {
-          "type": ["string", "null"],
-          "description": "ГОСТ/ТУ на покрытие, если указан."
-        }
-      }
-    },
-    "normative": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "gost_tu": {
-          "type": ["string", "null"],
-          "description": "ГОСТ или ТУ на изготовление изделия."
-        },
-        "lnd_sections": {
-          "type": "array",
-          "description": "Ссылки на разделы ЛНД, если применимо.",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "extraction": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "confidence": {
-          "type": ["number", "null"],
-          "minimum": 0,
-          "maximum": 1,
-          "description": "Общая уверенность извлечения карточки."
-        },
-        "method": {
-          "type": ["string", "null"],
-          "description": "Источник извлечения: user_query, excel, ocr, llm, expert_edit."
-        },
-        "missing_fields": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
+      "description": "Изменяемый набор характеристик. Название характеристики является ключом, а значение соответствует characteristicValue.",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/characteristicValue"
       }
     },
     "sources": {
       "type": "array",
-      "description": "Ссылки на источники данных, из которых собрана карточка.",
+      "description": "Источники, по которым собрана карточка. Характеристики ссылаются на source_fragment.fragment_id.",
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["type"],
-        "properties": {
-          "type": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "created_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "dcdContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "collection",
+        "document"
+      ],
+      "properties": {
+        "domain": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/dcdNode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Верхняя область знаний, например газопровод."
+        },
+        "collection": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/dcdNode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Однородная группа внутри области, например трубопроводные детали."
+        },
+        "document": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/dcdDocument"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Основной документ карточки. Остальные документы перечисляются в sources."
+        }
+      }
+    },
+    "dcdNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "name"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "dcdDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "document_id",
+        "document_type",
+        "title"
+      ],
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "document_type": {
+          "type": "string",
+          "enum": [
+            "passport",
+            "excel",
+            "lnd",
+            "catalog",
+            "standard",
+            "user_query",
+            "other"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "characteristicValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "value_type",
+        "unit",
+        "status",
+        "confidence",
+        "source_fragment_ids"
+      ],
+      "properties": {
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          },
+          "description": "Нормализованное значение. null означает, что значение неизвестно, а не отрицательно."
+        },
+        "value_type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "list"
+          ],
+          "description": "Ожидаемый тип значения для правил и интерфейса."
+        },
+        "raw_value": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ],
+          "description": "Исходная запись до нормализации."
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Каноническая единица измерения, например mm или MPa."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "extracted",
+            "normalized",
+            "inferred",
+            "expert_confirmed",
+            "rejected",
+            "conflict",
+            "unknown"
+          ]
+        },
+        "confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Уверенность автоматического извлечения. Для экспертного значения может быть 1."
+        },
+        "source_fragment_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
             "type": "string",
-            "examples": ["passport", "excel", "lnd", "user_query"]
+            "minLength": 1
           },
-          "file": {
-            "type": ["string", "null"]
-          },
-          "page": {
-            "type": ["integer", "null"]
-          },
-          "row": {
-            "type": ["integer", "null"]
-          },
-          "fragment": {
-            "type": ["string", "null"]
-          }
+          "description": "Идентификаторы фрагментов, подтверждающих значение."
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "type",
+        "document_id",
+        "file_name",
+        "source_fragment"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "passport",
+            "excel",
+            "lnd",
+            "catalog",
+            "standard",
+            "user_query",
+            "expert"
+          ]
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "file_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_fragment": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sourceFragment"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "sourceFragment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fragment_id",
+        "text",
+        "page",
+        "row",
+        "bbox"
+      ],
+      "properties": {
+        "fragment_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text": {
+          "type": "string"
+        },
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "row": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "bbox": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Координаты фрагмента на странице: x1, y1, x2, y2."
         }
       }
     }
