@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from sqlalchemy.orm import Session
 
-from app.models import MatchingRule, ReplacementSet
-from app.schemas import RuleTrace
+from app.models import MatchingRule, ReplacementSet, MTRItem
+from app.schemas import ItemCard, RuleTrace
+from app.utils.jsonb_utils import get_property_value
 
 
 FIELD_ALIASES = {
@@ -81,11 +82,6 @@ NUMERIC_TOLERANCES = {
 
 
 class RulesEngine:
-    """Evaluates a requested item card against one candidate.
-
-    ItemCard v2 dictionaries are the primary input. Legacy Pydantic cards are
-    supported while the backend and stored test data are being migrated.
-    """
 
     def __init__(self, db: Session):
         self.db = db
@@ -126,7 +122,7 @@ class RulesEngine:
                 }
             )
 
-    def evaluate(self, requested: Any, candidate: Any) -> Dict[str, Any]:
+    def evaluate(self, requested: Union[ItemCard, Dict], candidate: Union[ItemCard, Dict, MTRItem]) -> Dict[str, Any]:
         requested_values = self._card_to_values(requested)
         candidate_values = self._card_to_values(candidate)
         comparison = self._compare_values(requested_values, candidate_values)
@@ -137,10 +133,6 @@ class RulesEngine:
         )
         score = self._calculate_score(comparison, rules_result["penalty"])
         status = self._determine_status(score, comparison, rules_result)
-        explanation, expert_comment = self._generate_explanation(
-            comparison,
-            rules_result,
-        )
 
         return {
             "status": status,
@@ -149,8 +141,8 @@ class RulesEngine:
             "mismatched_params": comparison["mismatched"],
             "missing_params": comparison["missing"],
             "warnings": rules_result["warnings"],
-            "expert_comment": expert_comment,
-            "explanation": explanation,
+            "expert_comment": rules_result["expert_comment"],
+            "explanation": rules_result["explanation"],
             "rule_trace": rules_result["traces"],
         }
 
@@ -162,10 +154,10 @@ class RulesEngine:
             if field in data:
                 values[field] = data.get(field)
 
-        codes = data.get("codes")
-        if isinstance(codes, dict):
-            values["mtr_code"] = codes.get("mtr_code")
-            values["ksm_code"] = codes.get("ksm_code")
+        if "mtr_code" in data:
+            values["mtr_code"] = data.get("mtr_code")
+        if "ksm_code" in data:
+            values["ksm_code"] = data.get("ksm_code")
 
         properties = data.get("properties")
         if isinstance(properties, dict):
@@ -177,6 +169,7 @@ class RulesEngine:
                     values[parameter] = characteristic
             return values
 
+        # ===== LEGACY PATHS (если нет properties) =====
         for parameter, path in LEGACY_PATHS.items():
             value = self._read_path(data, path)
             if value is not _MISSING:
@@ -285,6 +278,9 @@ class RulesEngine:
         allowed_replacements.extend(replacement_result["messages"])
         traces.extend(replacement_result["traces"])
 
+        explanation = self._build_explanation(comparison, warnings, expert_comments, allowed_replacements)
+        expert_comment = self._build_expert_comment(warnings, expert_comments, allowed_replacements)
+
         return {
             "hard_filter": hard_filter,
             "warnings": self._unique(warnings),
@@ -292,6 +288,8 @@ class RulesEngine:
             "allowed_replacements": self._unique(allowed_replacements),
             "penalty": penalty,
             "traces": self._unique_traces(traces),
+            "explanation": explanation,
+            "expert_comment": expert_comment,
         }
 
     def _apply_expert_review_policies(
@@ -437,6 +435,8 @@ class RulesEngine:
             FIELD_WEIGHTS.get(field, 5)
             for field in comparison["matched"]
         )
+        if max_score == 0:
+            return 0.0
         raw_score = (earned_score / max_score) * 100
         return max(0.0, min(100.0, raw_score - penalty))
 
@@ -463,44 +463,36 @@ class RulesEngine:
             return "требует проверки"
         return "низкая релевантность"
 
-    def _generate_explanation(
+    def _build_explanation(
         self,
         comparison: Dict[str, Any],
-        rules_result: Dict[str, Any],
-    ) -> tuple[str, Optional[str]]:
+        warnings: List[str],
+        expert_comments: List[str],
+        allowed_replacements: List[str],
+    ) -> str:
         parts = []
         if comparison["matched"]:
             parts.append(f"Совпало: {', '.join(comparison['matched'])}")
         if comparison["mismatched"]:
-            parts.append(
-                f"Расхождения: {', '.join(comparison['mismatched'])}"
-            )
+            parts.append(f"Расхождения: {', '.join(comparison['mismatched'])}")
         if comparison["missing"]:
-            parts.append(
-                f"У кандидата нет данных: {', '.join(comparison['missing'])}"
-            )
-        if rules_result["warnings"]:
-            parts.append(
-                f"Предупреждения: {'; '.join(rules_result['warnings'])}"
-            )
-        if rules_result["expert_comments"]:
-            parts.append(
-                "Комментарий эксперту: "
-                + "; ".join(rules_result["expert_comments"])
-            )
-        if rules_result["allowed_replacements"]:
-            parts.append(
-                "Составная замена: "
-                + "; ".join(rules_result["allowed_replacements"])
-            )
+            parts.append(f"У кандидата нет данных: {', '.join(comparison['missing'])}")
+        if warnings:
+            parts.append(f"Предупреждения: {'; '.join(warnings)}")
+        if expert_comments:
+            parts.append("Комментарий эксперту: " + "; ".join(expert_comments))
+        if allowed_replacements:
+            parts.append("Составная замена: " + "; ".join(allowed_replacements))
+        return ". ".join(parts) or "Нет данных для сравнения."
 
-        expert_parts = (
-            rules_result["warnings"]
-            + rules_result["expert_comments"]
-            + rules_result["allowed_replacements"]
-        )
-        expert_comment = "; ".join(self._unique(expert_parts)) or None
-        return ". ".join(parts), expert_comment
+    @staticmethod
+    def _build_expert_comment(
+        warnings: List[str],
+        expert_comments: List[str],
+        allowed_replacements: List[str],
+    ) -> Optional[str]:
+        parts = warnings + expert_comments + allowed_replacements
+        return "; ".join(parts) if parts else None
 
     def _rule_matches(
         self,
@@ -508,13 +500,18 @@ class RulesEngine:
         requested_value: Any,
         candidate_value: Any,
     ) -> bool:
-        return self._rule_value_matches(
-            rule["from_value"],
-            requested_value,
-        ) and self._rule_value_matches(
-            rule["to_value"],
-            candidate_value,
-        )
+        from_value = rule["from_value"]
+        to_value = rule["to_value"]
+
+        from_matches = True
+        if from_value is not None and from_value != "":
+            from_matches = self._rule_value_matches(from_value, requested_value)
+
+        to_matches = True
+        if to_value is not None and to_value != "":
+            to_matches = self._rule_value_matches(to_value, candidate_value)
+
+        return from_matches and to_matches
 
     def _rule_value_matches(self, expected: Any, actual: Any) -> bool:
         if expected is None or expected == "":
@@ -557,6 +554,8 @@ class RulesEngine:
             return card.model_dump()
         if hasattr(card, "dict"):
             return card.dict()
+        if hasattr(card, "__dict__"):
+            return {k: v for k, v in card.__dict__.items() if not k.startswith("_")}
         raise TypeError("Карточка должна быть словарём или Pydantic-моделью")
 
     @staticmethod

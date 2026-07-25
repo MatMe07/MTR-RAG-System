@@ -118,11 +118,6 @@ class MatchResult(BaseModel):
     rule_trace: List[RuleTrace] = Field(default_factory=list, description="Сработавшие правила")
     sources: List[Source] = Field(default_factory=list, description="Источники")
 
-    rank: int
-    mtr_code: str
-    ksm_code: Optional[str]
-    candidate_name: str
-    sources: List[Source]
     stock_quantity: Optional[float]
     stock_cost: Optional[float]
     

@@ -3,6 +3,7 @@ from sqlalchemy import (
     ForeignKey, Index, UniqueConstraint
 )
 from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime, timezone
 
 
@@ -101,7 +102,7 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     file_name = Column(String(255), nullable=False)
     file_type = Column(String(20), nullable=False)  # excel, passport, lnd
-    upload_date = Column(DateTime, default=datetime.utcnow)
+    upload_date = Column(DateTime, default=datetime.now(timezone.utc))
     page_count = Column(Integer, nullable=True)
     ocr_status = Column(String(20), default="pending")
     ocr_confidence = Column(Float, nullable=True)
@@ -151,41 +152,26 @@ class MTRItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     mtr_code = Column(String(50), unique=True, nullable=False, index=True)
     ksm_code = Column(String(50), index=True, nullable=True)
+    item_type = Column(String(50), nullable=False, index=True)
+    subtype = Column(String(50), nullable=True, index=True)
+    designation = Column(String(255), nullable=True)
+    short_text = Column(Text, nullable=True)
     lot = Column(String(50), nullable=True)
     material_class = Column(String(100), nullable=True)
-    short_text = Column(Text, nullable=True)
     
-    # Денормализованные параметры
-    item_type = Column(String(20), nullable=False, index=True)
-    subtype = Column(String(20), nullable=True, index=True)
-    designation = Column(String(255), nullable=True)
+    properties = Column(JSONB, nullable=True, default={})
     
-    dn = Column(Float, nullable=True, index=True)
-    d1 = Column(Float, nullable=True) 
-    d2 = Column(Float, nullable=True) 
-    
-    wall_thickness = Column(Float, nullable=True)
-    angle = Column(Float, nullable=True, index=True)
-    pressure = Column(Float, nullable=True, index=True)
-    
-    strength_class = Column(String(10), nullable=True, index=True)
-    steel_grade = Column(String(20), nullable=True, index=True)
-    medium = Column(String(20), nullable=True, index=True)
-    
-    inner_coating = Column(Boolean, default=False)
-    outer_coating = Column(Boolean, default=False)
-    climate_version = Column(String(10), nullable=True, index=True)
-    gost_or_tu = Column(String(50), nullable=True)
-    
+    schema_version = Column(Integer, default=1)
     source_excel_row = Column(Integer, nullable=True)
     source_document_id = Column(Integer, ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     source_document = relationship("Document")
     
     __table_args__ = (
-        Index("idx_mtr_items_type_dn", "item_type", "dn"),
-        Index("idx_mtr_items_dn_angle", "dn", "angle"),
+        Index("idx_mtr_item_type", "item_type"),
+        Index("idx_mtr_properties_gin", "properties", postgresql_using="gin"),
     )
 
 
@@ -195,6 +181,11 @@ class KSMItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     ksm_code = Column(String(50), unique=True, nullable=False, index=True)
     short_text = Column(Text, nullable=True)
+    item_type = Column(String(50), nullable=True, index=True)
+    subtype = Column(String(50), nullable=True, index=True)
+    designation = Column(String(255), nullable=True)
+    
+    properties = Column(JSONB, nullable=True, default={})
     
     quantity = Column(Float, nullable=True)
     unit = Column(String(20), nullable=True)
@@ -204,23 +195,14 @@ class KSMItem(Base):
     planned_involvement_date = Column(DateTime, nullable=True)
     forecast_involvement_date = Column(DateTime, nullable=True)
     
-    # Денормализованные параметры
-    item_type = Column(String(20), nullable=True, index=True)
-    subtype = Column(String(20), nullable=True, index=True)
-    designation = Column(String(255), nullable=True)
-    dn = Column(Float, nullable=True, index=True)
-    wall_thickness = Column(Float, nullable=True)
-    angle = Column(Float, nullable=True, index=True)
-    pressure = Column(Float, nullable=True, index=True)
-    strength_class = Column(String(10), nullable=True, index=True)
-    steel_grade = Column(String(20), nullable=True, index=True)
-    medium = Column(String(20), nullable=True, index=True)
-    inner_coating = Column(Boolean, default=False)
-    outer_coating = Column(Boolean, default=False)
-    climate_version = Column(String(10), nullable=True, index=True)
-    gost_or_tu = Column(String(50), nullable=True)
-    
+    schema_version = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    
+    __table_args__ = (
+        Index("idx_ksm_item_type", "item_type"),
+        Index("idx_ksm_properties_gin", "properties", postgresql_using="gin"),
+    )
 
 
 class ExpertMatch(Base):

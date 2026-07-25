@@ -1,9 +1,9 @@
 import sys
-import os
 import csv
+from typing import Dict, Any
 import json
+from app.utils.jsonb_utils import set_property_value
 from pathlib import Path
-from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -34,6 +34,31 @@ def load_mtr_catalog(file_path: str, manifest_path: str):
         for row in reader:
             if not row.get('mtr_code'):
                 continue
+            
+            props = {}
+            
+            if row.get('dn') and row['dn'].strip():
+                props = set_property_value(props, 'dn', float(row['dn']), 'мм')
+            if row.get('wall_thickness') and row['wall_thickness'].strip():
+                props = set_property_value(props, 'wall_thickness', float(row['wall_thickness']), 'мм')
+            if row.get('angle') and row['angle'].strip():
+                props = set_property_value(props, 'angle', float(row['angle']), '°')
+            if row.get('pn') and row['pn'].strip():
+                props = set_property_value(props, 'pressure', float(row['pn']), 'МПа')
+            if row.get('strength_class') and row['strength_class'].strip():
+                props = set_property_value(props, 'strength_class', row['strength_class'].strip())
+            if row.get('steel_grade') and row['steel_grade'].strip():
+                props = set_property_value(props, 'steel_grade', row['steel_grade'].strip())
+            if row.get('medium') and row['medium'].strip():
+                props = set_property_value(props, 'medium', row['medium'].strip())
+            if row.get('climate_version') and row['climate_version'].strip():
+                props = set_property_value(props, 'climate_version', row['climate_version'].strip())
+            if row.get('gost_tu') and row['gost_tu'].strip():
+                props = set_property_value(props, 'gost_or_tu', row['gost_tu'].strip())
+            if row.get('inner_coating', 'false').lower() == 'true':
+                props = set_property_value(props, 'inner_coating', True)
+            if row.get('outer_coating', 'false').lower() == 'true':
+                props = set_property_value(props, 'outer_coating', True)
             mtr_code = row.get('mtr_code', '').strip()
             mtr = MTRItem(
                 mtr_code=mtr_code,
@@ -41,19 +66,6 @@ def load_mtr_catalog(file_path: str, manifest_path: str):
                 item_type=row.get('item_type', '').strip(),
                 subtype=row.get('subtype', '').strip() or None,
                 designation=row.get('designation', '').strip() or None,
-                dn=float(row['dn']) if row.get('dn') and row['dn'].strip() else None,
-                d1=float(row['d1']) if row.get("d1") and row['d1'].strip() else None,
-                d2=float(row['d2']) if row.get("d2") and row['d2'].strip() else None,
-                wall_thickness=float(row['wall_thickness']) if row.get('wall_thickness') and row['wall_thickness'].strip() else None,
-                angle=float(row['angle']) if row.get('angle') and row['angle'].strip() else None,
-                pressure=float(row['pn']) if row.get('pn') and row['pn'].strip() else None,
-                strength_class=row.get('strength_class', '').strip() or None,
-                steel_grade=row.get('steel_grade', '').strip() or None,
-                medium=row.get('medium', '').strip() or None,
-                inner_coating=row.get('inner_coating', 'false').lower() == 'true',
-                outer_coating=row.get('outer_coating', 'false').lower() == 'true',
-                climate_version=row.get('climate_version', 'УХЛ').strip() or None,
-                gost_or_tu=row.get('gost_tu', '').strip() or None,
                 short_text=row.get('name', '').strip() or None,
                 lot=row.get('lot', 'LOT-001').strip() or None,
                 material_class=row.get('material_class', '').strip() or None,
@@ -76,32 +88,44 @@ def load_ksm_from_catalog(file_path: str):
         for row in reader:
             if not row.get('ksm_code'):
                 continue
-
+            
+            props = {}
+            
+            if row.get('dn') and row['dn'].strip():
+                props = set_property_value(props, 'dn', float(row['dn']), 'мм')
+            if row.get('wall_thickness') and row['wall_thickness'].strip():
+                props = set_property_value(props, 'wall_thickness', float(row['wall_thickness']), 'мм')
+            if row.get('angle') and row['angle'].strip():
+                props = set_property_value(props, 'angle', float(row['angle']), '°')
+            if row.get('pn') and row['pn'].strip():
+                props = set_property_value(props, 'pressure', float(row['pn']), 'МПа')
+            if row.get('strength_class') and row['strength_class'].strip():
+                props = set_property_value(props, 'strength_class', row['strength_class'].strip())
+            if row.get('steel_grade') and row['steel_grade'].strip():
+                props = set_property_value(props, 'steel_grade', row['steel_grade'].strip())
+            if row.get('medium') and row['medium'].strip():
+                props = set_property_value(props, 'medium', row['medium'].strip())
+            if row.get('climate_version') and row['climate_version'].strip():
+                props = set_property_value(props, 'climate_version', row['climate_version'].strip())
+            if row.get('gost_tu') and row['gost_tu'].strip():
+                props = set_property_value(props, 'gost_or_tu', row['gost_tu'].strip())
+            if row.get('inner_coating', 'false').lower() == 'true':
+                props = set_property_value(props, 'inner_coating', True)
+            if row.get('outer_coating', 'false').lower() == 'true':
+                props = set_property_value(props, 'outer_coating', True)
+            
             ksm = KSMItem(
                 ksm_code=row.get('ksm_code', '').strip(),
                 short_text=row.get('name', '').strip() or None,
-                quantity=float(row['stock_qty']) if row.get('stock_qty') and row['stock_qty'].strip() else None,
-                unit=row.get('unit', '').strip() or None,
-                cost=float(row['cost']) if row.get('cost') and row['cost'].strip() else None,
-                stock_category=row.get('stock_category', '').strip() or None,
-                business_unit=row.get('business_unit', '').strip() or None,
-                planned_involvement_date=datetime.strptime(row['planned_involvement_date'], '%Y-%m-%d') if row.get('planned_involvement_date') and row['planned_involvement_date'].strip() else None,
-                forecast_involvement_date=datetime.strptime(row['forecast_involvement_date'], '%Y-%m-%d') if row.get('forecast_involvement_date') and row['forecast_involvement_date'].strip() else None,
                 item_type=row.get('item_type', '').strip() or None,
                 subtype=row.get('subtype', '').strip() or None,
                 designation=row.get('designation', '').strip() or None,
-                dn=float(row['dn']) if row.get('dn') and row['dn'].strip() else None,
-                wall_thickness=float(row['wall_thickness']) if row.get('wall_thickness') and row['wall_thickness'].strip() else None,
-                angle=float(row['angle']) if row.get('angle') and row['angle'].strip() else None,
-                pressure=float(row['pn']) if row.get('pn') and row['pn'].strip() else None,
-                strength_class=row.get('strength_class', '').strip() or None,
-                steel_grade=row.get('steel_grade', '').strip() or None,
-                medium=row.get('medium', '').strip() or None,
-                inner_coating=row.get('inner_coating', 'false').lower() == 'true',
-                outer_coating=row.get('outer_coating', 'false').lower() == 'true',
-                climate_version=row.get('climate_version', 'УХЛ').strip() or None,
-                gost_or_tu=row.get('gost_tu', '').strip() or None,
-
+                properties=props,
+                quantity=float(row['stock_qty']) if row.get('stock_qty') and row['stock_qty'].strip() else None,
+                unit=row.get('unit', '').strip() or None,
+                cost=None,
+                stock_category=None,
+                business_unit=None
             )
             db.add(ksm)
             count += 1
@@ -355,12 +379,81 @@ def load_expected_cards(file_path: str):
     print(f"Загружено характеристик: {count} записей")
 
 
+def map_properties(properties: Dict[str, Any]) -> Dict[str, Any]:
+    result = {}
+    
+    for key, value in properties.items():
+        if not isinstance(value, dict):
+            continue
+        
+        val = value.get('value')
+        if val is None:
+            continue
+        
+        unit = value.get('unit')
+        if unit:
+            result = set_property_value(result, key, val, unit)
+        else:
+            result = set_property_value(result, key, val)
+    
+    return result
+
+def load_mtr_10k(file_path: str, batch_size: int = 1000):
+    db = SessionLocal()
+    count = 0
+    batch = []
+    
+    print(f"Начинаем загрузку из {file_path}...")
+    
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            if not line.strip():
+                continue
+            
+            try:
+                data = json.loads(line)
+            except json.JSONDecodeError as e:
+                print(f"Ошибка парсинга JSON: {e}")
+                continue
+            
+            codes = data.get('codes', {})
+            properties = data.get('properties', {})
+            
+            mtr = MTRItem(
+                mtr_code=codes.get('mtr_code'),
+                ksm_code=codes.get('ksm_code'),
+                item_type=data.get('item_type', ''),
+                subtype=data.get('subtype'),
+                designation=data.get('designation'),
+                short_text=data.get('name'),
+                properties=map_properties(properties),
+                schema_version=int(float(data.get('schema_version', 1)))
+            )
+            
+            batch.append(mtr)
+            count += 1
+            
+            if len(batch) >= batch_size:
+                db.add_all(batch)
+                db.commit()
+                print(f"Загружено {count} записей...")
+                batch = []
+    
+    if batch:
+        db.add_all(batch)
+        db.commit()
+    
+    db.close()
+    print(f"Загружено {count} МТР из 10k.jsonl")
+
 if __name__ == "__main__":
     data_dir = Path(__file__).parent.parent.parent.parent / "data" / "sample"
-
+    data_dir10k = Path(__file__).parent.parent.parent.parent / "data" / "generated"
     print("Загрузка данных...")
 
-    load_mtr_catalog(data_dir / "mtr_catalog.csv", data_dir / "document_manifest.csv")
+    # load_mtr_catalog(data_dir / "mtr_catalog.csv", data_dir / "document_manifest.csv")
+    load_mtr_10k(data_dir10k / "mtr_catalog_10k.jsonl")
+    
     load_ksm_from_catalog(data_dir / "mtr_catalog.csv")
     load_documents(data_dir / "document_manifest.csv", data_dir / "expected_item_cards.jsonl")
     load_golden_dataset(data_dir / "golden_dataset.csv")
@@ -374,4 +467,5 @@ if __name__ == "__main__":
     if rules_path.exists():
         load_matching_rules(rules_path)
 
+    
     print("Все данные загружены!")

@@ -10,6 +10,9 @@ from app.schemas import (
     SearchRequest, SearchResponse, MatchResult, ItemCard,
     Geometry, Pressure, Material, Environment, Coating, Normative, Source
 )
+from app.utils.jsonb_utils import get_property_value, properties_to_card_dict
+from sqlalchemy import cast, Float, String, func
+
 from app.services.rules_engine import RulesEngine
 from app.services.llm_service import LLMService
 from app.services.embedding_service import EmbeddingService
@@ -101,49 +104,67 @@ class SearchService:
         if card.item_type:
             query = query.filter(MTRItem.item_type == card.item_type)
 
-        if card.geometry and card.geometry.dn:
-            tolerance = card.geometry.dn * 0.1
-            query = query.filter(
-                MTRItem.dn.between(
-                    card.geometry.dn - tolerance,
-                    card.geometry.dn + tolerance
+        if card.geometry:
+            if card.geometry.dn:
+                tolerance = card.geometry.dn * 0.1
+                query = query.filter(
+                    cast(
+                        func.jsonb_extract_path_text(MTRItem.properties, 'dn', 'value'),
+                        Float
+                    ).between(
+                        card.geometry.dn - tolerance,
+                        card.geometry.dn + tolerance
+                    )
                 )
-            )
-
-        if card.geometry and card.geometry.angle:
-            query = query.filter(
-                MTRItem.angle.between(
-                    card.geometry.angle - 5,
-                    card.geometry.angle + 5
+            if card.geometry.angle:
+                query = query.filter(
+                    cast(
+                        func.jsonb_extract_path_text(MTRItem.properties, 'angle', 'value'),
+                        Float
+                    ).between(
+                        card.geometry.angle - 5,
+                        card.geometry.angle + 5
+                    )
                 )
-            )
-
-        if card.geometry and card.geometry.wall_thickness:
-            tolerance = card.geometry.wall_thickness * 0.15
-            query = query.filter(
-                MTRItem.wall_thickness.between(
-                    card.geometry.wall_thickness - tolerance,
-                    card.geometry.wall_thickness + tolerance
+            if card.geometry.wall_thickness:
+                tolerance = card.geometry.wall_thickness * 0.15
+                query = query.filter(
+                    cast(
+                        func.jsonb_extract_path_text(MTRItem.properties, 'wall_thickness', 'value'),
+                        Float
+                    ).between(
+                        card.geometry.wall_thickness - tolerance,
+                        card.geometry.wall_thickness + tolerance
+                    )
                 )
-            )
 
         if card.pressure and card.pressure.pn:
             tolerance = card.pressure.pn * 0.1
             query = query.filter(
-                MTRItem.pressure.between(
+                cast(
+                    func.jsonb_extract_path_text(MTRItem.properties, 'pressure', 'value'),
+                    Float
+                ).between(
                     card.pressure.pn - tolerance,
                     card.pressure.pn + tolerance
                 )
             )
 
-        if card.material and card.material.strength_class:
-            query = query.filter(MTRItem.strength_class == card.material.strength_class)
+        if card.material:
+            if card.material.strength_class:
+                query = query.filter(
+                    func.jsonb_extract_path_text(MTRItem.properties, 'strength_class', 'value') == card.material.strength_class
+                )
+            if card.material.steel_grade:
+                query = query.filter(
+                    func.jsonb_extract_path_text(MTRItem.properties, 'steel_grade', 'value') == card.material.steel_grade
+                )
 
-        if card.material and card.material.steel_grade:
-            query = query.filter(MTRItem.steel_grade == card.material.steel_grade)
-
-        if card.environment and card.environment.medium:
-            query = query.filter(MTRItem.medium == card.environment.medium)
+        if card.environment:
+            if card.environment.medium:
+                query = query.filter(
+                    func.jsonb_extract_path_text(MTRItem.properties, 'medium', 'value') == card.environment.medium
+                )
 
         return query.limit(100).all()
 
@@ -213,7 +234,7 @@ class SearchService:
         candidates: List[MTRItem]
     ) -> List[MatchResult]:
         results = []
-
+        
         for idx, mtr_item in enumerate(candidates):
             candidate_card = self._mtr_to_card(mtr_item)
             evaluation = self.rules_engine.evaluate(requested_card, candidate_card)
@@ -246,6 +267,11 @@ class SearchService:
         return results
 
     def _mtr_to_card(self, mtr: MTRItem) -> ItemCard:
+        props = mtr.properties or {}
+        card_dict = properties_to_card_dict(props, mtr.mtr_code, mtr.ksm_code)
+        
+        sources = self._get_sources(mtr)
+        
         return ItemCard(
             card_id=str(mtr.id),
             mtr_code=mtr.mtr_code,
@@ -254,31 +280,13 @@ class SearchService:
             subtype=mtr.subtype,
             designation=mtr.designation,
             name=mtr.short_text,
-            geometry=Geometry(
-                dn=mtr.dn,
-                wall_thickness=mtr.wall_thickness,
-                angle=mtr.angle
-            ),
-            pressure=Pressure(
-                pn=mtr.pressure
-            ),
-            material=Material(
-                steel_grade=mtr.steel_grade,
-                strength_class=mtr.strength_class,
-                standard=mtr.gost_or_tu
-            ),
-            environment=Environment(
-                medium=mtr.medium,
-                climate_version=mtr.climate_version
-            ),
-            coating=Coating(
-                inner_coating=mtr.inner_coating,
-                outer_coating=mtr.outer_coating
-            ),
-            normative=Normative(
-                gost_tu=mtr.gost_or_tu
-            ),
-            sources=[]
+            geometry=Geometry(**card_dict["geometry"]),
+            pressure=Pressure(**card_dict["pressure"]),
+            material=Material(**card_dict["material"]),
+            environment=Environment(**card_dict["environment"]),
+            coating=Coating(**card_dict["coating"]),
+            normative=Normative(**card_dict["normative"]),
+            sources=sources
         )
 
     def _get_sources(self, mtr: MTRItem) -> List[Source]:

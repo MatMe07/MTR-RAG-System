@@ -13,7 +13,7 @@ from app.models import MTRItem
 from app.schemas import ItemCard
 from app.database import SessionLocal
 from app.core.config import settings
-
+from app.utils.jsonb_utils import get_property_value
 
 class EmbeddingService:
     def __init__(
@@ -235,6 +235,7 @@ class EmbeddingService:
 
     def _mtr_to_text(self, mtr: MTRItem) -> str:
         parts = []
+        props = mtr.properties or {}
 
         if mtr.item_type:
             parts.append(f"тип: {mtr.item_type}")
@@ -245,32 +246,45 @@ class EmbeddingService:
         if mtr.short_text:
             parts.append(f"наименование: {mtr.short_text}")
 
-        if mtr.dn:
-            parts.append(f"DN: {mtr.dn} мм")
-        if mtr.wall_thickness:
-            parts.append(f"стенка: {mtr.wall_thickness} мм")
-        if mtr.angle:
-            parts.append(f"угол: {mtr.angle} градусов")
-        if mtr.pressure:
-            parts.append(f"давление: {mtr.pressure} МПа")
-
-        if mtr.steel_grade:
-            parts.append(f"сталь: {mtr.steel_grade}")
-        if mtr.strength_class:
-            parts.append(f"класс: {mtr.strength_class}")
-
-        if mtr.medium:
-            parts.append(f"среда: {mtr.medium}")
-
-        if mtr.climate_version:
-            parts.append(f"климат: {mtr.climate_version}")
-
-        if mtr.inner_coating:
+        dn = get_property_value(props, 'dn')
+        if dn:
+            parts.append(f"DN: {dn} мм")
+        
+        wall = get_property_value(props, 'wall_thickness')
+        if wall:
+            parts.append(f"стенка: {wall} мм")
+        
+        angle = get_property_value(props, 'angle')
+        if angle:
+            parts.append(f"угол: {angle} градусов")
+        
+        pressure = get_property_value(props, 'pressure')
+        if pressure:
+            parts.append(f"давление: {pressure} МПа")
+        
+        steel_grade = get_property_value(props, 'steel_grade')
+        if steel_grade:
+            parts.append(f"сталь: {steel_grade}")
+        
+        strength_class = get_property_value(props, 'strength_class')
+        if strength_class:
+            parts.append(f"класс: {strength_class}")
+        
+        medium = get_property_value(props, 'medium')
+        if medium:
+            parts.append(f"среда: {medium}")
+        
+        climate = get_property_value(props, 'climate_version')
+        if climate:
+            parts.append(f"климат: {climate}")
+        
+        if get_property_value(props, 'inner_coating'):
             parts.append("внутреннее покрытие")
-        if mtr.outer_coating:
+        if get_property_value(props, 'outer_coating'):
             parts.append("наружное покрытие")
-
-        if mtr.gost_or_tu:
-            parts.append(f"ГОСТ/ТУ: {mtr.gost_or_tu}")
+        
+        gost = get_property_value(props, 'gost_or_tu')
+        if gost:
+            parts.append(f"ГОСТ/ТУ: {gost}")
 
         return " ".join(parts)
