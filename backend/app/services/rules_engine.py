@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.models import MatchingRule, ReplacementSet, MTRItem
 from app.schemas import ItemCard, RuleTrace
-from app.utils.jsonb_utils import get_property_value
 
 
 FIELD_ALIASES = {
@@ -80,6 +79,10 @@ NUMERIC_TOLERANCES = {
     "temperature_min_c": 0.1,
 }
 
+BLOCKER_FIELDS = {"item_type", "dn"}
+
+HARD_FILTER_RULE_TYPES = {"hard_filter"}
+
 
 class RulesEngine:
 
@@ -87,7 +90,9 @@ class RulesEngine:
         self.db = db
         self.rules_by_parameter: Dict[str, List[Dict[str, Any]]] = {}
         self.replacement_sets: List[Dict[str, Any]] = []
+        self.synonyms: Dict[str, List[str]] = {}
         self._load_rules()
+        self._load_synonyms()
 
     def _load_rules(self) -> None:
         for rule in self.db.query(MatchingRule).all():
@@ -122,17 +127,27 @@ class RulesEngine:
                 }
             )
 
+    def _load_synonyms(self) -> None:
+        from app.models import Synonym
+        for syn in self.db.query(Synonym).all():
+            if syn.normalized_value not in self.synonyms:
+                self.synonyms[syn.normalized_value] = []
+            self.synonyms[syn.normalized_value].append(syn.synonym)
+
+    def reload(self) -> None:
+        self.rules_by_parameter.clear()
+        self.replacement_sets.clear()
+        self.synonyms.clear()
+        self._load_rules()
+        self._load_synonyms()
+
     def evaluate(self, requested: Union[ItemCard, Dict], candidate: Union[ItemCard, Dict, MTRItem]) -> Dict[str, Any]:
         requested_values = self._card_to_values(requested)
         candidate_values = self._card_to_values(candidate)
         comparison = self._compare_values(requested_values, candidate_values)
-        rules_result = self._apply_rules(
-            comparison,
-            requested_values,
-            candidate_values,
-        )
+        rules_result = self._apply_rules(comparison, requested_values, candidate_values)
         score = self._calculate_score(comparison, rules_result["penalty"])
-        status = self._determine_status(score, comparison, rules_result)
+        status = self._determine_status(comparison, rules_result)
 
         return {
             "status": status,
@@ -169,7 +184,6 @@ class RulesEngine:
                     values[parameter] = characteristic
             return values
 
-        # ===== LEGACY PATHS (если нет properties) =====
         for parameter, path in LEGACY_PATHS.items():
             value = self._read_path(data, path)
             if value is not _MISSING:
@@ -185,19 +199,39 @@ class RulesEngine:
         matched: List[str] = []
         mismatched: List[str] = []
         missing: List[str] = []
+        extra_good: List[str] = []
         details: Dict[str, Dict[str, Any]] = {}
 
-        for parameter, requested_value in requested.items():
-            if parameter in {"mtr_code", "ksm_code", "designation", "name"}:
-                continue
-            if requested_value is None or requested_value == "":
+        all_params = set(requested.keys()) | set(candidate.keys())
+        skip_params = {"mtr_code", "ksm_code", "designation", "name"}
+
+        for parameter in all_params:
+            if parameter in skip_params:
                 continue
 
+            requested_value = requested.get(parameter)
             candidate_value = candidate.get(parameter)
             details[parameter] = {
                 "requested": requested_value,
                 "candidate": candidate_value,
             }
+
+            if parameter in {"h2s_confirmed", "co2_confirmed", "inner_coating", "outer_coating"}:
+                result = self._compare_boolean(parameter, requested_value, candidate_value)
+                if result == "match":
+                    matched.append(parameter)
+                elif result == "mismatch":
+                    mismatched.append(parameter)
+                elif result == "extra_good":
+                    extra_good.append(parameter)
+                elif result == "missing":
+                    missing.append(parameter)
+                continue
+
+            if requested_value is None or requested_value == "":
+                if candidate_value is not None and candidate_value != "":
+                    extra_good.append(parameter)
+                continue
 
             if candidate_value is None or candidate_value == "":
                 missing.append(parameter)
@@ -210,8 +244,62 @@ class RulesEngine:
             "matched": matched,
             "mismatched": mismatched,
             "missing": missing,
+            "extra_good": extra_good,
             "details": details,
         }
+
+    def _compare_boolean(self, parameter: str, requested_value: Any, candidate_value: Any) -> str:
+        if requested_value is None:
+            if candidate_value is True:
+                return "extra_good"
+            return "missing"
+
+        if candidate_value is None:
+            return "missing"
+
+        if requested_value == candidate_value:
+            return "match"
+        return "mismatch"
+
+    def _values_equal(self, parameter: str, left: Any, right: Any) -> bool:
+        if left is None or right is None:
+            return left is right
+
+        if isinstance(left, bool) or isinstance(right, bool):
+            return self._normalize_value(left) == self._normalize_value(right)
+
+        left_num = self._to_float(left)
+        right_num = self._to_float(right)
+        if left_num is not None and right_num is not None:
+            if parameter == "dn":
+                tolerance = max(abs(left_num), abs(right_num)) * 0.1
+            else:
+                tolerance = NUMERIC_TOLERANCES.get(parameter, 1e-9)
+            return abs(left_num - right_num) <= tolerance
+
+        left_str = str(left).strip().lower()
+        right_str = str(right).strip().lower()
+
+        if left_str == right_str:
+            return True
+
+        if left_str in right_str or right_str in left_str:
+            return True
+
+        if self._synonyms_match(parameter, left_str, right_str):
+            return True
+
+        return False
+
+    def _synonyms_match(self, parameter: str, left: str, right: str) -> bool:
+        for norm, synonyms in self.synonyms.items():
+            if norm == left and right in synonyms:
+                return True
+            if norm == right and left in synonyms:
+                return True
+            if left in synonyms and right in synonyms:
+                return True
+        return False
 
     def _apply_rules(
         self,
@@ -226,56 +314,70 @@ class RulesEngine:
         traces: List[RuleTrace] = []
         penalty = 0
 
-        for parameter in comparison["mismatched"] + comparison["missing"]:
+        for parameter in comparison["mismatched"]:
             requested_value = requested.get(parameter)
             candidate_value = candidate.get(parameter)
 
             for rule in self.rules_by_parameter.get(parameter, []):
-                if not self._rule_matches(
-                    rule,
-                    requested_value,
-                    candidate_value,
-                ):
+                if not self._rule_matches(rule, requested_value, candidate_value):
                     continue
 
                 rule_type = rule["rule_type"]
-                message = self._rule_message(
-                    rule,
-                    parameter,
-                    requested_value,
-                    candidate_value,
-                )
-                penalty += max(0, rule["penalty"])
 
                 if rule_type == "hard_filter" and not rule["allowed"]:
                     hard_filter = True
-                elif rule_type == "warning":
-                    warnings.append(message)
+                    traces.append(
+                        RuleTrace(
+                            rule_id=self._rule_id(rule),
+                            reaction=rule_type,
+                            message=self._rule_message(rule, parameter, requested_value, candidate_value),
+                        )
+                    )
+                    break
+
+                if rule_type == "warning":
+                    message = self._rule_message(rule, parameter, requested_value, candidate_value)
+                    if message not in warnings:
+                        warnings.append(message)
                 elif rule_type == "expert_comment":
-                    expert_comments.append(message)
+                    message = self._rule_message(rule, parameter, requested_value, candidate_value)
+                    if message not in expert_comments:
+                        expert_comments.append(message)
                 elif rule_type == "allowed_replacement" and rule["allowed"]:
-                    allowed_replacements.append(message)
+                    message = self._rule_message(rule, parameter, requested_value, candidate_value)
+                    if message not in allowed_replacements:
+                        allowed_replacements.append(message)
+                elif rule_type == "penalty":
+                    penalty += min(rule["penalty"], 100)
 
                 traces.append(
                     RuleTrace(
                         rule_id=self._rule_id(rule),
                         reaction=rule_type,
-                        message=message,
+                        message=self._rule_message(rule, parameter, requested_value, candidate_value),
                     )
                 )
 
-        special_result = self._apply_expert_review_policies(
-            requested,
-            candidate,
-        )
-        warnings.extend(special_result["warnings"])
+            if hard_filter:
+                break
+
+        if not hard_filter:
+            for parameter in comparison["missing"]:
+                if parameter in {"dn"}:
+                    warnings.append(f"Нет данных по параметру {parameter}. Без DN изделие неприменимо.")
+                else:
+                    warnings.append(f"Нет данных по параметру {parameter}. Требуется проверка.")
+
+        special_result = self._apply_expert_review_policies(requested, candidate)
+        for w in special_result["warnings"]:
+            if w not in warnings:
+                warnings.append(w)
         traces.extend(special_result["traces"])
 
-        replacement_result = self._find_composite_replacements(
-            requested,
-            candidate,
-        )
-        allowed_replacements.extend(replacement_result["messages"])
+        replacement_result = self._find_composite_replacements(requested, candidate)
+        for msg in replacement_result["messages"]:
+            if msg not in allowed_replacements:
+                allowed_replacements.append(msg)
         traces.extend(replacement_result["traces"])
 
         explanation = self._build_explanation(comparison, warnings, expert_comments, allowed_replacements)
@@ -283,11 +385,11 @@ class RulesEngine:
 
         return {
             "hard_filter": hard_filter,
-            "warnings": self._unique(warnings),
-            "expert_comments": self._unique(expert_comments),
-            "allowed_replacements": self._unique(allowed_replacements),
-            "penalty": penalty,
-            "traces": self._unique_traces(traces),
+            "warnings": warnings,
+            "expert_comments": expert_comments,
+            "allowed_replacements": allowed_replacements,
+            "penalty": min(penalty, 100),
+            "traces": traces,
             "explanation": explanation,
             "expert_comment": expert_comment,
         }
@@ -306,10 +408,7 @@ class RulesEngine:
         ):
             if requested.get(parameter) is True and candidate.get(parameter) is not True:
                 candidate_state = self._boolean_state(candidate.get(parameter))
-                message = (
-                    f"{label} требуется, но у кандидата оно {candidate_state}. "
-                    "Кандидата оставить в выдаче и передать эксперту."
-                )
+                message = f"{label} требуется, но у кандидата оно {candidate_state}."
                 warnings.append(message)
                 traces.append(
                     RuleTrace(
@@ -326,10 +425,7 @@ class RulesEngine:
             if self._medium_requires(requested, chemical, parameter):
                 if candidate.get(parameter) is not True:
                     candidate_state = self._boolean_state(candidate.get(parameter))
-                    message = (
-                        f"Применимость к {chemical} требуется, но у кандидата "
-                        f"она {candidate_state}. Требуется экспертная проверка."
-                    )
+                    message = f"Применимость к {chemical} требуется, но у кандидата она {candidate_state}."
                     warnings.append(message)
                     traces.append(
                         RuleTrace(
@@ -353,24 +449,17 @@ class RulesEngine:
             if not self._replacement_matches(replacement, requested, candidate):
                 continue
 
-            quantity = replacement["quantity"] or 1
             condition = replacement["condition"] or (
-                f"{quantity} шт. {replacement['component_item_type']} "
+                f"{replacement['quantity']} шт. {replacement['component_item_type']} "
                 f"{self._display_value(replacement['component_angle'])}° "
                 f"вместо {replacement['target_item_type']} "
                 f"{self._display_value(replacement['target_angle'])}°"
             )
-            message = (
-                f"Составная замена, не прямой аналог: {condition}. "
-                "Окончательное решение принимает эксперт."
-            )
+            message = f"Составная замена, не прямой аналог: {condition}."
             messages.append(message)
             traces.append(
                 RuleTrace(
-                    rule_id=str(
-                        replacement["source"]
-                        or f"REPLACEMENT-{replacement['id'] or 'SET'}"
-                    ),
+                    rule_id=str(replacement["source"] or f"REPLACEMENT-{replacement['id'] or 'SET'}"),
                     reaction="allowed_replacement",
                     message=message,
                 )
@@ -385,26 +474,10 @@ class RulesEngine:
         candidate: Dict[str, Any],
     ) -> bool:
         checks = (
-            self._values_equal(
-                "item_type",
-                replacement["target_item_type"],
-                requested.get("item_type"),
-            ),
-            self._values_equal(
-                "angle",
-                replacement["target_angle"],
-                requested.get("angle"),
-            ),
-            self._values_equal(
-                "item_type",
-                replacement["component_item_type"],
-                candidate.get("item_type"),
-            ),
-            self._values_equal(
-                "angle",
-                replacement["component_angle"],
-                candidate.get("angle"),
-            ),
+            self._values_equal("item_type", replacement["target_item_type"], requested.get("item_type")),
+            self._values_equal("angle", replacement["target_angle"], requested.get("angle")),
+            self._values_equal("item_type", replacement["component_item_type"], candidate.get("item_type")),
+            self._values_equal("angle", replacement["component_angle"], candidate.get("angle")),
         )
         if not all(checks):
             return False
@@ -422,39 +495,72 @@ class RulesEngine:
         comparison: Dict[str, Any],
         penalty: int,
     ) -> float:
-        considered = (
-            comparison["matched"]
-            + comparison["mismatched"]
-            + comparison["missing"]
-        )
-        if not considered:
-            return 0.0
+        matched = comparison["matched"]
+        mismatched = comparison["mismatched"]
+        missing = comparison["missing"]
+        extra_good = comparison.get("extra_good", [])
 
-        max_score = sum(FIELD_WEIGHTS.get(field, 5) for field in considered)
-        earned_score = sum(
-            FIELD_WEIGHTS.get(field, 5)
-            for field in comparison["matched"]
-        )
+        max_score = 0
+        earned_score = 0
+
+        all_fields = set(matched) | set(mismatched) | set(missing)
+
+        for field in all_fields:
+            weight = FIELD_WEIGHTS.get(field, 5)
+            max_score += weight
+            if field in matched:
+                earned_score += weight
+            elif field in mismatched:
+                earned_score += weight * 0.2
+            elif field in missing:
+                earned_score += weight * 0.0
+
+        for field in extra_good:
+            weight = FIELD_WEIGHTS.get(field, 5)
+            earned_score += weight * 0.1
+
         if max_score == 0:
             return 0.0
+
         raw_score = (earned_score / max_score) * 100
         return max(0.0, min(100.0, raw_score - penalty))
 
-    @staticmethod
     def _determine_status(
-        score: float,
+        self,
         comparison: Dict[str, Any],
         rules_result: Dict[str, Any],
     ) -> str:
         if rules_result["hard_filter"]:
             return "низкая релевантность"
+
+        has_blocker = False
+        for field in comparison["mismatched"]:
+            if field in BLOCKER_FIELDS:
+                has_blocker = True
+                break
+
+        if has_blocker:
+            return "не соответствует"
+
+        has_important_missing = False
+        for field in comparison["missing"]:
+            if field in {"dn", "wall_thickness", "angle", "h2s_confirmed", "inner_coating"}:
+                has_important_missing = True
+                break
+
         if (
-            comparison["missing"]
+            has_important_missing
             or rules_result["warnings"]
             or rules_result["expert_comments"]
             or rules_result["allowed_replacements"]
         ):
             return "требует проверки"
+
+        score = self._calculate_score(comparison, rules_result["penalty"])
+
+        if comparison.get("extra_good") and score >= 70:
+            return "потенциальный аналог"
+
         if score >= 90:
             return "соответствует"
         if score >= 70:
@@ -476,13 +582,15 @@ class RulesEngine:
         if comparison["mismatched"]:
             parts.append(f"Расхождения: {', '.join(comparison['mismatched'])}")
         if comparison["missing"]:
-            parts.append(f"У кандидата нет данных: {', '.join(comparison['missing'])}")
+            parts.append(f"Нет данных: {', '.join(comparison['missing'])}")
+        if comparison.get("extra_good"):
+            parts.append(f"Дополнительные подтверждения: {', '.join(comparison['extra_good'])}")
         if warnings:
             parts.append(f"Предупреждения: {'; '.join(warnings)}")
         if expert_comments:
-            parts.append("Комментарий эксперту: " + "; ".join(expert_comments))
+            parts.append(f"Комментарий эксперту: {'; '.join(expert_comments)}")
         if allowed_replacements:
-            parts.append("Составная замена: " + "; ".join(allowed_replacements))
+            parts.append(f"Составная замена: {'; '.join(allowed_replacements)}")
         return ". ".join(parts) or "Нет данных для сравнения."
 
     @staticmethod
@@ -524,27 +632,10 @@ class RulesEngine:
         if expected_normalized == actual_normalized:
             return True
 
-        if isinstance(expected_normalized, str) and isinstance(
-            actual_normalized,
-            str,
-        ):
+        if isinstance(expected_normalized, str) and isinstance(actual_normalized, str):
             if expected_normalized in {"гост", "ту"}:
                 return actual_normalized.startswith(expected_normalized)
         return False
-
-    def _values_equal(self, parameter: str, left: Any, right: Any) -> bool:
-        if left is None or right is None:
-            return left is right
-        if isinstance(left, bool) or isinstance(right, bool):
-            return self._normalize_value(left) is self._normalize_value(right)
-
-        left_number = self._to_float(left)
-        right_number = self._to_float(right)
-        if left_number is not None and right_number is not None:
-            tolerance = NUMERIC_TOLERANCES.get(parameter, 1e-9)
-            return abs(left_number - right_number) <= tolerance
-
-        return self._normalize_value(left) == self._normalize_value(right)
 
     @staticmethod
     def _as_dict(card: Any) -> Dict[str, Any]:
@@ -604,11 +695,7 @@ class RulesEngine:
         return None
 
     @staticmethod
-    def _medium_requires(
-        values: Dict[str, Any],
-        chemical: str,
-        confirmation_parameter: str,
-    ) -> bool:
+    def _medium_requires(values: Dict[str, Any], chemical: str, confirmation_parameter: str) -> bool:
         if values.get(confirmation_parameter) is True:
             return True
         medium = values.get("medium")
@@ -632,40 +719,14 @@ class RulesEngine:
             return "нет"
         return str(value)
 
-    def _rule_message(
-        self,
-        rule: Dict[str, Any],
-        parameter: str,
-        requested_value: Any,
-        candidate_value: Any,
-    ) -> str:
+    def _rule_message(self, rule: Dict[str, Any], parameter: str, requested_value: Any, candidate_value: Any) -> str:
         condition = rule["condition"] or "Сработало правило сопоставления."
         allowed_text = "разрешено правилом" if rule["allowed"] else "не разрешено правилом"
-        return (
-            f"{condition} Параметр {parameter}: требуется "
-            f"{self._display_value(requested_value)}, у кандидата "
-            f"{self._display_value(candidate_value)}; {allowed_text}."
-        )
+        return f"{condition} Параметр {parameter}: требуется {self._display_value(requested_value)}, у кандидата {self._display_value(candidate_value)}; {allowed_text}."
 
     @staticmethod
     def _rule_id(rule: Dict[str, Any]) -> str:
         return str(rule["source"] or rule["id"] or "RULE")
-
-    @staticmethod
-    def _unique(values: Iterable[str]) -> List[str]:
-        return list(dict.fromkeys(value for value in values if value))
-
-    @staticmethod
-    def _unique_traces(traces: Iterable[RuleTrace]) -> List[RuleTrace]:
-        result = []
-        seen = set()
-        for trace in traces:
-            key = (trace.rule_id, trace.reaction, trace.message)
-            if key in seen:
-                continue
-            seen.add(key)
-            result.append(trace)
-        return result
 
 
 _MISSING = object()

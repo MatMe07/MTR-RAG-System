@@ -856,10 +856,29 @@ def render_app() -> None:
             else:
                 st.rerun()
 
+    print(f"Current search results: {current}")
+    # нужно вывести красиво кандидатов через print
+    for index, candidate in enumerate(current.get("candidates", []), start=1):
+        print(f"Candidate {index}:")
+        print(f"  Rank: {candidate.get('rank', index)}")
+        print(f"  MTR Code: {candidate.get('mtr_code', '')}")
+        print(f"  KSM Code: {candidate.get('ksm_code', '')}")
+        print(f"  Name: {candidate.get('candidate_name', '')}")
+        print(f"  Match Percent: {candidate.get('match_percent', -1)}%")
+        print(f"  Status: {STATUS_LABELS.get(candidate.get('status', ''), candidate.get('status', 'нет данных'))}")
+        print(f"  Warnings: {len(candidate.get('warnings', []))}")
+        print("  Sources:")
+        for source in candidate.get("sources", []):
+            source_type = SOURCE_LABELS.get(source.get("type"), source.get("type") or "Источник")
+            location = source_location(source)  
+            fragment = source.get("fragment") or "No fragment"
+            print(f"    - Type: {source_type}, Location: {location}, Fragment: {fragment}")
+    
     candidates = sorted(
         current.get("candidates", []),
         key=lambda item: item.get("rank", 0),
     )
+    
     if not candidates:
         if not current.get("error"):
             st.info(

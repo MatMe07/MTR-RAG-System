@@ -17,37 +17,39 @@ QUERY_TO_CARD_PROMPT = """
 Правила:
 - Не выдумывай значения.
 - Если параметр не указан, ставь null.
-- Если параметр указан неявно, запиши нормализованное значение и добавь исходный фрагмент в sources.
-- Если пользователь говорит "сероводород", "H2S", "кислая среда" - это относится к environment.medium и может требовать h2s_confirmed = null.
+- Если пользователь ввел условное обозначение (ОКШ90-159x10-К48-09Г2С-УХЛ), сохрани его в поле designation.
+- Если параметр указан неявно, запиши нормализованное значение.
+- Если пользователь говорит "сероводород", "H2S" - установи environment.medium = "H2S".
+- Если пользователь говорит "для H2S", "с H2S", "сероводородная среда" - установи h2s_confirmed = true.
+- Если пользователь говорит "без H2S", "не для H2S" - установи h2s_confirmed = false.
 - Если пользователь говорит "внутреннее покрытие" или "наружное покрытие", заполни блок coating.
 
-Поля, которые нужно искать:
+Поля для поиска:
 - тип изделия: отвод, труба, задвижка, заглушка, переход, тройник
-- подтип: ОКШ, ОГ и т.д.
-- DN / диаметр
-- угол для отводов
-- толщина стенки
-- PN/Ру или давление
-- марка стали
-- класс прочности
+- подтип: ОКШ, ОГ, ЗК
+- DN / диаметр (число)
+- угол для отводов (число)
+- толщина стенки (число)
+- PN/Ру или давление (число)
+- марка стали (строка)
+- класс прочности: К48, К52 (строка)
 - среда: H2S, CO2, газ, вода, нефть
-- внутреннее/наружное покрытие
-- ГОСТ/ТУ
-- климатическое исполнение
+- внутреннее/наружное покрытие (true/false)
+- ГОСТ/ТУ (строка)
+- климатическое исполнение: У, УХЛ, ХЛ (строка)
 
 Схема ответа:
-
-{{  
+{{
     "item_type": "отвод",
-    "subtype": null,
-    "designation": null,
+    "subtype": "ОКШ",
+    "designation": "ОКШ90-159x10-К48-09Г2С-УХЛ",
     "geometry": {{"dn": 159, "wall_thickness": 10, "angle": 90}},
-    "pressure": {{"pn": null}},
-    "material": {{"steel_grade": null, "strength_class": "К48"}},
-    "environment": {{"medium": "H2S", "h2s_confirmed": null, "co2_confirmed": null, "climate_version": null}},
+    "pressure": {{"pn": 160}},
+    "material": {{"steel_grade": "09Г2С", "strength_class": "К48"}},
+    "environment": {{"medium": "H2S", "h2s_confirmed": true, "co2_confirmed": null, "climate_version": "УХЛ"}},
     "coating": {{"inner_coating": true, "outer_coating": null}},
-    "normative": {{"gost_tu": null}},
-    "extraction": {{"missing_fields": ["subtype", "gost_tu"]}}
+    "normative": {{"gost_tu": "ТУ 1469-048-78795288-2015"}},
+    "extraction": {{"missing_fields": []}}
 }}
 
 Только JSON, без пояснений.
@@ -62,23 +64,23 @@ PASSPORT_TO_CARD_PROMPT = """
 Главные правила:
 - Не выдумывай значения.
 - Если параметр не найден, ставь null.
-- Если параметр найден, укажи исходный фрагмент в sources.
-- Если есть номер страницы, сохрани его в sources.page.
-- Если есть противоречивые значения, выбери наиболее вероятное.
+- Если текст содержит таблицу в формате "Параметр | Значение" или "DN: 159 мм", извлекай параметры из неё.
+- Если значения противоречат, выбери то, что встречается чаще или указано в таблице.
 - Заводской номер не превращай в отдельный МТР.
+- Не ищи mtr_code и ksm_code — их нет в паспорте.
 
 Схема ответа:
 {{
     "item_type": "отвод",
     "subtype": "ОКШ",
     "designation": "ОКШ90-159x10-К48-09Г2С-УХЛ",
-    "geometry": {"dn": 159, "wall_thickness": 10, "angle": 90},
-    "pressure": {"pn": 160},
-    "material": {"steel_grade": "09Г2С", "strength_class": "К48"},
-    "environment": {"medium": "газ", "h2s_confirmed": null, "co2_confirmed": null, "climate_version": "УХЛ"},
-    "coating": {"inner_coating": null, "outer_coating": true},
-    "normative": {"gost_tu": "ТУ 1469-048-78795288-2015"},
-    "extraction": {"missing_fields": ["mtr_code", "ksm_code"]}
+    "geometry": {{"dn": 159, "wall_thickness": 10, "angle": 90}},
+    "pressure": {{"pn": 160}},
+    "material": {{"steel_grade": "09Г2С", "strength_class": "К48"}},
+    "environment": {{"medium": "газ", "h2s_confirmed": null, "co2_confirmed": null, "climate_version": "УХЛ"}},
+    "coating": {{"inner_coating": null, "outer_coating": true}},
+    "normative": {{"gost_tu": "ТУ 1469-048-78795288-2015"}},
+    "extraction": {{"missing_fields": ["mtr_code", "ksm_code"]}}
 }}
 
 Только JSON, без пояснений.

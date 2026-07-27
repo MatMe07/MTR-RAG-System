@@ -68,6 +68,7 @@ def load_mtr_catalog(file_path: str, manifest_path: str):
                 designation=row.get('designation', '').strip() or None,
                 short_text=row.get('name', '').strip() or None,
                 lot=row.get('lot', 'LOT-001').strip() or None,
+                properties=props,
                 material_class=row.get('material_class', '').strip() or None,
                 source_excel_row=count + 1,
                 source_document_id = doc_map.get(mtr_code)
@@ -451,8 +452,8 @@ if __name__ == "__main__":
     data_dir10k = Path(__file__).parent.parent.parent.parent / "data" / "generated"
     print("Загрузка данных...")
 
-    # load_mtr_catalog(data_dir / "mtr_catalog.csv", data_dir / "document_manifest.csv")
-    load_mtr_10k(data_dir10k / "mtr_catalog_10k.jsonl")
+    load_mtr_catalog(data_dir / "mtr_catalog.csv", data_dir / "document_manifest.csv")
+    # load_mtr_10k(data_dir10k / "mtr_catalog_10k.jsonl")
     
     load_ksm_from_catalog(data_dir / "mtr_catalog.csv")
     load_documents(data_dir / "document_manifest.csv", data_dir / "expected_item_cards.jsonl")

@@ -64,7 +64,7 @@ class SearchService:
             total_found=len(scored),
             search_time_ms=search_time_ms
         )
-        print(searchresponse.candidates)
+        # print(searchresponse.candidates)
         return searchresponse
 
     def _parse_query(self, query: str) -> ItemCard:
@@ -234,9 +234,11 @@ class SearchService:
         candidates: List[MTRItem]
     ) -> List[MatchResult]:
         results = []
+        print(requested_card)
         
         for idx, mtr_item in enumerate(candidates):
             candidate_card = self._mtr_to_card(mtr_item)
+            
             evaluation = self.rules_engine.evaluate(requested_card, candidate_card)
 
             results.append(
