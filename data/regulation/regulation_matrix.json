@@ -1,0 +1,437 @@
+{
+  "schema_version": "1.0",
+  "verified_on": "2026-07-28",
+  "purpose": "Нормативная основа синтетического каталога МТР для демонстрационного газопроводного объекта.",
+  "important_limitations": [
+    "ГОСТ определяет область применения, конструкцию, размеры или общие технические требования, но не присваивает внутренний код КСМ Роснефти.",
+    "Публичные примеры КСМ приведены только как доказательство связи «код КСМ -> конкретное наименование». Полный корпоративный классификатор и внутренние ЛНД в открытом доступе не найдены.",
+    "Соответствие H2S, CO2, коррозионной среде и наличие покрытия нельзя подтверждать только геометрическим ГОСТом: нужны паспорт, ТУ, проектная документация и/или внутренний ЛНД.",
+    "Все позиции каталога имеют synthetic=true и не являются реальными карточками Роснефти или сертификатами соответствия."
+  ],
+  "verification_statuses": {
+    "confirmed_official": "Область применения и статус стандарта подтверждены на официальном портале Росстандарта.",
+    "confirmed_official_scope_limited": "Стандарт подтверждён, но он регулирует только часть характеристик карточки.",
+    "requires_internal_document": "Для вывода нужен внутренний ЛНД, корпоративный классификатор, ТУ, паспорт или решение эксперта.",
+    "replaced": "Стандарт заменён более новой редакцией и не должен использоваться как основной для новых карточек."
+  },
+  "sources": [
+    {
+      "source_id": "RST-GOST-8731-2025",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 8731-2025",
+      "title": "Трубы стальные бесшовные горячедеформированные. Технические условия",
+      "status": "Действует",
+      "effective_from": "2026-03-01",
+      "replaces": "ГОСТ 8731-74",
+      "scope": "Технические требования к бесшовным горячедеформированным трубам круглого сечения общего назначения из нелегированной и легированной стали.",
+      "official_url": "https://protect.gost.ru/gost/details/4ad6b757-7237-4240-a9b0-f83d93805861"
+    },
+    {
+      "source_id": "RST-GOST-8732-2025",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 8732-2025",
+      "title": "Трубы стальные бесшовные горячедеформированные. Сортамент",
+      "status": "Действует",
+      "effective_from": "2026-03-01",
+      "replaces": "ГОСТ 8732-78",
+      "scope": "Сортамент стальных бесшовных горячедеформированных труб круглого сечения: диаметры, толщины стенок, длины и предельные отклонения.",
+      "official_url": "https://protect.gost.ru/gost/details/dabcf620-777a-4adc-8224-1b05c514c9a7"
+    },
+    {
+      "source_id": "RST-GOST-20295-85",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 20295-85",
+      "title": "Трубы стальные сварные для магистральных газонефтепроводов. Технические условия",
+      "status": "Действует",
+      "effective_from": "1987-01-01",
+      "replaces": "ГОСТ 20295-74",
+      "scope": "Стальные сварные прямошовные и спиральношовные трубы диаметром 114-1020 мм для магистральных газонефтепроводов, нефтепродуктопроводов, технологических и промысловых трубопроводов.",
+      "official_url": "https://protect.gost.ru/gost/details/cdd99d04-ca45-411d-b67e-eee41df840e8"
+    },
+    {
+      "source_id": "RST-GOST-17375-2001",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 17375-2001",
+      "title": "Детали трубопроводов. Отводы крутоизогнутые типа 3D. Конструкция",
+      "status": "Действует",
+      "effective_from": "2003-01-01",
+      "replaces": "ГОСТ 17375-83",
+      "scope": "Бесшовные приварные отводы из углеродистой и низколегированной стали типа 3D с R=1,5 DN; область применения определяется совместно с ГОСТ 17380-2001.",
+      "official_url": "https://protect.gost.ru/gost/details/b040f003-38d3-474e-b2fc-e6ec9820d938"
+    },
+    {
+      "source_id": "RST-GOST-17376-2001",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 17376-2001",
+      "title": "Детали трубопроводов. Тройники. Конструкция",
+      "status": "Действует",
+      "effective_from": "2003-01-01",
+      "replaces": "ГОСТ 17376-83",
+      "scope": "Бесшовные приварные равнопроходные и переходные тройники из углеродистой и низколегированной стали; область применения определяется совместно с ГОСТ 17380-2001.",
+      "official_url": "https://protect.gost.ru/gost/details/b06ead63-6458-4596-a976-daacb616e274"
+    },
+    {
+      "source_id": "RST-GOST-17378-2001",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 17378-2001",
+      "title": "Детали трубопроводов. Переходы. Конструкция",
+      "status": "Действует",
+      "effective_from": "2003-01-01",
+      "replaces": "ГОСТ 17378-83",
+      "scope": "Бесшовные приварные концентрические и эксцентрические переходы из углеродистой и низколегированной стали; область применения определяется совместно с ГОСТ 17380-2001.",
+      "official_url": "https://protect.gost.ru/gost/details/afdcd071-ec41-4f77-852d-eb9a1c87db7b"
+    },
+    {
+      "source_id": "RST-GOST-17379-2001",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 17379-2001",
+      "title": "Детали трубопроводов. Заглушки эллиптические. Конструкция",
+      "status": "Действует",
+      "effective_from": "2003-01-01",
+      "replaces": "ГОСТ 17379-83",
+      "scope": "Бесшовные приварные эллиптические заглушки из углеродистой и низколегированной стали; область применения определяется совместно с ГОСТ 17380-2001.",
+      "official_url": "https://protect.gost.ru/gost/details/03197b54-6e8a-4f34-9c0c-4520cb9dee5a"
+    },
+    {
+      "source_id": "RST-GOST-17380-2001",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 17380-2001",
+      "title": "Детали трубопроводов бесшовные приварные. Общие технические условия",
+      "status": "Действует",
+      "effective_from": "2003-01-01",
+      "replaces": "ГОСТ 17380-83",
+      "scope": "Общие технические условия для отводов, тройников, переходов и заглушек при PN до 16 МПа и температуре от -70 до +450 °C. Конкретные условия применения задаются проектной или конструкторской документацией с учётом транспортируемого вещества и внешней среды.",
+      "official_url": "https://protect.gost.ru/gost/details/c589a484-99c7-4747-82eb-b22eca6f3311"
+    },
+    {
+      "source_id": "RST-GOST-5762-2002",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 5762-2002",
+      "title": "Арматура трубопроводная промышленная. Задвижки на номинальное давление не более PN 250. Общие технические условия",
+      "status": "Действует",
+      "effective_from": "2003-07-01",
+      "replaces": null,
+      "scope": "Задвижки общепромышленного назначения на номинальное давление не более PN 250; стандарт не распространяется на неметаллические и футерованные задвижки.",
+      "official_url": "https://protect.gost.ru/gost/details/2d202904-d3e0-484a-9d1d-dc1443f08785"
+    },
+    {
+      "source_id": "RST-GOST-33259-2015",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 33259-2015",
+      "title": "Фланцы арматуры, соединительных частей и трубопроводов на номинальное давление до PN 250",
+      "status": "Действует",
+      "effective_from": "2016-04-01",
+      "replaces": "ГОСТ 12815-80; ГОСТ 12816-80; ГОСТ 12817-80; ГОСТ 12818-80; ГОСТ 12819-80; ГОСТ 12820-80; ГОСТ 12821-80; ГОСТ 12822-80",
+      "scope": "Конструкция, размеры и общие технические требования к присоединительным фланцам арматуры, соединительных частей и трубопроводов на давление до PN 250.",
+      "official_url": "https://protect.gost.ru/gost/details/66ebf93e-1d81-4202-b092-e10a05ad5c1d"
+    },
+    {
+      "source_id": "RST-GOST-28338-89",
+      "organization": "Росстандарт",
+      "source_type": "official_standard_card",
+      "standard": "ГОСТ 28338-89",
+      "title": "Соединения трубопроводов и арматура. Номинальные диаметры. Ряды",
+      "status": "Действует",
+      "effective_from": "1991-01-01",
+      "replaces": null,
+      "scope": "Устанавливает ряды значений номинальных диаметров DN и их обозначения для соединений трубопроводов и арматуры.",
+      "official_url": "https://protect.gost.ru/gost/details/c1103427-a3ec-42b8-a79d-596626379be3"
+    },
+    {
+      "source_id": "RN-TECH-REG",
+      "organization": "ПАО «НК «Роснефть»",
+      "source_type": "official_company_page",
+      "standard": null,
+      "title": "Техническое регулирование",
+      "status": "Официальная страница",
+      "effective_from": null,
+      "replaces": null,
+      "scope": "Подтверждает наличие корпоративной нормативно-технической базы и стандартов бизнеса, но не публикует полный классификатор КСМ и применимые ЛНД.",
+      "official_url": "https://www.rosneft.ru/Development/Tehnologicheskij_klaster/Tehnicheskoe_regulirovanie/"
+    },
+    {
+      "source_id": "RN-KSM-PUBLIC-2026",
+      "organization": "АО «Самаранефтегаз» / ПАО «НК «Роснефть»",
+      "source_type": "official_tender",
+      "standard": null,
+      "title": "Публичные примеры КСМ и наименований деталей трубопроводов",
+      "status": "Официальная тендерная публикация",
+      "effective_from": "2026-02-19",
+      "replaces": null,
+      "scope": "Показывает, что числовой код КСМ связан с конкретным нормализованным наименованием и характеристиками позиции; не является полным классификатором.",
+      "official_url": "https://tender.rosneft.ru/sales/tt95512-16_04_2026.html"
+    }
+  ],
+  "public_ksm_examples": [
+    {
+      "ksm_code": "2491378",
+      "normalized_name": "ОКШ 45-426х10-1,6-0,6-1,5DN-К52-УХЛ",
+      "item_type": "отвод",
+      "source_id": "RN-KSM-PUBLIC-2026",
+      "comment": "Публичный пример связи КСМ с конкретным наименованием. Не переносить код на другую карточку."
+    },
+    {
+      "ksm_code": "10060528",
+      "normalized_name": "ОКШ 90-133х6К48-0.Б0-1,5D000-У",
+      "item_type": "отвод",
+      "source_id": "RN-KSM-PUBLIC-2026",
+      "comment": "Публичный пример связи КСМ с конкретным наименованием. Не переносить код на другую карточку."
+    },
+    {
+      "ksm_code": "2468822",
+      "normalized_name": "ОКБ 90-530х10(К52)-4-0,75-1,5DN-УХЛ",
+      "item_type": "отвод",
+      "source_id": "RN-KSM-PUBLIC-2026",
+      "comment": "Один и тот же КСМ встречается в двух лотах с близким написанием; это пример необходимости нормализации и удаления дублей."
+    },
+    {
+      "ksm_code": "2486514",
+      "normalized_name": "ОГ 4 530х10-4-0,75-5DN-750-К52-УХЛ",
+      "item_type": "отвод гнутый",
+      "source_id": "RN-KSM-PUBLIC-2026",
+      "comment": "Публичный пример гнутого отвода. Для нормативной привязки нужен внутренний ЛНД, ТУ или паспорт."
+    }
+  ],
+  "medium_profiles": [
+    {
+      "code": "natural_gas",
+      "name": "природный газ",
+      "compatibility_status": "requires_project_and_passport",
+      "required_evidence": ["проектная документация", "паспорт изделия"]
+    },
+    {
+      "code": "gas_h2s",
+      "name": "газ с H2S",
+      "compatibility_status": "requires_tu_lnd_passport",
+      "required_evidence": ["паспорт изделия", "ТУ", "внутренний ЛНД", "заключение эксперта"]
+    },
+    {
+      "code": "gas_co2",
+      "name": "газ с CO2",
+      "compatibility_status": "requires_tu_lnd_passport",
+      "required_evidence": ["паспорт изделия", "ТУ", "внутренний ЛНД", "заключение эксперта"]
+    },
+    {
+      "code": "gas_h2s_co2",
+      "name": "газ с H2S и CO2",
+      "compatibility_status": "requires_tu_lnd_passport",
+      "required_evidence": ["паспорт изделия", "ТУ", "внутренний ЛНД", "заключение эксперта"]
+    },
+    {
+      "code": "oil",
+      "name": "нефть",
+      "compatibility_status": "requires_project_and_passport",
+      "required_evidence": ["проектная документация", "паспорт изделия"]
+    },
+    {
+      "code": "process_water",
+      "name": "техническая вода",
+      "compatibility_status": "requires_project_and_passport",
+      "required_evidence": ["проектная документация", "паспорт изделия"]
+    },
+    {
+      "code": "corrosive_medium",
+      "name": "коррозионно-активная среда",
+      "compatibility_status": "requires_tu_lnd_passport",
+      "required_evidence": ["анализ среды", "паспорт изделия", "ТУ", "внутренний ЛНД", "заключение эксперта"]
+    }
+  ],
+  "material_profiles": [
+    {
+      "steel_grade": "20",
+      "verification_status": "confirmed_official_scope_limited",
+      "comment": "Используется как демонстрационная углеродистая сталь; конкретная применимость подтверждается стандартом, паспортом и проектом."
+    },
+    {
+      "steel_grade": "09Г2С",
+      "verification_status": "confirmed_official_scope_limited",
+      "comment": "Используется как демонстрационная низколегированная сталь; конкретная применимость подтверждается стандартом, паспортом и проектом."
+    },
+    {
+      "steel_grade": "13ХФА",
+      "verification_status": "requires_internal_document",
+      "comment": "Не считать автоматически пригодной для H2S: требуется ТУ, паспорт и корпоративный ЛНД."
+    },
+    {
+      "steel_grade": "09ГСФ",
+      "verification_status": "requires_internal_document",
+      "comment": "Не считать автоматически взаимозаменяемой с 09Г2С: требуется ТУ, паспорт и решение эксперта."
+    }
+  ],
+  "class_rules": [
+    {
+      "rule_id": "PIPE-SEAMLESS-2025",
+      "collection_code": "pipes",
+      "collection_name": "Трубы",
+      "item_type": "труба",
+      "subtypes": ["бесшовная горячедеформированная"],
+      "target_count": 110,
+      "standard_ids": ["RST-GOST-8731-2025", "RST-GOST-8732-2025", "RST-GOST-28338-89"],
+      "public_ksm_example": null,
+      "mandatory_properties": ["outer_diameter", "wall_thickness", "steel_grade", "length", "standard", "source"],
+      "hard_constraints": ["тип трубы", "наружный диаметр", "толщина стенки"],
+      "warning_constraints": ["марка стали", "PN как проектный параметр", "покрытие", "рабочая среда"],
+      "internal_lnd": "Требуется корпоративный классификатор КСМ и ЛНД по применимости на объекте.",
+      "verification_status": "confirmed_official_scope_limited",
+      "regulation_comment": "ГОСТ 8731-2025 задаёт технические условия, ГОСТ 8732-2025 — сортамент. Пригодность для конкретной среды и расчётного давления подтверждаются отдельно.",
+      "dimension_profiles": [
+        [57, 4], [76, 5], [89, 6], [108, 6], [133, 6], [159, 8],
+        [219, 10], [273, 10], [325, 12], [377, 12], [426, 14], [530, 16]
+      ]
+    },
+    {
+      "rule_id": "PIPE-WELDED-MAIN-20295",
+      "collection_code": "pipes",
+      "collection_name": "Трубы",
+      "item_type": "труба",
+      "subtypes": ["электросварная прямошовная", "электросварная спиральношовная"],
+      "target_count": 110,
+      "standard_ids": ["RST-GOST-20295-85", "RST-GOST-28338-89"],
+      "public_ksm_example": null,
+      "mandatory_properties": ["outer_diameter", "wall_thickness", "steel_grade", "weld_type", "standard", "source"],
+      "hard_constraints": ["тип трубы", "наружный диаметр", "толщина стенки", "тип шва"],
+      "warning_constraints": ["марка стали", "PN как проектный параметр", "покрытие", "рабочая среда"],
+      "internal_lnd": "Требуется корпоративный классификатор КСМ и ЛНД по применимости на объекте.",
+      "verification_status": "confirmed_official_scope_limited",
+      "regulation_comment": "ГОСТ 20295-85 распространяется на трубы диаметром 114-1020 мм. Конкретная размерная комбинация, среда и давление должны быть подтверждены документами позиции.",
+      "dimension_profiles": [
+        [159, 6], [219, 8], [325, 8], [426, 10], [530, 10],
+        [630, 12], [720, 12], [820, 14], [1020, 16]
+      ]
+    },
+    {
+      "rule_id": "ELBOW-3D-17375",
+      "collection_code": "elbows",
+      "collection_name": "Отводы",
+      "item_type": "отвод",
+      "subtypes": ["ОКШ 3D"],
+      "target_count": 220,
+      "standard_ids": ["RST-GOST-17375-2001", "RST-GOST-17380-2001", "RST-GOST-28338-89"],
+      "public_ksm_example": "2491378; 10060528",
+      "mandatory_properties": ["outer_diameter", "wall_thickness", "angle", "bend_radius", "steel_grade", "standard", "source"],
+      "hard_constraints": ["тип изделия", "наружный диаметр", "толщина стенки", "угол"],
+      "warning_constraints": ["марка стали", "класс прочности", "PN", "покрытие", "рабочая среда"],
+      "internal_lnd": "Для соответствия корпоративному КСМ, H2S/CO2 и покрытию нужны классификатор, ЛНД, ТУ и паспорт.",
+      "verification_status": "confirmed_official_scope_limited",
+      "regulation_comment": "ГОСТ 17375-2001 задаёт конструкцию отводов 3D; ГОСТ 17380-2001 допускает PN до 16 МПа, но требует учитывать свойства среды в проектной документации.",
+      "angles": [45, 90],
+      "dimension_profiles": [
+        [57, 3], [76, 4], [89, 4], [108, 4], [133, 6], [159, 6],
+        [219, 8], [273, 10], [325, 10], [377, 12], [426, 10], [530, 10]
+      ]
+    },
+    {
+      "rule_id": "REDUCER-17378",
+      "collection_code": "reducers",
+      "collection_name": "Переходы",
+      "item_type": "переход",
+      "subtypes": ["концентрический", "эксцентрический"],
+      "target_count": 150,
+      "standard_ids": ["RST-GOST-17378-2001", "RST-GOST-17380-2001", "RST-GOST-28338-89"],
+      "public_ksm_example": null,
+      "mandatory_properties": ["outer_diameter_1", "wall_thickness_1", "outer_diameter_2", "wall_thickness_2", "steel_grade", "standard", "source"],
+      "hard_constraints": ["тип изделия", "больший диаметр", "меньший диаметр", "толщины стенок"],
+      "warning_constraints": ["марка стали", "PN", "покрытие", "рабочая среда"],
+      "internal_lnd": "Требуется корпоративный классификатор КСМ и ЛНД по применимости на объекте.",
+      "verification_status": "confirmed_official_scope_limited",
+      "regulation_comment": "ГОСТ 17378-2001 задаёт конструкцию концентрических и эксцентрических переходов; конкретная среда определяется проектом и документами изделия.",
+      "dimension_profiles": [
+        [76, 4, 57, 3], [89, 4, 57, 3], [108, 4, 76, 4],
+        [133, 5, 89, 4], [159, 6, 108, 4], [219, 8, 159, 6],
+        [273, 10, 219, 8], [325, 10, 219, 8], [426, 12, 325, 10]
+      ]
+    },
+    {
+      "rule_id": "VALVE-GATE-5762",
+      "collection_code": "valves",
+      "collection_name": "Трубопроводная арматура",
+      "item_type": "задвижка",
+      "subtypes": ["клиновая", "шиберная"],
+      "target_count": 150,
+      "standard_ids": ["RST-GOST-5762-2002", "RST-GOST-33259-2015", "RST-GOST-28338-89"],
+      "public_ksm_example": null,
+      "mandatory_properties": ["dn", "pn", "body_material", "connection_type", "drive_type", "leak_tightness_class", "standard", "source"],
+      "hard_constraints": ["тип арматуры", "DN", "тип присоединения"],
+      "warning_constraints": ["PN", "материал корпуса", "привод", "класс герметичности", "рабочая среда"],
+      "internal_lnd": "Требуется корпоративный классификатор КСМ, паспорт изготовителя и ЛНД по применимости.",
+      "verification_status": "confirmed_official_scope_limited",
+      "regulation_comment": "ГОСТ 5762-2002 охватывает общепромышленные задвижки до PN 250, ГОСТ 33259-2015 — фланцевые присоединения. Совместимость со средой подтверждает паспорт.",
+      "dn_pn_profiles": [
+        [25, 16], [50, 16], [80, 25], [100, 40], [150, 40],
+        [200, 63], [250, 100], [300, 160], [400, 160], [500, 250]
+      ]
+    },
+    {
+      "rule_id": "PLUG-ELLIPTICAL-17379",
+      "collection_code": "plugs",
+      "collection_name": "Заглушки",
+      "item_type": "заглушка",
+      "subtypes": ["эллиптическая приварная"],
+      "target_count": 130,
+      "standard_ids": ["RST-GOST-17379-2001", "RST-GOST-17380-2001", "RST-GOST-28338-89"],
+      "public_ksm_example": null,
+      "mandatory_properties": ["outer_diameter", "wall_thickness", "steel_grade", "standard", "source"],
+      "hard_constraints": ["тип заглушки", "наружный диаметр", "толщина стенки"],
+      "warning_constraints": ["марка стали", "PN", "покрытие", "рабочая среда"],
+      "internal_lnd": "Требуется корпоративный классификатор КСМ и ЛНД по применимости на объекте.",
+      "verification_status": "confirmed_official_scope_limited",
+      "regulation_comment": "ГОСТ 17379-2001 распространяется именно на эллиптические приварные заглушки; фланцевые и поворотные заглушки требуют отдельного норматива.",
+      "dimension_profiles": [
+        [57, 3], [76, 4], [89, 4], [108, 4], [133, 5], [159, 6],
+        [219, 8], [273, 10], [325, 10], [377, 12], [426, 12]
+      ]
+    },
+    {
+      "rule_id": "TEE-17376",
+      "collection_code": "tees",
+      "collection_name": "Тройники",
+      "item_type": "тройник",
+      "subtypes": ["равнопроходной", "переходный"],
+      "target_count": 130,
+      "standard_ids": ["RST-GOST-17376-2001", "RST-GOST-17380-2001", "RST-GOST-28338-89"],
+      "public_ksm_example": null,
+      "mandatory_properties": ["outer_diameter_main", "wall_thickness_main", "outer_diameter_branch", "wall_thickness_branch", "steel_grade", "standard", "source"],
+      "hard_constraints": ["тип тройника", "диаметр магистрали", "диаметр ответвления", "толщины стенок"],
+      "warning_constraints": ["марка стали", "PN", "покрытие", "рабочая среда"],
+      "internal_lnd": "Требуется корпоративный классификатор КСМ и ЛНД по применимости на объекте.",
+      "verification_status": "confirmed_official_scope_limited",
+      "regulation_comment": "ГОСТ 17376-2001 задаёт конструкцию равнопроходных и переходных тройников; совместимость со средой и объектом подтверждается отдельно.",
+      "dimension_profiles": [
+        [57, 3, 57, 3], [76, 4, 76, 4], [89, 4, 89, 4],
+        [108, 4, 108, 4], [133, 5, 133, 5], [159, 6, 159, 6],
+        [219, 8, 219, 8], [273, 10, 273, 10], [325, 10, 325, 10],
+        [426, 12, 426, 12], [76, 4, 57, 3], [89, 4, 57, 3],
+        [108, 4, 76, 4], [133, 5, 89, 4], [159, 6, 108, 4],
+        [219, 8, 159, 6], [273, 10, 219, 8], [325, 10, 219, 8],
+        [426, 12, 325, 10]
+      ]
+    }
+  ],
+  "replaced_standards": [
+    {
+      "standard": "ГОСТ 8731-74",
+      "replacement": "ГОСТ 8731-2025",
+      "status": "replaced"
+    },
+    {
+      "standard": "ГОСТ 8732-78",
+      "replacement": "ГОСТ 8732-2025",
+      "status": "replaced"
+    },
+    {
+      "standard": "ГОСТ 12821-80",
+      "replacement": "ГОСТ 33259-2015",
+      "status": "replaced"
+    }
+  ]
+}
