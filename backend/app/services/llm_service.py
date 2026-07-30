@@ -6,7 +6,18 @@ from typing import Optional, Dict, Any
 from langchain_openai import ChatOpenAI
 
 from app.core.config import settings
-from app.schemas import ItemCard, Geometry, Pressure, Material, Environment, Coating, Normative, Source
+from app.schemas import (
+    Coating,
+    Environment,
+    Extraction,
+    Geometry,
+    ItemCard,
+    Material,
+    Normative,
+    Pressure,
+    Source,
+)
+from app.services.query_normalizer import normalize_query
 
 
 QUERY_TO_CARD_PROMPT = """
@@ -19,8 +30,12 @@ QUERY_TO_CARD_PROMPT = """
 - Если параметр не указан, ставь null.
 - Если пользователь ввел условное обозначение (ОКШ90-159x10-К48-09Г2С-УХЛ), сохрани его в поле designation.
 - Если параметр указан неявно, запиши нормализованное значение.
+- Считай ДУ, DU и "условный проход" синонимами DN.
+- Считай Ру, PY и PU синонимами PN.
+- Запись "426 на 10" или "426х10" означает размер 426x10, а не DN426.
+- Слова "колено" и "отвод" в запросах на трубопроводные детали нормализуй как тип "отвод".
 - Если пользователь говорит "сероводород", "H2S" - установи environment.medium = "H2S".
-- Если пользователь говорит "для H2S", "с H2S", "сероводородная среда" - установи h2s_confirmed = true.
+- Если пользователь говорит "для H2S", "с H2S", "сероводородная среда" - установи h2s_confirmed = true как требование запроса, а не как доказанный факт о кандидате.
 - Если пользователь говорит "без H2S", "не для H2S" - установи h2s_confirmed = false.
 - Если пользователь говорит "внутреннее покрытие" или "наружное покрытие", заполни блок coating.
 
@@ -141,7 +156,10 @@ class LLMService:
         return self._llm
 
     def parse_query(self, query: str) -> ItemCard:
-        prompt = QUERY_TO_CARD_PROMPT.format(query=query)
+        normalized = normalize_query(query)
+        prompt = QUERY_TO_CARD_PROMPT.format(
+            query=normalized["normalized_text"]
+        )
         # print(prompt)
         # print(self.llm)
         response = self.llm.invoke(prompt).content
@@ -201,6 +219,14 @@ class LLMService:
                 ),
                 normative=Normative(
                     gost_tu=data.get('normative', {}).get('gost_tu')
+                ),
+                extraction=Extraction(
+                    confidence=data.get('extraction', {}).get('confidence'),
+                    method=data.get('extraction', {}).get('method')
+                    or "user_query",
+                    missing_fields=data.get('extraction', {}).get(
+                        'missing_fields', []
+                    ),
                 ),
                 sources=[Source(type="llm", **source_copy)]
             )

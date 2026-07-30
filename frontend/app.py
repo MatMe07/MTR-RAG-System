@@ -1,5 +1,7 @@
 import json
 import os
+import re
+import sys
 import uuid
 from pathlib import Path
 from typing import Any
@@ -9,7 +11,16 @@ import streamlit as st
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from backend.app.services.search_router import route_query_text
+
+
 DEMO_DATA_PATH = PROJECT_ROOT / "data" / "sample" / "ui_demo_case_q007.json"
+QUESTIONS_PATH = (
+    PROJECT_ROOT / "data" / "evaluation" / "complex_questions_40.jsonl"
+)
 BACKEND_URL = os.getenv("MTR_BACKEND_URL", "http://localhost:8000").rstrip("/")
 
 SEARCH_MODES = {
@@ -58,6 +69,37 @@ SOURCE_LABELS = {
     "standard": "ГОСТ/ТУ",
     "user_query": "Запрос пользователя",
     "expert": "Эксперт",
+}
+
+ROUTE_LABELS = {
+    "ordinary": "Обычный поиск",
+    "clarification": "Нужно уточнение",
+    "agent": "Агентный сценарий",
+}
+
+MODE_LABELS = {
+    "exact": "Точный код",
+    "hybrid": "Каталог и правила",
+    "missing_parameters": "Уточнение параметров",
+    "inventory_and_match": "Аналоги и склад",
+    "inventory": "Складские остатки",
+    "maintenance_plan": "План ТОиР",
+    "object_configuration": "Связи объекта",
+    "impact_analysis": "Влияние замены",
+    "evidence_collection": "Сбор подтверждений",
+}
+
+TOOL_LABELS = {
+    "catalog_search": "каталог",
+    "stock_query": "складские остатки",
+    "rules_engine": "правила сравнения",
+    "regulation_lookup": "ГОСТ/ТУ и нормативы",
+    "graph_search": "связи объекта",
+    "maintenance_planner": "планирование ТОиР",
+    "document_search": "паспорта и документы",
+    "explanation_generator": "объяснение параметров",
+    "object_builder": "состав объекта",
+    "impact_analyzer": "влияние изменения",
 }
 
 
@@ -294,6 +336,133 @@ def load_demo_data() -> dict[str, Any]:
     result["backend_connected"] = False
     result["error"] = None
     return result
+
+
+def load_approved_questions() -> list[dict[str, Any]]:
+    return [
+        json.loads(line)
+        for line in QUESTIONS_PATH.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
+def _question_key(value: str) -> str:
+    normalized = " ".join(value.casefold().split())
+    return re.sub(r"[?.!,;:]+$", "", normalized).strip()
+
+
+def find_approved_question(query: str) -> dict[str, Any] | None:
+    query_key = _question_key(query)
+    return next(
+        (
+            question
+            for question in load_approved_questions()
+            if _question_key(question["question"]) == query_key
+        ),
+        None,
+    )
+
+
+def card_missing_fields(card: dict[str, Any]) -> list[str]:
+    extraction = card.get("extraction")
+    if not isinstance(extraction, dict):
+        return []
+    missing = extraction.get("missing_fields")
+    return list(missing) if isinstance(missing, list) else []
+
+
+def build_query_review_context(
+    query: str,
+    card: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    decision = route_query_text(query, card or {})
+    scenario = find_approved_question(query)
+    if scenario:
+        decision["route"] = scenario["expected_route"]
+        decision["required_tools"] = scenario["required_tools"]
+    decision["scenario"] = scenario
+    decision["card_missing_fields"] = card_missing_fields(card or {})
+    return decision
+
+
+def render_query_processing(
+    query: str,
+    card: dict[str, Any],
+) -> None:
+    if not query.strip():
+        return
+
+    context = build_query_review_context(query, card)
+    scenario = context["scenario"]
+    with st.expander("Как система поняла запрос", expanded=True):
+        if scenario:
+            st.caption(
+                f"Согласованный проверочный сценарий {scenario['case_id']}"
+            )
+
+        summary = st.columns(3)
+        summary[0].metric("Задача", context["intent_label"])
+        summary[1].metric(
+            "Маршрут",
+            ROUTE_LABELS.get(context["route"], context["route"]),
+        )
+        summary[2].metric(
+            "Способ обработки",
+            MODE_LABELS.get(context["mode"], context["mode"]),
+        )
+
+        for reason in context["reasons"]:
+            st.markdown(f"- {reason}")
+
+        aliases = [
+            alias
+            for alias in context["detected_aliases"]
+            if alias["alias"] != alias["canonical"]
+        ]
+        if aliases:
+            recognized = ", ".join(
+                f"{alias['alias']} → {alias['canonical'].upper()}"
+                for alias in aliases
+            )
+            st.caption(f"Распознаны формулировки: {recognized}")
+
+        tools = [
+            TOOL_LABELS.get(tool, tool)
+            for tool in context["required_tools"]
+        ]
+        st.caption("Будут использованы: " + ", ".join(tools))
+
+        missing = list(
+            dict.fromkeys(
+                context["missing_parameters"]
+                + context["card_missing_fields"]
+            )
+        )
+        if missing:
+            st.warning(
+                "Нужно уточнить или проверить: " + ", ".join(missing)
+            )
+
+    with st.expander("Критерии правильного ответа", expanded=bool(scenario)):
+        if not scenario:
+            st.markdown(
+                "- показать найденных кандидатов и причину их попадания "
+                "в выдачу\n"
+                "- отделить совпадения от расхождений и неизвестных данных\n"
+                "- привести доступные источники\n"
+                "- оставить окончательное решение эксперту"
+            )
+            return
+
+        st.markdown("**В ответе должны быть:**")
+        for requirement in scenario["answer_must_include"]:
+            st.markdown(f"- {requirement}")
+        sources = ", ".join(
+            SOURCE_LABELS.get(source, source)
+            for source in scenario["required_sources"]
+        )
+        st.caption(f"Нужные источники: {sources}")
+        st.warning(scenario["mandatory_warning"])
 
 
 def card_value(
@@ -843,6 +1012,11 @@ def render_app() -> None:
     if current.get("error"):
         st.error(current["error"])
 
+    render_query_processing(
+        current.get("query") or "",
+        current.get("query_card") or {},
+    )
+
     edited_query = render_query_card(current.get("query_card") or {})
     if edited_query:
         with st.spinner("Повторно ищем по исправленным параметрам..."):
@@ -856,24 +1030,6 @@ def render_app() -> None:
             else:
                 st.rerun()
 
-    print(f"Current search results: {current}")
-    # нужно вывести красиво кандидатов через print
-    for index, candidate in enumerate(current.get("candidates", []), start=1):
-        print(f"Candidate {index}:")
-        print(f"  Rank: {candidate.get('rank', index)}")
-        print(f"  MTR Code: {candidate.get('mtr_code', '')}")
-        print(f"  KSM Code: {candidate.get('ksm_code', '')}")
-        print(f"  Name: {candidate.get('candidate_name', '')}")
-        print(f"  Match Percent: {candidate.get('match_percent', -1)}%")
-        print(f"  Status: {STATUS_LABELS.get(candidate.get('status', ''), candidate.get('status', 'нет данных'))}")
-        print(f"  Warnings: {len(candidate.get('warnings', []))}")
-        print("  Sources:")
-        for source in candidate.get("sources", []):
-            source_type = SOURCE_LABELS.get(source.get("type"), source.get("type") or "Источник")
-            location = source_location(source)  
-            fragment = source.get("fragment") or "No fragment"
-            print(f"    - Type: {source_type}, Location: {location}, Fragment: {fragment}")
-    
     candidates = sorted(
         current.get("candidates", []),
         key=lambda item: item.get("rank", 0),

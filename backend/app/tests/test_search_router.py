@@ -1,6 +1,6 @@
 import unittest
 
-from app.services.search_router import route_search
+from app.services.search_router import route_query_text, route_search
 
 
 class SearchRouterTest(unittest.TestCase):
@@ -58,6 +58,46 @@ class SearchRouterTest(unittest.TestCase):
 
         self.assertEqual(decision["route"], "ordinary")
         self.assertEqual(decision["mode"], "hybrid")
+
+    def test_plain_analogue_query_with_stock_uses_agent(self):
+        decision = route_query_text(
+            "Какой аналог отвода 90 426 на 10 подойдет для H2S, "
+            "покажи из наличия"
+        )
+
+        self.assertEqual(decision["intent"], "replacement")
+        self.assertEqual(decision["route"], "agent")
+        self.assertEqual(decision["mode"], "inventory_and_match")
+        self.assertIn("stock_query", decision["required_tools"])
+        self.assertIn("rules_engine", decision["required_tools"])
+
+    def test_repair_plan_uses_graph_stock_and_planner(self):
+        decision = route_query_text(
+            "У меня сломался отвод COMP-SYN-008, "
+            "составь план ремонта"
+        )
+
+        self.assertEqual(decision["intent"], "maintenance")
+        self.assertEqual(decision["route"], "agent")
+        self.assertEqual(decision["mode"], "maintenance_plan")
+        self.assertIn("graph_search", decision["required_tools"])
+        self.assertIn("maintenance_planner", decision["required_tools"])
+
+    def test_equipment_explanation_by_code_is_ordinary(self):
+        decision = route_query_text(
+            "Расскажи про задвижку KSM-SYN-REG-000591"
+        )
+
+        self.assertEqual(decision["intent"], "equipment_guidance")
+        self.assertEqual(decision["route"], "ordinary")
+        self.assertEqual(decision["mode"], "exact")
+
+    def test_incomplete_elbow_request_asks_for_parameters(self):
+        decision = route_query_text("Нужен аналог отвода DN159")
+
+        self.assertEqual(decision["route"], "clarification")
+        self.assertIn("angle", decision["missing_parameters"])
+        self.assertIn("wall_thickness", decision["missing_parameters"])
 
 
 if __name__ == "__main__":
