@@ -130,6 +130,12 @@ def _common_properties(
             status="normalized",
             confidence=1,
         ),
+        "gost_tu": _fact(
+            primary_standard["standard"],
+            [standard_fragments[0]],
+            status="normalized",
+            confidence=1,
+        ),
         "applicable_standards": _fact(
             [
                 next(
@@ -168,6 +174,14 @@ def _common_properties(
         "medium_compatibility_status": _fact(
             medium["compatibility_status"],
             [synthetic_fragment, *standard_fragments],
+        ),
+        "h2s_confirmed": _fact(
+            None,
+            [synthetic_fragment],
+        ),
+        "co2_confirmed": _fact(
+            None,
+            [synthetic_fragment],
         ),
         "required_evidence": _fact(
             medium["required_evidence"],
@@ -511,6 +525,7 @@ def _write_catalog_csv(
         "ksm_code",
         "item_type",
         "subtype",
+        "name",
         "designation",
         "dn",
         "outer_diameter",
@@ -523,10 +538,14 @@ def _write_catalog_csv(
         "strength_class",
         "medium",
         "medium_compatibility_status",
+        "h2s_confirmed",
+        "co2_confirmed",
         "inner_coating",
         "outer_coating",
+        "gost_tu",
         "standard",
         "stock_qty",
+        "unit",
         "synthetic",
     ]
     with output.open("w", encoding="utf-8-sig", newline="") as file:
@@ -540,6 +559,7 @@ def _write_catalog_csv(
                     "ksm_code": card["codes"]["ksm_code"],
                     "item_type": card["item_type"],
                     "subtype": card["subtype"],
+                    "name": card["name"],
                     "designation": card["designation"],
                     "dn": _property_value(card, "dn"),
                     "outer_diameter": _property_value(
@@ -560,14 +580,22 @@ def _write_catalog_csv(
                     "medium_compatibility_status": _property_value(
                         card, "medium_compatibility_status"
                     ),
+                    "h2s_confirmed": _property_value(
+                        card, "h2s_confirmed"
+                    ),
+                    "co2_confirmed": _property_value(
+                        card, "co2_confirmed"
+                    ),
                     "inner_coating": _property_value(
                         card, "inner_coating"
                     ),
                     "outer_coating": _property_value(
                         card, "outer_coating"
                     ),
+                    "gost_tu": _property_value(card, "gost_tu"),
                     "standard": _property_value(card, "standard"),
                     "stock_qty": _property_value(card, "stock_qty"),
+                    "unit": "pcs",
                     "synthetic": _property_value(card, "synthetic"),
                 }
             )

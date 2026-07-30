@@ -208,7 +208,7 @@ class EmbeddingService:
                 parts.append(f"угол: {card.geometry.angle} градусов")
 
         if card.pressure and card.pressure.pn:
-            parts.append(f"давление: {card.pressure.pn} МПа")
+            parts.append(f"номинальное давление: PN{card.pressure.pn}")
 
         if card.material:
             if card.material.steel_grade:
@@ -258,9 +258,9 @@ class EmbeddingService:
         if angle:
             parts.append(f"угол: {angle} градусов")
         
-        pressure = get_property_value(props, 'pressure')
+        pressure = get_property_value(props, 'pn')
         if pressure:
-            parts.append(f"давление: {pressure} МПа")
+            parts.append(f"номинальное давление: PN{pressure}")
         
         steel_grade = get_property_value(props, 'steel_grade')
         if steel_grade:
@@ -283,7 +283,7 @@ class EmbeddingService:
         if get_property_value(props, 'outer_coating'):
             parts.append("наружное покрытие")
         
-        gost = get_property_value(props, 'gost_or_tu')
+        gost = get_property_value(props, 'gost_tu')
         if gost:
             parts.append(f"ГОСТ/ТУ: {gost}")
 

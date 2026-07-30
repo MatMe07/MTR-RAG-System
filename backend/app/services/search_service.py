@@ -18,6 +18,14 @@ from app.services.llm_service import LLMService
 from app.services.embedding_service import EmbeddingService
 
 
+def _jsonb_property_text(column, canonical_key: str, *legacy_keys: str):
+    paths = [
+        func.jsonb_extract_path_text(column, key, 'value')
+        for key in (canonical_key, *legacy_keys)
+    ]
+    return func.coalesce(*paths) if len(paths) > 1 else paths[0]
+
+
 class SearchService:
     def __init__(
         self,
@@ -142,7 +150,11 @@ class SearchService:
             tolerance = card.pressure.pn * 0.1
             query = query.filter(
                 cast(
-                    func.jsonb_extract_path_text(MTRItem.properties, 'pressure', 'value'),
+                    _jsonb_property_text(
+                        MTRItem.properties,
+                        'pn',
+                        'pressure',
+                    ),
                     Float
                 ).between(
                     card.pressure.pn - tolerance,
