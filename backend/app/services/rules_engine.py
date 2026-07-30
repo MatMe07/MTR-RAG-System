@@ -326,6 +326,7 @@ class RulesEngine:
 
                 if rule_type == "hard_filter" and not rule["allowed"]:
                     hard_filter = True
+                    penalty += min(rule["penalty"], 100)
                     traces.append(
                         RuleTrace(
                             rule_id=self._rule_id(rule),

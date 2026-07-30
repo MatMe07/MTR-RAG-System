@@ -82,6 +82,7 @@ H2S/CO2-среда, нефть, техническая вода и корроз�
 
 - `data/catalog/regulated_mtr_catalog_1000.jsonl` — полные карточки ItemCardV2;
 - `data/catalog/regulated_mtr_catalog_1000.csv` — плоская форма для просмотра;
+- `docs/schemas/catalog_backend_contract.md` — единые имена свойств и порядок загрузки в PostgreSQL и Qdrant;
 - `data/graph/gas_pipeline_object.json` — synthetic-объект из семи участков;
 - `data/graph/object_relations.csv` — связи объекта, компонентов и карточек.
 

@@ -1,7 +1,7 @@
 import unittest
 from types import SimpleNamespace
 
-from app.models import MatchingRule, ReplacementSet
+from app.models import MatchingRule, ReplacementSet, Synonym
 from app.schemas import Geometry, ItemCard
 from app.services.rules_engine import RulesEngine
 
@@ -15,15 +15,18 @@ class FakeQuery:
 
 
 class FakeSession:
-    def __init__(self, rules=None, replacements=None):
+    def __init__(self, rules=None, replacements=None, synonyms=None):
         self.rules = rules or []
         self.replacements = replacements or []
+        self.synonyms = synonyms or []
 
     def query(self, model):
         if model is MatchingRule:
             return FakeQuery(self.rules)
         if model is ReplacementSet:
             return FakeQuery(self.replacements)
+        if model is Synonym:
+            return FakeQuery(self.synonyms)
         raise AssertionError(f"Неожиданная модель: {model}")
 
 

@@ -1,22 +1,62 @@
 import sys
+import argparse
 import csv
 from typing import Dict, Any
 import json
-from app.utils.jsonb_utils import set_property_value
+from app.utils.jsonb_utils import (
+    get_property_unit,
+    get_property_value,
+    normalize_properties,
+    set_property_value,
+)
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from app.database import SessionLocal
-from app.models import (
-    MTRItem, KSMItem, Document, DocumentPage, TestCase,
-    ExtractedCharacteristic, ExpertMatch, MatchingRule,
-    ReplacementSet
-)
+SessionLocal = None
+MTRItem = None
+KSMItem = None
+Document = None
+DocumentPage = None
+TestCase = None
+ExtractedCharacteristic = None
+MatchingRule = None
+ReplacementSet = None
+
+
+def _new_session():
+    global SessionLocal
+    global MTRItem, KSMItem, Document, DocumentPage, TestCase
+    global ExtractedCharacteristic, MatchingRule, ReplacementSet
+
+    if SessionLocal is None:
+        from app.database import SessionLocal as session_factory
+        from app.models import (
+            Document as document_model,
+            DocumentPage as document_page_model,
+            ExtractedCharacteristic as characteristic_model,
+            KSMItem as ksm_model,
+            MTRItem as mtr_model,
+            MatchingRule as matching_rule_model,
+            ReplacementSet as replacement_set_model,
+            TestCase as test_case_model,
+        )
+
+        SessionLocal = session_factory
+        MTRItem = mtr_model
+        KSMItem = ksm_model
+        Document = document_model
+        DocumentPage = document_page_model
+        TestCase = test_case_model
+        ExtractedCharacteristic = characteristic_model
+        MatchingRule = matching_rule_model
+        ReplacementSet = replacement_set_model
+
+    return SessionLocal()
 
 
 def load_mtr_catalog(file_path: str, manifest_path: str):
-    db = SessionLocal()
+    db = _new_session()
     doc_map = {}
     with open(manifest_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter=';')
@@ -44,7 +84,7 @@ def load_mtr_catalog(file_path: str, manifest_path: str):
             if row.get('angle') and row['angle'].strip():
                 props = set_property_value(props, 'angle', float(row['angle']), '°')
             if row.get('pn') and row['pn'].strip():
-                props = set_property_value(props, 'pressure', float(row['pn']), 'МПа')
+                props = set_property_value(props, 'pn', float(row['pn']), 'PN')
             if row.get('strength_class') and row['strength_class'].strip():
                 props = set_property_value(props, 'strength_class', row['strength_class'].strip())
             if row.get('steel_grade') and row['steel_grade'].strip():
@@ -54,7 +94,7 @@ def load_mtr_catalog(file_path: str, manifest_path: str):
             if row.get('climate_version') and row['climate_version'].strip():
                 props = set_property_value(props, 'climate_version', row['climate_version'].strip())
             if row.get('gost_tu') and row['gost_tu'].strip():
-                props = set_property_value(props, 'gost_or_tu', row['gost_tu'].strip())
+                props = set_property_value(props, 'gost_tu', row['gost_tu'].strip())
             if row.get('inner_coating', 'false').lower() == 'true':
                 props = set_property_value(props, 'inner_coating', True)
             if row.get('outer_coating', 'false').lower() == 'true':
@@ -82,7 +122,7 @@ def load_mtr_catalog(file_path: str, manifest_path: str):
 
 
 def load_ksm_from_catalog(file_path: str):
-    db = SessionLocal()
+    db = _new_session()
     count = 0
     with open(file_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter=';')
@@ -99,7 +139,7 @@ def load_ksm_from_catalog(file_path: str):
             if row.get('angle') and row['angle'].strip():
                 props = set_property_value(props, 'angle', float(row['angle']), '°')
             if row.get('pn') and row['pn'].strip():
-                props = set_property_value(props, 'pressure', float(row['pn']), 'МПа')
+                props = set_property_value(props, 'pn', float(row['pn']), 'PN')
             if row.get('strength_class') and row['strength_class'].strip():
                 props = set_property_value(props, 'strength_class', row['strength_class'].strip())
             if row.get('steel_grade') and row['steel_grade'].strip():
@@ -109,7 +149,7 @@ def load_ksm_from_catalog(file_path: str):
             if row.get('climate_version') and row['climate_version'].strip():
                 props = set_property_value(props, 'climate_version', row['climate_version'].strip())
             if row.get('gost_tu') and row['gost_tu'].strip():
-                props = set_property_value(props, 'gost_or_tu', row['gost_tu'].strip())
+                props = set_property_value(props, 'gost_tu', row['gost_tu'].strip())
             if row.get('inner_coating', 'false').lower() == 'true':
                 props = set_property_value(props, 'inner_coating', True)
             if row.get('outer_coating', 'false').lower() == 'true':
@@ -137,7 +177,7 @@ def load_ksm_from_catalog(file_path: str):
 
 
 def load_documents(file_path: str, cards_path: str):
-    db = SessionLocal()
+    db = _new_session()
     cards_map = {}
     with open(cards_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -196,7 +236,7 @@ def load_documents(file_path: str, cards_path: str):
 
 
 def load_golden_dataset(file_path: str):
-    db = SessionLocal()
+    db = _new_session()
     count = 0
     with open(file_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter=';')
@@ -226,7 +266,7 @@ def load_golden_dataset(file_path: str):
 
 
 def load_replacement_sets(file_path: str):
-    db = SessionLocal()
+    db = _new_session()
     count = 0
     with open(file_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter=';')
@@ -254,7 +294,7 @@ def load_replacement_sets(file_path: str):
 
 
 def load_matching_rules(file_path: str):
-    db = SessionLocal()
+    db = _new_session()
     count = 0
     with open(file_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter=';')
@@ -281,7 +321,7 @@ def load_matching_rules(file_path: str):
 
 
 def load_expected_cards(file_path: str):
-    db = SessionLocal()
+    db = _new_session()
     count = 0
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -381,92 +421,188 @@ def load_expected_cards(file_path: str):
 
 
 def map_properties(properties: Dict[str, Any]) -> Dict[str, Any]:
-    result = {}
-    
-    for key, value in properties.items():
-        if not isinstance(value, dict):
-            continue
-        
-        val = value.get('value')
-        if val is None:
-            continue
-        
-        unit = value.get('unit')
-        if unit:
-            result = set_property_value(result, key, val, unit)
-        else:
-            result = set_property_value(result, key, val)
-    
-    return result
+    return normalize_properties(properties)
+
+
+def _schema_version(value: Any) -> int:
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return 1
+
+
+def catalog_card_to_payloads(
+    data: Dict[str, Any],
+) -> tuple[Dict[str, Any], Dict[str, Any] | None]:
+    codes = data.get('codes', {})
+    mtr_code = codes.get('mtr_code')
+    if not mtr_code:
+        raise ValueError("В карточке отсутствует codes.mtr_code")
+
+    properties = map_properties(data.get('properties', {}))
+    common = {
+        "item_type": data.get('item_type', ''),
+        "subtype": data.get('subtype'),
+        "designation": data.get('designation'),
+        "short_text": data.get('name') or data.get('designation'),
+        "properties": properties,
+        "schema_version": _schema_version(data.get('schema_version')),
+    }
+    mtr_payload = {
+        "mtr_code": mtr_code,
+        "ksm_code": codes.get('ksm_code'),
+        **common,
+    }
+
+    ksm_code = codes.get('ksm_code')
+    if not ksm_code:
+        return mtr_payload, None
+
+    ksm_payload = {
+        "ksm_code": ksm_code,
+        **common,
+        "quantity": get_property_value(properties, 'stock_qty'),
+        "unit": get_property_unit(properties, 'stock_qty') or "pcs",
+    }
+    return mtr_payload, ksm_payload
+
+
+def _upsert_mtr(db, payload: Dict[str, Any]) -> None:
+    item = db.query(MTRItem).filter(
+        MTRItem.mtr_code == payload["mtr_code"]
+    ).first()
+    if item is None:
+        db.add(MTRItem(**payload))
+        return
+    for key, value in payload.items():
+        setattr(item, key, value)
+
+
+def _upsert_ksm(db, payload: Dict[str, Any]) -> None:
+    item = db.query(KSMItem).filter(
+        KSMItem.ksm_code == payload["ksm_code"]
+    ).first()
+    if item is None:
+        db.add(KSMItem(**payload))
+        return
+    for key, value in payload.items():
+        setattr(item, key, value)
+
+
+def load_catalog_jsonl(
+    file_path: str | Path,
+    batch_size: int = 1000,
+    *,
+    load_ksm: bool = True,
+) -> Dict[str, int]:
+    """Load one ItemCardV2 JSONL catalog into PostgreSQL."""
+    db = _new_session()
+    mtr_count = 0
+    ksm_count = 0
+
+    print(f"Начинаем загрузку из {file_path}...")
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line_number, line in enumerate(f, start=1):
+                if not line.strip():
+                    continue
+
+                try:
+                    data = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(
+                        f"Некорректный JSON в строке {line_number}: {exc}"
+                    ) from exc
+
+                try:
+                    mtr_payload, ksm_payload = catalog_card_to_payloads(
+                        data
+                    )
+                except ValueError as exc:
+                    raise ValueError(
+                        f"Ошибка карточки в строке {line_number}: {exc}"
+                    ) from exc
+
+                _upsert_mtr(db, mtr_payload)
+                mtr_count += 1
+
+                if load_ksm and ksm_payload:
+                    _upsert_ksm(db, ksm_payload)
+                    ksm_count += 1
+
+                if mtr_count % batch_size == 0:
+                    db.commit()
+                    print(f"Загружено {mtr_count} карточек...")
+
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+    print(
+        f"Каталог загружен: {mtr_count} МТР, {ksm_count} КСМ"
+    )
+    return {"mtr_count": mtr_count, "ksm_count": ksm_count}
+
 
 def load_mtr_10k(file_path: str, batch_size: int = 1000):
-    db = SessionLocal()
-    count = 0
-    batch = []
-    
-    print(f"Начинаем загрузку из {file_path}...")
-    
-    with open(file_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            if not line.strip():
-                continue
-            
-            try:
-                data = json.loads(line)
-            except json.JSONDecodeError as e:
-                print(f"Ошибка парсинга JSON: {e}")
-                continue
-            
-            codes = data.get('codes', {})
-            properties = data.get('properties', {})
-            
-            mtr = MTRItem(
-                mtr_code=codes.get('mtr_code'),
-                ksm_code=codes.get('ksm_code'),
-                item_type=data.get('item_type', ''),
-                subtype=data.get('subtype'),
-                designation=data.get('designation'),
-                short_text=data.get('name'),
-                properties=map_properties(properties),
-                schema_version=int(float(data.get('schema_version', 1)))
-            )
-            
-            batch.append(mtr)
-            count += 1
-            
-            if len(batch) >= batch_size:
-                db.add_all(batch)
-                db.commit()
-                print(f"Загружено {count} записей...")
-                batch = []
-    
-    if batch:
-        db.add_all(batch)
-        db.commit()
-    
-    db.close()
-    print(f"Загружено {count} МТР из 10k.jsonl")
+    """Backward-compatible wrapper for the previous loader name."""
+    return load_catalog_jsonl(
+        file_path,
+        batch_size=batch_size,
+        load_ksm=False,
+    )
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Загрузка тестовых данных")
+    parser.add_argument(
+        "--catalog-jsonl",
+        type=Path,
+        help="ItemCardV2 JSONL-каталог для загрузки в МТР и КСМ",
+    )
+    parser.add_argument(
+        "--skip-sample",
+        action="store_true",
+        help="Не загружать небольшой каталог из data/sample",
+    )
+    parser.add_argument(
+        "--mtr-only",
+        action="store_true",
+        help="Из JSONL загружать только МТР без складских записей КСМ",
+    )
+    args = parser.parse_args()
+
     data_dir = Path(__file__).parent.parent.parent.parent / "data" / "sample"
-    data_dir10k = Path(__file__).parent.parent.parent.parent / "data" / "generated"
     print("Загрузка данных...")
 
-    load_mtr_catalog(data_dir / "mtr_catalog.csv", data_dir / "document_manifest.csv")
-    # load_mtr_10k(data_dir10k / "mtr_catalog_10k.jsonl")
-    
-    load_ksm_from_catalog(data_dir / "mtr_catalog.csv")
-    load_documents(data_dir / "document_manifest.csv", data_dir / "expected_item_cards.jsonl")
-    load_golden_dataset(data_dir / "golden_dataset.csv")
-    load_expected_cards(data_dir / "expected_item_cards.jsonl")
+    if not args.skip_sample:
+        load_mtr_catalog(
+            data_dir / "mtr_catalog.csv",
+            data_dir / "document_manifest.csv",
+        )
+        load_ksm_from_catalog(data_dir / "mtr_catalog.csv")
+        load_documents(
+            data_dir / "document_manifest.csv",
+            data_dir / "expected_item_cards.jsonl",
+        )
+        load_golden_dataset(data_dir / "golden_dataset.csv")
+        load_expected_cards(data_dir / "expected_item_cards.jsonl")
 
-    replacement_path = data_dir / "replacement_sets.csv"
-    if replacement_path.exists():
-        load_replacement_sets(replacement_path)
+        replacement_path = data_dir / "replacement_sets.csv"
+        if replacement_path.exists():
+            load_replacement_sets(replacement_path)
 
-    rules_path = data_dir / "matching_rules.csv"
-    if rules_path.exists():
-        load_matching_rules(rules_path)
+        rules_path = data_dir / "matching_rules.csv"
+        if rules_path.exists():
+            load_matching_rules(rules_path)
+
+    if args.catalog_jsonl:
+        load_catalog_jsonl(
+            args.catalog_jsonl,
+            load_ksm=not args.mtr_only,
+        )
 
     
     print("Все данные загружены!")

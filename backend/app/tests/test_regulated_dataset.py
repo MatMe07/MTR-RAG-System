@@ -159,6 +159,20 @@ class RegulatedDatasetTest(unittest.TestCase):
             self.assertTrue(standard_sources)
             self.assertTrue(standard_sources.issubset(standard_source_ids))
 
+    def test_cards_keep_backend_search_contract(self):
+        for card in self.cards:
+            properties = card["properties"]
+            self.assertIn("pn", properties)
+            self.assertIn("gost_tu", properties)
+            self.assertIn("h2s_confirmed", properties)
+            self.assertIn("co2_confirmed", properties)
+            self.assertIsNone(properties["h2s_confirmed"]["value"])
+            self.assertIsNone(properties["co2_confirmed"]["value"])
+            self.assertEqual(
+                properties["gost_tu"]["value"],
+                properties["standard"]["value"],
+            )
+
     def test_all_cards_validate_against_item_card_v2(self):
         schema = json.loads(
             (REPO_ROOT / "docs/schemas/item_card.schema.json").read_text(

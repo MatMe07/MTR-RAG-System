@@ -1,13 +1,63 @@
 # backend/app/utils/jsonb_utils.py
 
+from copy import deepcopy
 from typing import Any, Dict, Optional, List
 from app.schemas import ItemCard, Geometry, Pressure, Material, Environment, Coating, Normative
+
+
+CANONICAL_PROPERTY_ALIASES = {
+    "pressure": "pn",
+    "gost_or_tu": "gost_tu",
+}
+
+PROPERTY_READ_FALLBACKS = {
+    "pn": ("pressure",),
+    "pressure": ("pn",),
+    "gost_tu": ("gost_or_tu", "standard"),
+    "gost_or_tu": ("gost_tu", "standard"),
+}
+
+
+def canonical_property_name(key: str) -> str:
+    return CANONICAL_PROPERTY_ALIASES.get(key, key)
+
+
+def normalize_properties(properties: Dict) -> Dict:
+    """Return JSONB properties using canonical keys without losing metadata."""
+    if not properties:
+        return {}
+
+    result = {}
+    explicit_keys = {
+        canonical_property_name(key)
+        for key in properties
+        if key not in CANONICAL_PROPERTY_ALIASES
+    }
+
+    for key, characteristic in properties.items():
+        canonical_key = canonical_property_name(key)
+        if key in CANONICAL_PROPERTY_ALIASES and canonical_key in explicit_keys:
+            continue
+        result[canonical_key] = deepcopy(characteristic)
+
+    # ItemCardV2 used "standard" before the backend contract introduced
+    # the explicit manufacturing-standard key.
+    if "gost_tu" not in result and "standard" in result:
+        result["gost_tu"] = deepcopy(result["standard"])
+
+    return result
 
 
 def get_property_value(properties: Dict, key: str) -> Optional[Any]:
     if not properties:
         return None
+
     prop = properties.get(key)
+    if prop is None:
+        for fallback_key in PROPERTY_READ_FALLBACKS.get(key, ()):
+            if fallback_key in properties:
+                prop = properties[fallback_key]
+                break
     if isinstance(prop, dict):
         return prop.get('value')
     return prop
@@ -16,13 +66,20 @@ def get_property_value(properties: Dict, key: str) -> Optional[Any]:
 def get_property_unit(properties: Dict, key: str) -> Optional[str]:
     if not properties:
         return None
+
     prop = properties.get(key)
+    if prop is None:
+        for fallback_key in PROPERTY_READ_FALLBACKS.get(key, ()):
+            if fallback_key in properties:
+                prop = properties[fallback_key]
+                break
     if isinstance(prop, dict):
         return prop.get('unit')
     return None
 
 
 def set_property_value(properties: Dict, key: str, value: Any, unit: Optional[str] = None) -> Dict:
+    key = canonical_property_name(key)
     if value is None:
         if key in properties:
             del properties[key]
@@ -54,7 +111,7 @@ def card_to_properties(card: ItemCard) -> Dict:
             props = set_property_value(props, 'radius', card.geometry.radius)
     
     if card.pressure and card.pressure.pn is not None:
-        props = set_property_value(props, 'pressure', card.pressure.pn, 'МПа')
+        props = set_property_value(props, 'pn', card.pressure.pn, 'PN')
     
     if card.material:
         if card.material.steel_grade:
@@ -88,7 +145,7 @@ def card_to_properties(card: ItemCard) -> Dict:
     
     if card.normative:
         if card.normative.gost_tu:
-            props = set_property_value(props, 'gost_or_tu', card.normative.gost_tu)
+            props = set_property_value(props, 'gost_tu', card.normative.gost_tu)
         if card.normative.lnd_sections:
             props = set_property_value(props, 'lnd_sections', card.normative.lnd_sections)
     
@@ -108,7 +165,7 @@ def properties_to_card_dict(properties: Dict, mtr_code: str = None, ksm_code: st
             "radius": get_property_value(properties, 'radius')
         },
         "pressure": {
-            "pn": get_property_value(properties, 'pressure')
+            "pn": get_property_value(properties, 'pn')
         },
         "material": {
             "steel_grade": get_property_value(properties, 'steel_grade'),
@@ -129,7 +186,7 @@ def properties_to_card_dict(properties: Dict, mtr_code: str = None, ksm_code: st
             "coating_standard": get_property_value(properties, 'coating_standard')
         },
         "normative": {
-            "gost_tu": get_property_value(properties, 'gost_or_tu'),
+            "gost_tu": get_property_value(properties, 'gost_tu'),
             "lnd_sections": get_property_value(properties, 'lnd_sections') or []
         }
     }
