@@ -105,6 +105,36 @@ class FrontendAppTest(unittest.TestCase):
         self.assertIn("наружное покрытие отсутствует", query)
         self.assertNotIn("пригодность к H2S подтверждена", query)
 
+    def test_approved_question_loads_route_and_acceptance_criteria(self):
+        query = (
+            "Какой аналог отвода 90 426 на 10 подойдет для H2S, "
+            "покажи сначала то, что есть на складе?"
+        )
+
+        context = app.build_query_review_context(query, {})
+
+        self.assertEqual(context["scenario"]["case_id"], "AQ002")
+        self.assertEqual(context["route"], "agent")
+        self.assertIn("stock_query", context["required_tools"])
+        self.assertIn(
+            "подтверждение H2S",
+            context["scenario"]["answer_must_include"],
+        )
+
+    def test_missing_fields_are_read_from_extraction_metadata(self):
+        missing = app.card_missing_fields(
+            {
+                "extraction": {
+                    "missing_fields": ["pressure.pn", "material.steel_grade"]
+                }
+            }
+        )
+
+        self.assertEqual(
+            missing,
+            ["pressure.pn", "material.steel_grade"],
+        )
+
     @patch("frontend.app.post_json")
     @patch("frontend.app.upload_passport")
     def test_passport_is_uploaded_before_search(

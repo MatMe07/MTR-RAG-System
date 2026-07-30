@@ -3,6 +3,8 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
+from app.services.search_router import route_query_text
+
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 QUESTIONS_PATH = (
@@ -75,12 +77,31 @@ class AgentQuestionsTest(unittest.TestCase):
 
     def test_all_questions_require_sources_and_human_review(self):
         for question in self.questions:
-            self.assertEqual(question["expected_route"], "agent")
+            self.assertIn(
+                question["expected_route"],
+                {"ordinary", "agent"},
+            )
             self.assertTrue(question["required_tools"])
             self.assertTrue(question["required_sources"])
             self.assertTrue(question["answer_must_include"])
             self.assertTrue(question["mandatory_warning"])
             self.assertTrue(question["human_review_required"])
+
+    def test_routes_match_the_approved_question_metadata(self):
+        self.assertEqual(
+            Counter(
+                question["expected_route"]
+                for question in self.questions
+            ),
+            {"agent": 36, "ordinary": 4},
+        )
+        for question in self.questions:
+            decision = route_query_text(question["question"])
+            self.assertEqual(
+                decision["route"],
+                question["expected_route"],
+                question["case_id"],
+            )
 
     def test_catalog_and_graph_targets_really_exist(self):
         ksm_codes = {

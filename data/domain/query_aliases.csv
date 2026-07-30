@@ -1,0 +1,107 @@
+category;canonical;alias;automatic;description
+parameter_name;dn;dn;true;Номинальный диаметр
+parameter_name;dn;ду;true;Русское обозначение условного прохода
+parameter_name;dn;du;true;Латинская запись ДУ
+parameter_name;dn;условный проход;true;Полное название DN
+parameter_name;dn;номинальный диаметр;true;Полное название DN
+parameter_name;pn;pn;true;Номинальное давление
+parameter_name;pn;ру;true;Русское обозначение номинального давления
+parameter_name;pn;py;true;Частая латинская опечатка для Ру
+parameter_name;pn;pu;true;Частая латинская опечатка для Ру
+parameter_name;pn;номинальное давление;true;Полное название PN
+parameter_name;pn;давление;false;Может означать PN рабочее или испытательное давление
+item_type;отвод;отвод;true;Каноническое название
+item_type;отвод;отвода;true;Родительный падеж
+item_type;отвод;отводу;true;Дательный падеж
+item_type;отвод;колено;true;Разговорное название отвода
+item_type;отвод;окш;false;Обозначение крутозагнутого штампосварного отвода
+item_type;труба;труба;true;Каноническое название
+item_type;труба;трубу;true;Винительный падеж
+item_type;труба;трубы;true;Родительный падеж
+item_type;переход;переход;true;Каноническое название
+item_type;переход;перехода;true;Родительный падеж
+item_type;переход;переходу;true;Дательный падеж
+item_type;переход;редукционный переход;true;Развернутое название перехода
+item_type;задвижка;задвижка;true;Каноническое название
+item_type;задвижка;задвижке;true;Дательный и предложный падеж
+item_type;задвижка;задвижки;true;Родительный падеж
+item_type;задвижка;задвижку;true;Винительный падеж
+item_type;задвижка;задвишка;true;Частая опечатка
+item_type;заглушка;заглушка;true;Каноническое название
+item_type;заглушка;заглушке;true;Дательный и предложный падеж
+item_type;заглушка;заглушки;true;Родительный падеж
+item_type;заглушка;заглушку;true;Винительный падеж
+item_type;тройник;тройник;true;Каноническое название
+item_type;тройник;тройника;true;Родительный падеж
+medium;h2s;h2s;true;Химическая формула сероводорода
+medium;h2s;сероводород;true;Название H2S
+medium;h2s;сероводородом;true;Творительный падеж
+medium;h2s;сероводородная среда;true;Среда с H2S
+medium;h2s;газ с сероводородом;true;Газовая среда с H2S
+medium;co2;co2;true;Химическая формула углекислого газа
+medium;co2;углекислый газ;true;Название CO2
+medium;co2;диоксид углерода;true;Название CO2
+medium;corrosive_gas;кислый газ;false;Неоднозначно без состава среды
+medium;corrosive_gas;кислого газа;false;Неоднозначная форма в родительном падеже
+action;replacement;аналог;false;Поиск аналога
+action;replacement;аналога;false;Родительный падеж
+action;replacement;аналоги;false;Множественное число
+action;replacement;замена;false;Поиск замены
+action;replacement;замену;false;Винительный падеж
+action;replacement;замены;false;Родительный падеж
+action;replacement;заменить;false;Поиск замены
+action;replacement;чем заменить;false;Разговорный запрос на аналог
+action;replacement;подбери;false;Подбор кандидатов
+action;inventory;склад;false;Работа со складскими остатками
+action;inventory;складе;false;Предложный падеж
+action;inventory;склада;false;Родительный падеж
+action;inventory;остаток;false;Работа со складскими остатками
+action;inventory;остатки;false;Работа со складскими остатками
+action;inventory;остатком;false;Творительный падеж
+action;inventory;осталось;false;Разговорная проверка остатка
+action;inventory;в наличии;false;Проверка наличия
+action;inventory;из наличия;false;Подбор из наличия
+action;inventory;закупка;false;Планирование закупки
+action;inventory;закупки;false;Родительный падеж
+action;inventory;пополнение;false;Пополнение склада
+action;maintenance;ремонт;false;Сценарий ТОиР
+action;maintenance;ремонта;false;Родительный падеж
+action;maintenance;тоир;false;Техническое обслуживание и ремонт
+action;maintenance;обслуживание;false;Сценарий ТОиР
+action;maintenance;обслуживания;false;Родительный падеж
+action;maintenance;плановой замены;false;Плановая работа ТОиР
+action;maintenance;сломался;false;Отказ оборудования
+action;maintenance;сломалась;false;Отказ оборудования
+action;maintenance;сломались;false;Множественное число
+action;maintenance;отказала;false;Отказ оборудования
+action;maintenance;поврежден;false;Повреждение оборудования
+action;maintenance;повреждена;false;Повреждение оборудования
+action;maintenance;утечка;false;Аварийный ремонт
+action;maintenance;утечку;false;Винительный падеж
+action;explanation;расскажи;false;Объяснение оборудования
+action;explanation;объясни;false;Объяснение параметров
+action;explanation;что означает;false;Расшифровка обозначения
+action;explanation;чем отличается;false;Сравнительное объяснение
+action;document_search;паспорт;false;Поиск подтверждающего документа
+action;document_search;паспорта;false;Множественное число
+action;document_search;ту;false;Поиск технических условий
+action;document_search;гост;false;Поиск стандарта
+action;document_search;госты;false;Множественное число
+action;document_search;откуда взяты;false;Поиск происхождения нормативов
+action;document_search;документ;false;Поиск документа
+action;object_configuration;собери список деталей;false;Комплектация участка
+action;object_configuration;из каких деталей состоит;false;Разбор состава объекта
+action;object_configuration;добавь деталь;false;Дополнение конфигурации объекта
+action;object_configuration;в схеме;false;Анализ схемы объекта
+action;impact_analysis;что изменится;false;Анализ последствий изменения
+action;impact_analysis;переводят;false;Изменение рабочей среды объекта
+action;impact_analysis;придется заменить;false;Анализ затронутых деталей
+action;impact_analysis;нужно перепроверить;false;Анализ влияния изменения
+object_relation;object_scope;участок;false;Упоминание области эксплуатации
+object_relation;object_scope;участка;false;Родительный падеж
+object_relation;object_scope;участке;false;Предложный падеж
+object_relation;graph;соседние детали;false;Проверка связанных компонентов
+object_relation;graph;до и после;false;Проверка положения компонентов
+object_relation;graph;перед задвижкой;false;Проверка положения компонентов
+object_relation;graph;рядом с ней;false;Проверка соседних компонентов
+object_relation;graph;схема;false;Проверка конфигурации объекта
