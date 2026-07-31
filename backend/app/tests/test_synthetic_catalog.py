@@ -5,7 +5,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-from app.scripts.generate_synthetic_catalog import (
+from backend.app.scripts.GEN.generate_synthetic_catalog import (
     DEFAULT_CONFIG,
     calculate_allocations,
     generate_catalog,

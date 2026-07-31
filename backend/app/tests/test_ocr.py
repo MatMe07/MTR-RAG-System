@@ -12,7 +12,7 @@ def test_ocr(pdf_path: str):
     print(f"Тестируем OCR на файле: {pdf_path}")
     print("-" * 50)
 
-    ocr = OCRService(use_paddle=True)
+    ocr = OCRService()
 
     try:
         results = ocr.extract_text_from_pdf(pdf_path)
@@ -25,9 +25,7 @@ def test_ocr(pdf_path: str):
 
     for page in results:
         print(f"\n--- Страница {page['page_number']} ---")
-        print(f"Уверенность: {page['confidence']:.2%}")
         print(f"Текст ({len(page['text'])} символов):")
-
         text_preview = page['text'][:300]
         if len(page['text']) > 300:
             text_preview += "..."
@@ -36,7 +34,7 @@ def test_ocr(pdf_path: str):
         if page['tables']:
             print(f"\nНайдено таблиц: {len(page['tables'])}")
             for i, table in enumerate(page['tables']):
-                print(f"\nТаблица {i+1}: {table['row_count']} строк, {table['col_count']} колонок")
+                print(f"\nТаблица {i+1}: {len(table['rows'])} строк")
                 print("-" * 30)
                 for row in table['rows']:
                     print(" | ".join(row))

@@ -163,7 +163,7 @@ class LLMService:
         # print(prompt)
         # print(self.llm)
         response = self.llm.invoke(prompt).content
-        # print(response)
+        print(response)
         return self._extract_card_from_response(
             response,
             {"type": "user_query", "text": query}
@@ -186,6 +186,8 @@ class LLMService:
                 return self._empty_card(source)
             data = json.loads(json_match.group())
             source_copy = {k: v for k, v in source.items() if k != "type"}
+            # print(data)
+            # print(source_copy)
             return ItemCard(
                 card_id=None,
                 mtr_code=None,
@@ -228,7 +230,7 @@ class LLMService:
                         'missing_fields', []
                     ),
                 ),
-                sources=[Source(type="llm", **source_copy)]
+                sources=[Source( type="LLM",  **source_copy)]
             )
         except Exception:
             return self._empty_card(source)

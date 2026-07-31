@@ -6,7 +6,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-from app.scripts.generate_regulated_dataset import (
+from backend.app.scripts.GEN.generate_regulated_dataset import (
     DEFAULT_REGULATION,
     generate_regulated_dataset,
     iter_cards,

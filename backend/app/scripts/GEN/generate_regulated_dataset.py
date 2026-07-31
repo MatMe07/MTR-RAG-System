@@ -29,6 +29,7 @@ DOMAIN = {
 PN_VALUES = [16, 25, 40, 63, 100, 160]
 STRENGTH_CLASSES = ["К42", "К48", "К52", "К56"]
 DRIVE_TYPES = ["ручной", "электрический", "пневматический"]
+CLIMATE_VERSIONS = ["У", "УХЛ", "ХЛ"]
 OUTER_DIAMETER_TO_DN = {
     32: 25,
     38: 32,
@@ -100,6 +101,10 @@ def _coating_value(rng: random.Random, probability: float) -> bool | None:
     if roll < 0.18:
         return None
     return roll < 0.18 + probability
+
+
+def _climate_version(rng: random.Random) -> str:
+    return rng.choice(CLIMATE_VERSIONS)
 
 
 def _common_properties(
@@ -208,12 +213,16 @@ def _common_properties(
             [synthetic_fragment],
             unit="pcs",
         ),
+        "climate_version": _fact(
+            _climate_version(rng),
+            [synthetic_fragment],
+        ),
     }
     if rule["item_type"] != "задвижка":
         properties["pn"] = _fact(
             rng.choice(PN_VALUES),
             [synthetic_fragment],
-            unit="PN",
+            unit="МПа",
         )
         properties["pn_verification_status"] = _fact(
             "requires_strength_calculation_and_project",
@@ -245,7 +254,7 @@ def _apply_dimensions(
         properties["dn"] = _fact(
             OUTER_DIAMETER_TO_DN[diameter],
             [synthetic_fragment],
-            unit="DN",
+            unit="мм",
         )
     elif item_type == "переход":
         d1, t1, d2, t2 = rng.choice(rule["dimension_profiles"])
@@ -255,17 +264,17 @@ def _apply_dimensions(
                 "wall_thickness_1": _fact(t1, [synthetic_fragment], unit="mm"),
                 "outer_diameter_2": _fact(d2, [synthetic_fragment], unit="mm"),
                 "wall_thickness_2": _fact(t2, [synthetic_fragment], unit="mm"),
-                "d1": _fact(d1, [synthetic_fragment], unit="mm"),
-                "d2": _fact(d2, [synthetic_fragment], unit="mm"),
+                "d1": _fact(d1, [synthetic_fragment], unit="мм"),
+                "d2": _fact(d2, [synthetic_fragment], unit="мм"),
                 "dn_1": _fact(
                     OUTER_DIAMETER_TO_DN[d1],
                     [synthetic_fragment],
-                    unit="DN",
+                    unit="мм",
                 ),
                 "dn_2": _fact(
                     OUTER_DIAMETER_TO_DN[d2],
                     [synthetic_fragment],
-                    unit="DN",
+                    unit="мм",
                 ),
             }
         )
@@ -293,24 +302,24 @@ def _apply_dimensions(
                 "dn": _fact(
                     OUTER_DIAMETER_TO_DN[d_main],
                     [synthetic_fragment],
-                    unit="DN",
+                    unit="мм",
                 ),
                 "dn_main": _fact(
                     OUTER_DIAMETER_TO_DN[d_main],
                     [synthetic_fragment],
-                    unit="DN",
+                    unit="мм",
                 ),
                 "dn_branch": _fact(
                     OUTER_DIAMETER_TO_DN[d_branch],
                     [synthetic_fragment],
-                    unit="DN",
+                    unit="мм",
                 ),
             }
         )
     elif item_type == "задвижка":
         dn, pn = rng.choice(rule["dn_pn_profiles"])
-        properties["dn"] = _fact(dn, [synthetic_fragment], unit="mm")
-        properties["pn"] = _fact(pn, [synthetic_fragment], unit="PN")
+        properties["dn"] = _fact(dn, [synthetic_fragment], unit="мм")
+        properties["pn"] = _fact(pn, [synthetic_fragment], unit="МПа")
         properties["connection_type"] = _fact(
             "фланцевое", [synthetic_fragment]
         )
@@ -347,7 +356,7 @@ def _apply_dimensions(
         )
     elif item_type == "отвод":
         properties["angle"] = _fact(
-            rng.choice(rule["angles"]), [synthetic_fragment], unit="deg"
+            rng.choice(rule["angles"]), [synthetic_fragment], unit="°"
         )
         properties["bend_radius"] = _fact(
             "1.5 DN", [synthetic_fragment]
@@ -542,6 +551,7 @@ def _write_catalog_csv(
         "co2_confirmed",
         "inner_coating",
         "outer_coating",
+        "climate_version",
         "gost_tu",
         "standard",
         "stock_qty",
@@ -591,6 +601,9 @@ def _write_catalog_csv(
                     ),
                     "outer_coating": _property_value(
                         card, "outer_coating"
+                    ),
+                    "climate_version": _property_value(
+                        card, "climate_version"
                     ),
                     "gost_tu": _property_value(card, "gost_tu"),
                     "standard": _property_value(card, "standard"),

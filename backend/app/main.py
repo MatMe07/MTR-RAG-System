@@ -31,7 +31,6 @@ app = FastAPI(
 UPLOAD_DIR = "uploads/passports"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Глобальные сервисы (создаются один раз при старте)
 llm = LLMService()
 embeddings = EmbeddingService()
 ocr = get_ocr_service()
@@ -67,9 +66,6 @@ async def upload_passport(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    """
-    Загружает PDF-паспорт с OCR-обработкой.
-    """
     from app.models import Document, DocumentPage, ExtractedCharacteristic
     import numpy as np
     
@@ -101,26 +97,31 @@ async def upload_passport(
 
         doc.page_count = len(pages)
         doc.ocr_status = "done"
-        doc.ocr_confidence = np.mean([p['confidence'] for p in pages]) if pages else 0
+        # Явно конвертируем numpy float в Python float
+        doc.ocr_confidence = float(np.mean([p['confidence'] for p in pages])) if pages else 0.0
 
         full_text = "\n".join([p['text'] for p in pages if p['text']])
         if full_text.strip():
-            card = llm.extract_card_from_text(
-                full_text,
-                {"document_id": doc.id, "file_name": file.filename}
-            )
-            card_dict = card.dict() if hasattr(card, 'dict') else card
-            
-            for field, value in card_dict.items():
-                if value is not None and field not in ['sources', 'card_id', 'mtr_code', 'ksm_code']:
-                    if isinstance(value, (dict, list)):
-                        continue
-                    char = ExtractedCharacteristic(
-                        document_id=doc.id,
-                        field_name=field,
-                        normalized_value=str(value)
-                    )
-                    db.add(char)
+            try:
+                card = llm.extract_card_from_text(
+                    full_text,
+                    {"document_id": doc.id, "file_name": file.filename}
+                )
+                card_dict = card.dict() if hasattr(card, 'dict') else card
+                
+                for field, value in card_dict.items():
+                    if value is not None and field not in ['sources', 'card_id', 'mtr_code', 'ksm_code']:
+                        if isinstance(value, (dict, list)):
+                            continue
+                        char = ExtractedCharacteristic(
+                            document_id=doc.id,
+                            field_name=field,
+                            normalized_value=str(value)
+                        )
+                        db.add(char)
+            except Exception as llm_err:
+                print(f"LLM извлечение не удалось: {llm_err}")
+                # Продолжаем, даже если LLM не сработала
 
         db.commit()
         db.refresh(doc)
@@ -145,9 +146,6 @@ async def match(
     candidate_card: ItemCard,
     db: Session = Depends(get_db)
 ):
-    """
-    Сравнивает две карточки.
-    """
     rules = RulesEngine(db)
     result = rules.evaluate(requested_card, candidate_card)
     
@@ -164,7 +162,7 @@ async def match(
         warnings=result["warnings"],
         expert_comment=result["expert_comment"],
         rule_trace=result["rule_trace"],
-        sources=[]
+        sources=[]  
     )
 
 

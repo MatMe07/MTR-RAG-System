@@ -1,6 +1,6 @@
 import unittest
 
-from app.scripts.audit_catalog_completeness import (
+from backend.app.scripts.GEN.audit_catalog_completeness import (
     audit_catalog,
     load_cards,
 )

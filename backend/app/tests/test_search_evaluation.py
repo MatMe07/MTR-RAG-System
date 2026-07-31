@@ -1,6 +1,6 @@
 import unittest
 
-from app.scripts.evaluate_search_results import evaluate_cases
+from backend.app.scripts.GEN.evaluate_search_results import evaluate_cases
 
 
 class SearchEvaluationTest(unittest.TestCase):

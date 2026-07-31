@@ -45,10 +45,10 @@
     {
       "component_id": "COMP-SYN-001",
       "unit_id": "UNIT-SYN-GAS-001",
-      "installed_card_id": "SYN-REG-CARD-000008",
-      "ksm_code": "KSM-SYN-REG-000008",
+      "installed_card_id": "SYN-REG-CARD-000003",
+      "ksm_code": "KSM-SYN-REG-000003",
       "item_type": "труба",
-      "designation": "Труба бесшовная горячедеформированная 426x14 13ХФА",
+      "designation": "Труба бесшовная горячедеформированная 89x6 09Г2С",
       "operating_medium": "природный газ",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -56,10 +56,10 @@
     {
       "component_id": "COMP-SYN-002",
       "unit_id": "UNIT-SYN-GAS-001",
-      "installed_card_id": "SYN-REG-CARD-000221",
-      "ksm_code": "KSM-SYN-REG-000221",
+      "installed_card_id": "SYN-REG-CARD-000222",
+      "ksm_code": "KSM-SYN-REG-000222",
       "item_type": "отвод",
-      "designation": "ОКШ 45-159x6 13ХФА",
+      "designation": "ОКШ 45-108x4 09ГСФ",
       "operating_medium": "природный газ",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -67,8 +67,8 @@
     {
       "component_id": "COMP-SYN-003",
       "unit_id": "UNIT-SYN-GAS-001",
-      "installed_card_id": "SYN-REG-CARD-000444",
-      "ksm_code": "KSM-SYN-REG-000444",
+      "installed_card_id": "SYN-REG-CARD-000445",
+      "ksm_code": "KSM-SYN-REG-000445",
       "item_type": "переход",
       "designation": "Переход концентрический 108x4-76x4 13ХФА",
       "operating_medium": "природный газ",
@@ -81,7 +81,7 @@
       "installed_card_id": "SYN-REG-CARD-000591",
       "ksm_code": "KSM-SYN-REG-000591",
       "item_type": "задвижка",
-      "designation": "Задвижка шиберная DN200 PN63",
+      "designation": "Задвижка клиновая DN80 PN25",
       "operating_medium": "природный газ",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -89,10 +89,10 @@
     {
       "component_id": "COMP-SYN-005",
       "unit_id": "UNIT-SYN-GAS-001",
-      "installed_card_id": "SYN-REG-CARD-000752",
-      "ksm_code": "KSM-SYN-REG-000752",
+      "installed_card_id": "SYN-REG-CARD-000742",
+      "ksm_code": "KSM-SYN-REG-000742",
       "item_type": "заглушка",
-      "designation": "Заглушка эллиптическая приварная 89x4 20",
+      "designation": "Заглушка эллиптическая приварная 57x3 20",
       "operating_medium": "природный газ",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -100,10 +100,10 @@
     {
       "component_id": "COMP-SYN-006",
       "unit_id": "UNIT-SYN-GAS-001",
-      "installed_card_id": "SYN-REG-CARD-000876",
-      "ksm_code": "KSM-SYN-REG-000876",
+      "installed_card_id": "SYN-REG-CARD-000872",
+      "ksm_code": "KSM-SYN-REG-000872",
       "item_type": "тройник",
-      "designation": "Тройник переходный 426x12-325x10 09ГСФ",
+      "designation": "Тройник переходный 426x12-325x10 13ХФА",
       "operating_medium": "природный газ",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -111,8 +111,8 @@
     {
       "component_id": "COMP-SYN-007",
       "unit_id": "UNIT-SYN-H2S-001",
-      "installed_card_id": "SYN-REG-CARD-000004",
-      "ksm_code": "KSM-SYN-REG-000004",
+      "installed_card_id": "SYN-REG-CARD-000008",
+      "ksm_code": "KSM-SYN-REG-000008",
       "item_type": "труба",
       "designation": "Труба бесшовная горячедеформированная 108x6 20",
       "operating_medium": "газ с H2S",
@@ -122,10 +122,10 @@
     {
       "component_id": "COMP-SYN-008",
       "unit_id": "UNIT-SYN-H2S-001",
-      "installed_card_id": "SYN-REG-CARD-000225",
-      "ksm_code": "KSM-SYN-REG-000225",
+      "installed_card_id": "SYN-REG-CARD-000223",
+      "ksm_code": "KSM-SYN-REG-000223",
       "item_type": "отвод",
-      "designation": "ОКШ 45-325x10 09ГСФ",
+      "designation": "ОКШ 90-76x4 09ГСФ",
       "operating_medium": "газ с H2S",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -133,10 +133,10 @@
     {
       "component_id": "COMP-SYN-009",
       "unit_id": "UNIT-SYN-H2S-001",
-      "installed_card_id": "SYN-REG-CARD-000441",
-      "ksm_code": "KSM-SYN-REG-000441",
+      "installed_card_id": "SYN-REG-CARD-000444",
+      "ksm_code": "KSM-SYN-REG-000444",
       "item_type": "переход",
-      "designation": "Переход концентрический 89x4-57x3 20",
+      "designation": "Переход концентрический 108x4-76x4 13ХФА",
       "operating_medium": "газ с H2S",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -147,7 +147,7 @@
       "installed_card_id": "SYN-REG-CARD-000593",
       "ksm_code": "KSM-SYN-REG-000593",
       "item_type": "задвижка",
-      "designation": "Задвижка шиберная DN400 PN160",
+      "designation": "Задвижка шиберная DN50 PN16",
       "operating_medium": "газ с H2S",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -155,10 +155,10 @@
     {
       "component_id": "COMP-SYN-011",
       "unit_id": "UNIT-SYN-H2S-001",
-      "installed_card_id": "SYN-REG-CARD-000743",
-      "ksm_code": "KSM-SYN-REG-000743",
+      "installed_card_id": "SYN-REG-CARD-000746",
+      "ksm_code": "KSM-SYN-REG-000746",
       "item_type": "заглушка",
-      "designation": "Заглушка эллиптическая приварная 219x8 09ГСФ",
+      "designation": "Заглушка эллиптическая приварная 377x12 13ХФА",
       "operating_medium": "газ с H2S",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -166,10 +166,10 @@
     {
       "component_id": "COMP-SYN-012",
       "unit_id": "UNIT-SYN-H2S-001",
-      "installed_card_id": "SYN-REG-CARD-000888",
-      "ksm_code": "KSM-SYN-REG-000888",
+      "installed_card_id": "SYN-REG-CARD-000876",
+      "ksm_code": "KSM-SYN-REG-000876",
       "item_type": "тройник",
-      "designation": "Тройник равнопроходной 89x4-89x4 20",
+      "designation": "Тройник переходный 426x12-325x10 13ХФА",
       "operating_medium": "газ с H2S",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -177,10 +177,10 @@
     {
       "component_id": "COMP-SYN-013",
       "unit_id": "UNIT-SYN-CO2-001",
-      "installed_card_id": "SYN-REG-CARD-000003",
-      "ksm_code": "KSM-SYN-REG-000003",
+      "installed_card_id": "SYN-REG-CARD-000014",
+      "ksm_code": "KSM-SYN-REG-000014",
       "item_type": "труба",
-      "designation": "Труба бесшовная горячедеформированная 133x6 20",
+      "designation": "Труба бесшовная горячедеформированная 273x10 13ХФА",
       "operating_medium": "газ с CO2",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -188,10 +188,10 @@
     {
       "component_id": "COMP-SYN-014",
       "unit_id": "UNIT-SYN-CO2-001",
-      "installed_card_id": "SYN-REG-CARD-000227",
-      "ksm_code": "KSM-SYN-REG-000227",
+      "installed_card_id": "SYN-REG-CARD-000231",
+      "ksm_code": "KSM-SYN-REG-000231",
       "item_type": "отвод",
-      "designation": "ОКШ 90-108x4 09ГСФ",
+      "designation": "ОКШ 90-426x10 13ХФА",
       "operating_medium": "газ с CO2",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -199,10 +199,10 @@
     {
       "component_id": "COMP-SYN-015",
       "unit_id": "UNIT-SYN-CO2-001",
-      "installed_card_id": "SYN-REG-CARD-000450",
-      "ksm_code": "KSM-SYN-REG-000450",
+      "installed_card_id": "SYN-REG-CARD-000447",
+      "ksm_code": "KSM-SYN-REG-000447",
       "item_type": "переход",
-      "designation": "Переход эксцентрический 273x10-219x8 13ХФА",
+      "designation": "Переход концентрический 76x4-57x3 20",
       "operating_medium": "газ с CO2",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -210,8 +210,8 @@
     {
       "component_id": "COMP-SYN-016",
       "unit_id": "UNIT-SYN-CO2-001",
-      "installed_card_id": "SYN-REG-CARD-000605",
-      "ksm_code": "KSM-SYN-REG-000605",
+      "installed_card_id": "SYN-REG-CARD-000598",
+      "ksm_code": "KSM-SYN-REG-000598",
       "item_type": "задвижка",
       "designation": "Задвижка шиберная DN100 PN40",
       "operating_medium": "газ с CO2",
@@ -221,10 +221,10 @@
     {
       "component_id": "COMP-SYN-017",
       "unit_id": "UNIT-SYN-CO2-001",
-      "installed_card_id": "SYN-REG-CARD-000746",
-      "ksm_code": "KSM-SYN-REG-000746",
+      "installed_card_id": "SYN-REG-CARD-000752",
+      "ksm_code": "KSM-SYN-REG-000752",
       "item_type": "заглушка",
-      "designation": "Заглушка эллиптическая приварная 76x4 20",
+      "designation": "Заглушка эллиптическая приварная 133x5 09ГСФ",
       "operating_medium": "газ с CO2",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -232,10 +232,10 @@
     {
       "component_id": "COMP-SYN-018",
       "unit_id": "UNIT-SYN-CO2-001",
-      "installed_card_id": "SYN-REG-CARD-000877",
-      "ksm_code": "KSM-SYN-REG-000877",
+      "installed_card_id": "SYN-REG-CARD-000874",
+      "ksm_code": "KSM-SYN-REG-000874",
       "item_type": "тройник",
-      "designation": "Тройник равнопроходной 325x10-325x10 09ГСФ",
+      "designation": "Тройник равнопроходной 57x3-57x3 09Г2С",
       "operating_medium": "газ с CO2",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -254,10 +254,10 @@
     {
       "component_id": "COMP-SYN-020",
       "unit_id": "UNIT-SYN-MIX-001",
-      "installed_card_id": "SYN-REG-CARD-000222",
-      "ksm_code": "KSM-SYN-REG-000222",
+      "installed_card_id": "SYN-REG-CARD-000225",
+      "ksm_code": "KSM-SYN-REG-000225",
       "item_type": "отвод",
-      "designation": "ОКШ 45-133x6 09Г2С",
+      "designation": "ОКШ 90-133x6 09ГСФ",
       "operating_medium": "газ с H2S и CO2",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -265,10 +265,10 @@
     {
       "component_id": "COMP-SYN-021",
       "unit_id": "UNIT-SYN-MIX-001",
-      "installed_card_id": "SYN-REG-CARD-000443",
-      "ksm_code": "KSM-SYN-REG-000443",
+      "installed_card_id": "SYN-REG-CARD-000441",
+      "ksm_code": "KSM-SYN-REG-000441",
       "item_type": "переход",
-      "designation": "Переход эксцентрический 325x10-219x8 20",
+      "designation": "Переход эксцентрический 133x5-89x4 20",
       "operating_medium": "газ с H2S и CO2",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -276,10 +276,10 @@
     {
       "component_id": "COMP-SYN-022",
       "unit_id": "UNIT-SYN-MIX-001",
-      "installed_card_id": "SYN-REG-CARD-000602",
-      "ksm_code": "KSM-SYN-REG-000602",
+      "installed_card_id": "SYN-REG-CARD-000594",
+      "ksm_code": "KSM-SYN-REG-000594",
       "item_type": "задвижка",
-      "designation": "Задвижка шиберная DN200 PN63",
+      "designation": "Задвижка шиберная DN250 PN100",
       "operating_medium": "газ с H2S и CO2",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -287,10 +287,10 @@
     {
       "component_id": "COMP-SYN-023",
       "unit_id": "UNIT-SYN-MIX-001",
-      "installed_card_id": "SYN-REG-CARD-000762",
-      "ksm_code": "KSM-SYN-REG-000762",
+      "installed_card_id": "SYN-REG-CARD-000741",
+      "ksm_code": "KSM-SYN-REG-000741",
       "item_type": "заглушка",
-      "designation": "Заглушка эллиптическая приварная 89x4 09ГСФ",
+      "designation": "Заглушка эллиптическая приварная 76x4 09ГСФ",
       "operating_medium": "газ с H2S и CO2",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -298,10 +298,10 @@
     {
       "component_id": "COMP-SYN-024",
       "unit_id": "UNIT-SYN-MIX-001",
-      "installed_card_id": "SYN-REG-CARD-000871",
-      "ksm_code": "KSM-SYN-REG-000871",
+      "installed_card_id": "SYN-REG-CARD-000880",
+      "ksm_code": "KSM-SYN-REG-000880",
       "item_type": "тройник",
-      "designation": "Тройник переходный 325x10-219x8 09ГСФ",
+      "designation": "Тройник переходный 89x4-57x3 20",
       "operating_medium": "газ с H2S и CO2",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -312,7 +312,7 @@
       "installed_card_id": "SYN-REG-CARD-000002",
       "ksm_code": "KSM-SYN-REG-000002",
       "item_type": "труба",
-      "designation": "Труба бесшовная горячедеформированная 89x6 13ХФА",
+      "designation": "Труба бесшовная горячедеформированная 133x6 13ХФА",
       "operating_medium": "нефть",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -320,10 +320,10 @@
     {
       "component_id": "COMP-SYN-026",
       "unit_id": "UNIT-SYN-OIL-001",
-      "installed_card_id": "SYN-REG-CARD-000226",
-      "ksm_code": "KSM-SYN-REG-000226",
+      "installed_card_id": "SYN-REG-CARD-000224",
+      "ksm_code": "KSM-SYN-REG-000224",
       "item_type": "отвод",
-      "designation": "ОКШ 90-133x6 09ГСФ",
+      "designation": "ОКШ 90-377x12 13ХФА",
       "operating_medium": "нефть",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -334,7 +334,7 @@
       "installed_card_id": "SYN-REG-CARD-000442",
       "ksm_code": "KSM-SYN-REG-000442",
       "item_type": "переход",
-      "designation": "Переход эксцентрический 89x4-57x3 09Г2С",
+      "designation": "Переход концентрический 159x6-108x4 09ГСФ",
       "operating_medium": "нефть",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -342,10 +342,10 @@
     {
       "component_id": "COMP-SYN-028",
       "unit_id": "UNIT-SYN-OIL-001",
-      "installed_card_id": "SYN-REG-CARD-000592",
-      "ksm_code": "KSM-SYN-REG-000592",
+      "installed_card_id": "SYN-REG-CARD-000596",
+      "ksm_code": "KSM-SYN-REG-000596",
       "item_type": "задвижка",
-      "designation": "Задвижка шиберная DN25 PN16",
+      "designation": "Задвижка клиновая DN80 PN25",
       "operating_medium": "нефть",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -353,10 +353,10 @@
     {
       "component_id": "COMP-SYN-029",
       "unit_id": "UNIT-SYN-OIL-001",
-      "installed_card_id": "SYN-REG-CARD-000741",
-      "ksm_code": "KSM-SYN-REG-000741",
+      "installed_card_id": "SYN-REG-CARD-000743",
+      "ksm_code": "KSM-SYN-REG-000743",
       "item_type": "заглушка",
-      "designation": "Заглушка эллиптическая приварная 57x3 13ХФА",
+      "designation": "Заглушка эллиптическая приварная 133x5 20",
       "operating_medium": "нефть",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -364,10 +364,10 @@
     {
       "component_id": "COMP-SYN-030",
       "unit_id": "UNIT-SYN-OIL-001",
-      "installed_card_id": "SYN-REG-CARD-000872",
-      "ksm_code": "KSM-SYN-REG-000872",
+      "installed_card_id": "SYN-REG-CARD-000875",
+      "ksm_code": "KSM-SYN-REG-000875",
       "item_type": "тройник",
-      "designation": "Тройник равнопроходной 89x4-89x4 13ХФА",
+      "designation": "Тройник переходный 159x6-108x4 13ХФА",
       "operating_medium": "нефть",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -375,10 +375,10 @@
     {
       "component_id": "COMP-SYN-031",
       "unit_id": "UNIT-SYN-WATER-001",
-      "installed_card_id": "SYN-REG-CARD-000016",
-      "ksm_code": "KSM-SYN-REG-000016",
+      "installed_card_id": "SYN-REG-CARD-000025",
+      "ksm_code": "KSM-SYN-REG-000025",
       "item_type": "труба",
-      "designation": "Труба бесшовная горячедеформированная 133x6 13ХФА",
+      "designation": "Труба бесшовная горячедеформированная 159x8 09ГСФ",
       "operating_medium": "техническая вода",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -386,10 +386,10 @@
     {
       "component_id": "COMP-SYN-032",
       "unit_id": "UNIT-SYN-WATER-001",
-      "installed_card_id": "SYN-REG-CARD-000223",
-      "ksm_code": "KSM-SYN-REG-000223",
+      "installed_card_id": "SYN-REG-CARD-000234",
+      "ksm_code": "KSM-SYN-REG-000234",
       "item_type": "отвод",
-      "designation": "ОКШ 45-76x4 09Г2С",
+      "designation": "ОКШ 45-377x12 09Г2С",
       "operating_medium": "техническая вода",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -397,10 +397,10 @@
     {
       "component_id": "COMP-SYN-033",
       "unit_id": "UNIT-SYN-WATER-001",
-      "installed_card_id": "SYN-REG-CARD-000455",
-      "ksm_code": "KSM-SYN-REG-000455",
+      "installed_card_id": "SYN-REG-CARD-000443",
+      "ksm_code": "KSM-SYN-REG-000443",
       "item_type": "переход",
-      "designation": "Переход эксцентрический 219x8-159x6 20",
+      "designation": "Переход концентрический 133x5-89x4 20",
       "operating_medium": "техническая вода",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -408,10 +408,10 @@
     {
       "component_id": "COMP-SYN-034",
       "unit_id": "UNIT-SYN-WATER-001",
-      "installed_card_id": "SYN-REG-CARD-000623",
-      "ksm_code": "KSM-SYN-REG-000623",
+      "installed_card_id": "SYN-REG-CARD-000595",
+      "ksm_code": "KSM-SYN-REG-000595",
       "item_type": "задвижка",
-      "designation": "Задвижка шиберная DN200 PN63",
+      "designation": "Задвижка клиновая DN150 PN40",
       "operating_medium": "техническая вода",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -419,10 +419,10 @@
     {
       "component_id": "COMP-SYN-035",
       "unit_id": "UNIT-SYN-WATER-001",
-      "installed_card_id": "SYN-REG-CARD-000747",
-      "ksm_code": "KSM-SYN-REG-000747",
+      "installed_card_id": "SYN-REG-CARD-000744",
+      "ksm_code": "KSM-SYN-REG-000744",
       "item_type": "заглушка",
-      "designation": "Заглушка эллиптическая приварная 325x10 13ХФА",
+      "designation": "Заглушка эллиптическая приварная 57x3 09ГСФ",
       "operating_medium": "техническая вода",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -430,10 +430,10 @@
     {
       "component_id": "COMP-SYN-036",
       "unit_id": "UNIT-SYN-WATER-001",
-      "installed_card_id": "SYN-REG-CARD-000878",
-      "ksm_code": "KSM-SYN-REG-000878",
+      "installed_card_id": "SYN-REG-CARD-000871",
+      "ksm_code": "KSM-SYN-REG-000871",
       "item_type": "тройник",
-      "designation": "Тройник переходный 76x4-57x3 13ХФА",
+      "designation": "Тройник равнопроходной 57x3-57x3 09Г2С",
       "operating_medium": "техническая вода",
       "compatibility_status": "requires_project_and_passport",
       "expert_review_required": true
@@ -441,10 +441,10 @@
     {
       "component_id": "COMP-SYN-037",
       "unit_id": "UNIT-SYN-CORR-001",
-      "installed_card_id": "SYN-REG-CARD-000019",
-      "ksm_code": "KSM-SYN-REG-000019",
+      "installed_card_id": "SYN-REG-CARD-000006",
+      "ksm_code": "KSM-SYN-REG-000006",
       "item_type": "труба",
-      "designation": "Труба бесшовная горячедеформированная 325x12 09Г2С",
+      "designation": "Труба бесшовная горячедеформированная 377x12 20",
       "operating_medium": "коррозионно-активная среда",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -452,10 +452,10 @@
     {
       "component_id": "COMP-SYN-038",
       "unit_id": "UNIT-SYN-CORR-001",
-      "installed_card_id": "SYN-REG-CARD-000229",
-      "ksm_code": "KSM-SYN-REG-000229",
+      "installed_card_id": "SYN-REG-CARD-000221",
+      "ksm_code": "KSM-SYN-REG-000221",
       "item_type": "отвод",
-      "designation": "ОКШ 90-325x10 20",
+      "designation": "ОКШ 90-426x10 20",
       "operating_medium": "коррозионно-активная среда",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -463,10 +463,10 @@
     {
       "component_id": "COMP-SYN-039",
       "unit_id": "UNIT-SYN-CORR-001",
-      "installed_card_id": "SYN-REG-CARD-000446",
-      "ksm_code": "KSM-SYN-REG-000446",
+      "installed_card_id": "SYN-REG-CARD-000448",
+      "ksm_code": "KSM-SYN-REG-000448",
       "item_type": "переход",
-      "designation": "Переход концентрический 325x10-219x8 09Г2С",
+      "designation": "Переход концентрический 426x12-325x10 20",
       "operating_medium": "коррозионно-активная среда",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -474,10 +474,10 @@
     {
       "component_id": "COMP-SYN-040",
       "unit_id": "UNIT-SYN-CORR-001",
-      "installed_card_id": "SYN-REG-CARD-000612",
-      "ksm_code": "KSM-SYN-REG-000612",
+      "installed_card_id": "SYN-REG-CARD-000599",
+      "ksm_code": "KSM-SYN-REG-000599",
       "item_type": "задвижка",
-      "designation": "Задвижка клиновая DN25 PN16",
+      "designation": "Задвижка шиберная DN50 PN16",
       "operating_medium": "коррозионно-активная среда",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -485,10 +485,10 @@
     {
       "component_id": "COMP-SYN-041",
       "unit_id": "UNIT-SYN-CORR-001",
-      "installed_card_id": "SYN-REG-CARD-000742",
-      "ksm_code": "KSM-SYN-REG-000742",
+      "installed_card_id": "SYN-REG-CARD-000761",
+      "ksm_code": "KSM-SYN-REG-000761",
       "item_type": "заглушка",
-      "designation": "Заглушка эллиптическая приварная 426x12 09ГСФ",
+      "designation": "Заглушка эллиптическая приварная 426x12 09Г2С",
       "operating_medium": "коррозионно-активная среда",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -496,10 +496,10 @@
     {
       "component_id": "COMP-SYN-042",
       "unit_id": "UNIT-SYN-CORR-001",
-      "installed_card_id": "SYN-REG-CARD-000875",
-      "ksm_code": "KSM-SYN-REG-000875",
+      "installed_card_id": "SYN-REG-CARD-000892",
+      "ksm_code": "KSM-SYN-REG-000892",
       "item_type": "тройник",
-      "designation": "Тройник равнопроходной 325x10-325x10 09Г2С",
+      "designation": "Тройник переходный 76x4-57x3 13ХФА",
       "operating_medium": "коррозионно-активная среда",
       "compatibility_status": "requires_tu_lnd_passport",
       "expert_review_required": true
@@ -514,7 +514,7 @@
     {
       "from_id": "COMP-SYN-001",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000008"
+      "to_id": "SYN-REG-CARD-000003"
     },
     {
       "from_id": "UNIT-SYN-GAS-001",
@@ -529,7 +529,7 @@
     {
       "from_id": "COMP-SYN-002",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000221"
+      "to_id": "SYN-REG-CARD-000222"
     },
     {
       "from_id": "UNIT-SYN-GAS-001",
@@ -544,7 +544,7 @@
     {
       "from_id": "COMP-SYN-003",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000444"
+      "to_id": "SYN-REG-CARD-000445"
     },
     {
       "from_id": "UNIT-SYN-GAS-001",
@@ -574,7 +574,7 @@
     {
       "from_id": "COMP-SYN-005",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000752"
+      "to_id": "SYN-REG-CARD-000742"
     },
     {
       "from_id": "UNIT-SYN-GAS-001",
@@ -589,7 +589,7 @@
     {
       "from_id": "COMP-SYN-006",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000876"
+      "to_id": "SYN-REG-CARD-000872"
     },
     {
       "from_id": "UNIT-SYN-GAS-001",
@@ -604,7 +604,7 @@
     {
       "from_id": "COMP-SYN-007",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000004"
+      "to_id": "SYN-REG-CARD-000008"
     },
     {
       "from_id": "UNIT-SYN-H2S-001",
@@ -619,7 +619,7 @@
     {
       "from_id": "COMP-SYN-008",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000225"
+      "to_id": "SYN-REG-CARD-000223"
     },
     {
       "from_id": "UNIT-SYN-H2S-001",
@@ -634,7 +634,7 @@
     {
       "from_id": "COMP-SYN-009",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000441"
+      "to_id": "SYN-REG-CARD-000444"
     },
     {
       "from_id": "UNIT-SYN-H2S-001",
@@ -664,7 +664,7 @@
     {
       "from_id": "COMP-SYN-011",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000743"
+      "to_id": "SYN-REG-CARD-000746"
     },
     {
       "from_id": "UNIT-SYN-H2S-001",
@@ -679,7 +679,7 @@
     {
       "from_id": "COMP-SYN-012",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000888"
+      "to_id": "SYN-REG-CARD-000876"
     },
     {
       "from_id": "UNIT-SYN-H2S-001",
@@ -694,7 +694,7 @@
     {
       "from_id": "COMP-SYN-013",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000003"
+      "to_id": "SYN-REG-CARD-000014"
     },
     {
       "from_id": "UNIT-SYN-CO2-001",
@@ -709,7 +709,7 @@
     {
       "from_id": "COMP-SYN-014",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000227"
+      "to_id": "SYN-REG-CARD-000231"
     },
     {
       "from_id": "UNIT-SYN-CO2-001",
@@ -724,7 +724,7 @@
     {
       "from_id": "COMP-SYN-015",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000450"
+      "to_id": "SYN-REG-CARD-000447"
     },
     {
       "from_id": "UNIT-SYN-CO2-001",
@@ -739,7 +739,7 @@
     {
       "from_id": "COMP-SYN-016",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000605"
+      "to_id": "SYN-REG-CARD-000598"
     },
     {
       "from_id": "UNIT-SYN-CO2-001",
@@ -754,7 +754,7 @@
     {
       "from_id": "COMP-SYN-017",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000746"
+      "to_id": "SYN-REG-CARD-000752"
     },
     {
       "from_id": "UNIT-SYN-CO2-001",
@@ -769,7 +769,7 @@
     {
       "from_id": "COMP-SYN-018",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000877"
+      "to_id": "SYN-REG-CARD-000874"
     },
     {
       "from_id": "UNIT-SYN-CO2-001",
@@ -799,7 +799,7 @@
     {
       "from_id": "COMP-SYN-020",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000222"
+      "to_id": "SYN-REG-CARD-000225"
     },
     {
       "from_id": "UNIT-SYN-MIX-001",
@@ -814,7 +814,7 @@
     {
       "from_id": "COMP-SYN-021",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000443"
+      "to_id": "SYN-REG-CARD-000441"
     },
     {
       "from_id": "UNIT-SYN-MIX-001",
@@ -829,7 +829,7 @@
     {
       "from_id": "COMP-SYN-022",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000602"
+      "to_id": "SYN-REG-CARD-000594"
     },
     {
       "from_id": "UNIT-SYN-MIX-001",
@@ -844,7 +844,7 @@
     {
       "from_id": "COMP-SYN-023",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000762"
+      "to_id": "SYN-REG-CARD-000741"
     },
     {
       "from_id": "UNIT-SYN-MIX-001",
@@ -859,7 +859,7 @@
     {
       "from_id": "COMP-SYN-024",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000871"
+      "to_id": "SYN-REG-CARD-000880"
     },
     {
       "from_id": "UNIT-SYN-MIX-001",
@@ -889,7 +889,7 @@
     {
       "from_id": "COMP-SYN-026",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000226"
+      "to_id": "SYN-REG-CARD-000224"
     },
     {
       "from_id": "UNIT-SYN-OIL-001",
@@ -919,7 +919,7 @@
     {
       "from_id": "COMP-SYN-028",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000592"
+      "to_id": "SYN-REG-CARD-000596"
     },
     {
       "from_id": "UNIT-SYN-OIL-001",
@@ -934,7 +934,7 @@
     {
       "from_id": "COMP-SYN-029",
       "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000741"
+      "to_id": "SYN-REG-CARD-000743"
     },
     {
       "from_id": "UNIT-SYN-OIL-001",
@@ -948,188 +948,188 @@
     },
     {
       "from_id": "COMP-SYN-030",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000872"
-    },
-    {
-      "from_id": "UNIT-SYN-OIL-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-031",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-WATER-001"
-    },
-    {
-      "from_id": "COMP-SYN-031",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000016"
-    },
-    {
-      "from_id": "UNIT-SYN-WATER-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-032",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-WATER-001"
-    },
-    {
-      "from_id": "COMP-SYN-032",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000223"
-    },
-    {
-      "from_id": "UNIT-SYN-WATER-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-033",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-WATER-001"
-    },
-    {
-      "from_id": "COMP-SYN-033",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000455"
-    },
-    {
-      "from_id": "UNIT-SYN-WATER-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-034",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-WATER-001"
-    },
-    {
-      "from_id": "COMP-SYN-034",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000623"
-    },
-    {
-      "from_id": "UNIT-SYN-WATER-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-035",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-WATER-001"
-    },
-    {
-      "from_id": "COMP-SYN-035",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000747"
-    },
-    {
-      "from_id": "UNIT-SYN-WATER-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-036",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-WATER-001"
-    },
-    {
-      "from_id": "COMP-SYN-036",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000878"
-    },
-    {
-      "from_id": "UNIT-SYN-WATER-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-037",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-CORR-001"
-    },
-    {
-      "from_id": "COMP-SYN-037",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000019"
-    },
-    {
-      "from_id": "UNIT-SYN-CORR-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-038",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-CORR-001"
-    },
-    {
-      "from_id": "COMP-SYN-038",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000229"
-    },
-    {
-      "from_id": "UNIT-SYN-CORR-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-039",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-CORR-001"
-    },
-    {
-      "from_id": "COMP-SYN-039",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000446"
-    },
-    {
-      "from_id": "UNIT-SYN-CORR-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-040",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-CORR-001"
-    },
-    {
-      "from_id": "COMP-SYN-040",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000612"
-    },
-    {
-      "from_id": "UNIT-SYN-CORR-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-041",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-CORR-001"
-    },
-    {
-      "from_id": "COMP-SYN-041",
-      "relation": "USES_MTR",
-      "to_id": "SYN-REG-CARD-000742"
-    },
-    {
-      "from_id": "UNIT-SYN-CORR-001",
-      "relation": "PART_OF",
-      "to_id": "OBJ-SYN-GAS-001"
-    },
-    {
-      "from_id": "COMP-SYN-042",
-      "relation": "PART_OF",
-      "to_id": "UNIT-SYN-CORR-001"
-    },
-    {
-      "from_id": "COMP-SYN-042",
       "relation": "USES_MTR",
       "to_id": "SYN-REG-CARD-000875"
+    },
+    {
+      "from_id": "UNIT-SYN-OIL-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-031",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-WATER-001"
+    },
+    {
+      "from_id": "COMP-SYN-031",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000025"
+    },
+    {
+      "from_id": "UNIT-SYN-WATER-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-032",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-WATER-001"
+    },
+    {
+      "from_id": "COMP-SYN-032",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000234"
+    },
+    {
+      "from_id": "UNIT-SYN-WATER-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-033",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-WATER-001"
+    },
+    {
+      "from_id": "COMP-SYN-033",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000443"
+    },
+    {
+      "from_id": "UNIT-SYN-WATER-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-034",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-WATER-001"
+    },
+    {
+      "from_id": "COMP-SYN-034",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000595"
+    },
+    {
+      "from_id": "UNIT-SYN-WATER-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-035",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-WATER-001"
+    },
+    {
+      "from_id": "COMP-SYN-035",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000744"
+    },
+    {
+      "from_id": "UNIT-SYN-WATER-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-036",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-WATER-001"
+    },
+    {
+      "from_id": "COMP-SYN-036",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000871"
+    },
+    {
+      "from_id": "UNIT-SYN-WATER-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-037",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-CORR-001"
+    },
+    {
+      "from_id": "COMP-SYN-037",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000006"
+    },
+    {
+      "from_id": "UNIT-SYN-CORR-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-038",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-CORR-001"
+    },
+    {
+      "from_id": "COMP-SYN-038",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000221"
+    },
+    {
+      "from_id": "UNIT-SYN-CORR-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-039",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-CORR-001"
+    },
+    {
+      "from_id": "COMP-SYN-039",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000448"
+    },
+    {
+      "from_id": "UNIT-SYN-CORR-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-040",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-CORR-001"
+    },
+    {
+      "from_id": "COMP-SYN-040",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000599"
+    },
+    {
+      "from_id": "UNIT-SYN-CORR-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-041",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-CORR-001"
+    },
+    {
+      "from_id": "COMP-SYN-041",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000761"
+    },
+    {
+      "from_id": "UNIT-SYN-CORR-001",
+      "relation": "PART_OF",
+      "to_id": "OBJ-SYN-GAS-001"
+    },
+    {
+      "from_id": "COMP-SYN-042",
+      "relation": "PART_OF",
+      "to_id": "UNIT-SYN-CORR-001"
+    },
+    {
+      "from_id": "COMP-SYN-042",
+      "relation": "USES_MTR",
+      "to_id": "SYN-REG-CARD-000892"
     },
     {
       "from_id": "UNIT-SYN-CORR-001",

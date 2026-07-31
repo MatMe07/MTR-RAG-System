@@ -1,5 +1,4 @@
-SELECT *  FROM mtr_items
-WHERE mtr_code = 'MTR-0013';
+SELECT *  FROM document_pages;
 -- TRUNCATE TABLE mtr_items CASCADE;
 -- TRUNCATE TABLE ksm_items CASCADE;
 -- TRUNCATE TABLE documents CASCADE;

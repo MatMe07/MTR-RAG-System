@@ -547,13 +547,6 @@ def load_catalog_jsonl(
     return {"mtr_count": mtr_count, "ksm_count": ksm_count}
 
 
-def load_mtr_10k(file_path: str, batch_size: int = 1000):
-    """Backward-compatible wrapper for the previous loader name."""
-    return load_catalog_jsonl(
-        file_path,
-        batch_size=batch_size,
-        load_ksm=False,
-    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Загрузка тестовых данных")
@@ -578,11 +571,11 @@ if __name__ == "__main__":
     print("Загрузка данных...")
 
     if not args.skip_sample:
-        load_mtr_catalog(
-            data_dir / "mtr_catalog.csv",
-            data_dir / "document_manifest.csv",
-        )
-        load_ksm_from_catalog(data_dir / "mtr_catalog.csv")
+        # load_mtr_catalog(
+        #     data_dir / "mtr_catalog.csv",
+        #     data_dir / "document_manifest.csv",
+        # )
+        # load_ksm_from_catalog(data_dir / "mtr_catalog.csv")
         load_documents(
             data_dir / "document_manifest.csv",
             data_dir / "expected_item_cards.jsonl",

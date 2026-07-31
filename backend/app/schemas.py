@@ -65,7 +65,7 @@ class ItemCard(BaseModel):
     card_id: Optional[str] = Field(None, description="Внутренний идентификатор карточки")
     mtr_code: Optional[str] = Field(None, description="Код МТР")
     ksm_code: Optional[str] = Field(None, description="Код КСМ")
-    item_type: str = Field(..., description="Базовый тип изделия")
+    item_type: Optional[str] = Field(None, description="Базовый тип изделия")
     subtype: Optional[str] = Field(None, description="Подтип или конструктивное исполнение")
     designation: Optional[str] = Field(None, description="Условное обозначение изделия")
     name: Optional[str] = Field(None, description="Человекочитаемое наименование изделия")
