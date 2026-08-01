@@ -1,4 +1,4 @@
-SELECT *  FROM document_pages;
+SELECT count(1)  FROM mtr_items;
 -- TRUNCATE TABLE mtr_items CASCADE;
 -- TRUNCATE TABLE ksm_items CASCADE;
 -- TRUNCATE TABLE documents CASCADE;

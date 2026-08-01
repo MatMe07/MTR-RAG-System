@@ -80,12 +80,12 @@ class ItemCard(BaseModel):
     extraction: Optional[Extraction] = Field(None, description="Метаданные извлечения")
     sources: List[Source] = Field(..., description="Ссылки на источники данных")
 
-    @field_validator("item_type")
-    def validate_item_type(cls, v):
-        allowed = ["отвод", "труба", "задвижка", "заглушка", "переход", "тройник"]
-        if v.lower() not in allowed:
-            raise ValueError(f"item_type должен быть одним из: {allowed}")
-        return v.lower()
+    # @field_validator("item_type")
+    # def validate_item_type(cls, v):
+    #     allowed = ["отвод", "труба", "задвижка", "заглушка", "переход", "тройник"]
+    #     if v.lower() not in allowed:
+    #         raise ValueError(f"item_type должен быть одним из: {allowed}")
+    #     return v.lower()
 
 
 
@@ -117,13 +117,14 @@ class MatchResult(BaseModel):
     expert_comment: Optional[str] = Field(None, description="Короткий комментарий для эксперта")
     rule_trace: List[RuleTrace] = Field(default_factory=list, description="Сработавшие правила")
     sources: List[Source] = Field(default_factory=list, description="Источники")
-
+    explanation: Optional[str] = Field(None, description="Объяснение результата")
+    
     stock_quantity: Optional[float]
     stock_cost: Optional[float]
     
     @field_validator("status")
     def validate_status(cls, v):
-        allowed = ["соответствует", "потенциальный аналог", "требует проверки", "низкая релевантность", "нет данных"]
+        allowed = ["соответствует", "потенциальный аналог", "требует проверки", "низкая релевантность", "нет данных", "не соответствует"]
         if v not in allowed:
             raise ValueError(f"status должен быть одним из: {allowed}")
         return v

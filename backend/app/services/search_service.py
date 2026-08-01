@@ -41,7 +41,15 @@ class SearchService:
 
     def search(self, request: SearchRequest) -> SearchResponse:
         start_time = time.time()
-
+        if not request.query.strip():
+            return SearchResponse(
+                search_id=str(uuid.uuid4()),
+                query=request.query,
+                requested_card=ItemCard(item_type="", sources=[]),
+                candidates=[],
+                total_found=0,
+                search_time_ms=0
+            )
         if request.mode == "passport":
             requested_card = self._passport_to_card(request.document_id)
             candidates = self._hybrid_search(requested_card)
@@ -246,9 +254,30 @@ class SearchService:
         candidates: List[MTRItem]
     ) -> List[MatchResult]:
         results = []
-        print(requested_card)
+        # print(requested_card)
         
         for idx, mtr_item in enumerate(candidates):
+            if requested_card.mtr_code and requested_card.mtr_code == mtr_item.mtr_code:
+                results.append(
+                    MatchResult(
+                        rank=idx + 1,
+                        mtr_code=mtr_item.mtr_code,
+                        ksm_code=mtr_item.ksm_code,
+                        candidate_name=mtr_item.short_text or mtr_item.designation or "",
+                        sources=self._get_sources(mtr_item),
+                        stock_quantity=self._get_stock_quantity(mtr_item.ksm_code),
+                        stock_cost=self._get_stock_cost(mtr_item.ksm_code),
+                        status="соответствует",
+                        match_percent=100.0,
+                        matched_params=["mtr_code"],
+                        mismatched_params=[],
+                        missing_params=[],
+                        warnings=[],
+                        expert_comment="Точное совпадение по коду МТР",
+                        rule_trace=[]
+                    )
+                )
+                continue
             candidate_card = self._mtr_to_card(mtr_item)
             
             evaluation = self.rules_engine.evaluate(requested_card, candidate_card)
@@ -325,7 +354,8 @@ class SearchService:
                         file=doc.file_name
                     )
                 )
-
+        if not sources:
+            sources.append(Source(type="catalog", file="regulated_mtr_catalog_1000.jsonl"))
         return sources
 
     def _get_stock_quantity(self, ksm_code: Optional[str]) -> Optional[float]:

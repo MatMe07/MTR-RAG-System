@@ -2,10 +2,14 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import sys
+
+# Добавляем путь к корневой папке проекта
+# sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from jsonschema import Draft202012Validator
 
-from backend.app.scripts.GEN.generate_synthetic_catalog import (
+from app.scripts.GEN.generate_synthetic_catalog import (
     DEFAULT_CONFIG,
     calculate_allocations,
     generate_catalog,
@@ -15,7 +19,10 @@ from backend.app.scripts.GEN.generate_synthetic_catalog import (
 
 class SyntheticCatalogTest(unittest.TestCase):
     def test_million_distribution_has_exact_total(self):
-        config = load_config(DEFAULT_CONFIG)
+        # Путь к конфигу от корня проекта
+        root = Path(__file__).resolve().parents[3]
+        config_path = root / "data" / "generation" / "million_items_distribution.json"
+        config = load_config(config_path)
         allocations = calculate_allocations(config, 1_000_000)
 
         self.assertEqual(sum(allocations.values()), 1_000_000)
@@ -54,7 +61,8 @@ class SyntheticCatalogTest(unittest.TestCase):
         self.assertIn("drive_type", by_type["задвижка"]["properties"])
         self.assertIn("dn", by_type["заглушка"]["properties"])
 
-        schema_path = Path(__file__).resolve().parents[3] / "docs/schemas/item_card.schema.json"
+        root = Path(__file__).resolve().parents[3]
+        schema_path = root / "docs" / "schemas" / "item_card.schema.json"
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         validator = Draft202012Validator(schema)
         for card in by_type.values():

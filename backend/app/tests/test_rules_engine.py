@@ -1,6 +1,8 @@
 import unittest
 from types import SimpleNamespace
-
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from app.models import MatchingRule, ReplacementSet, Synonym
 from app.schemas import Geometry, ItemCard
 from app.services.rules_engine import RulesEngine

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_GOLDEN = REPO_ROOT / "data" / "sample" / "golden_dataset.csv"
 DEFAULT_ASSERTIONS = REPO_ROOT / "data" / "evaluation" / "golden_assertions.jsonl"
 

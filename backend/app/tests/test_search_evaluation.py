@@ -1,6 +1,8 @@
 import unittest
-
-from backend.app.scripts.GEN.evaluate_search_results import evaluate_cases
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from app.scripts.GEN.evaluate_search_results import evaluate_cases
 
 
 class SearchEvaluationTest(unittest.TestCase):

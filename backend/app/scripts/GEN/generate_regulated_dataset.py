@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_REGULATION = REPO_ROOT / "data" / "regulation" / "regulation_matrix.json"
 DEFAULT_CATALOG_JSONL = (
     REPO_ROOT / "data" / "catalog" / "regulated_mtr_catalog_1000.jsonl"

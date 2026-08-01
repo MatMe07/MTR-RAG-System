@@ -107,7 +107,7 @@ async def upload_passport(
                     full_text,
                     {"document_id": doc.id, "file_name": file.filename}
                 )
-                card_dict = card.dict() if hasattr(card, 'dict') else card
+                card_dict = card.model_dump() if hasattr(card, 'model_dump') else card
                 
                 for field, value in card_dict.items():
                     if value is not None and field not in ['sources', 'card_id', 'mtr_code', 'ksm_code']:

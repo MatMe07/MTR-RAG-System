@@ -156,6 +156,12 @@ class LLMService:
         return self._llm
 
     def parse_query(self, query: str) -> ItemCard:
+        if re.match(r'^[A-Z]{3}-[A-Z]{3}-[A-Z]{3}-\d{6}$', query.strip()):
+            return ItemCard(
+                item_type="",
+                mtr_code=query.strip(),
+                sources=[Source(type="user_query", fragment=query)]
+            )
         normalized = normalize_query(query)
         prompt = QUERY_TO_CARD_PROMPT.format(
             query=normalized["normalized_text"]
@@ -163,7 +169,7 @@ class LLMService:
         # print(prompt)
         # print(self.llm)
         response = self.llm.invoke(prompt).content
-        print(response)
+        # print(response)
         return self._extract_card_from_response(
             response,
             {"type": "user_query", "text": query}
@@ -259,6 +265,7 @@ class LLMService:
             }
 
     def _empty_card(self, source: Dict[str, Any]) -> ItemCard:
+        source_copy = {k: v for k, v in source.items() if k != "type"}
         return ItemCard(
             card_id=None,
             mtr_code=None,
@@ -273,5 +280,5 @@ class LLMService:
             environment=Environment(),
             coating=Coating(),
             normative=Normative(),
-            sources=[Source(type="llm", **source)]
+            sources=[Source(type="llm", **source_copy)]
         )
