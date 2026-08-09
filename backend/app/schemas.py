@@ -87,6 +87,25 @@ class ItemCard(BaseModel):
     #         raise ValueError(f"item_type должен быть одним из: {allowed}")
     #     return v.lower()
 
+class QueryIntent(BaseModel):
+    operation: Optional[str] = None
+    workflow: Optional[str] = None
+
+    unit_id: Optional[str] = None
+    component_id: Optional[str] = None
+
+    stock_required: bool = False
+    stock_missing: bool = False
+    stock_present_only: bool = False
+
+    quantity: Optional[float] = None
+    units_count: Optional[int] = None
+
+    comparison_required: bool = False
+    explanation_required: bool = False
+    plan_required: bool = False
+    documents_required: bool = False
+    normative_required: bool = False
 
 
 class SearchRequest(BaseModel):
@@ -181,13 +200,31 @@ class ExpertReviewResponse(BaseModel):
     success: bool
     message: str
     review_id: int
-
-
-
+    
 class ParsedQuery(BaseModel):
     original_query: str
+
+    operation: str
+    operations: List[str] = Field(default_factory=list)
+    
+    item_types: List[str] = Field(default_factory=list)
+
     card: Optional[ItemCard] = None
-    confidence: float = 1.0
+    cards: List[ItemCard] = Field(default_factory=list)
+
+    filters: Dict[str, Any] = Field(default_factory=dict)
+    changes: Dict[str, Any] = Field(default_factory=dict)
+    context: Dict[str, Any] = Field(default_factory=dict)
+    references: List[str] = Field(default_factory=list)
+    ambiguities: List[str] = Field(default_factory=list)
+    required_capabilities: List[str] = Field(default_factory=list)
+
+    confidence: float = Field(
+        1.0,
+        ge=0.0,
+        le=1.0
+    )
+    
 
 
 class DocumentInfo(BaseModel):

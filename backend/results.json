@@ -1,0 +1,1856 @@
+[
+  {
+    "id": 1,
+    "query": "Найди задвижку DN150 PN40 для H2S",
+    "operation": "search",
+    "operations": [
+      "search"
+    ],
+    "confidence": 0.94,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "задвижка",
+      "subtype": null,
+      "designation": "DN150 PN4 H2S",
+      "name": "задвижка DN150 PN4",
+      "geometry": {
+        "dn": 150.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": null,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": 4.0,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": "PN40"
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": "H2S",
+        "h2s_confirmed": true,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "geometry",
+          "material"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Найди задвижку DN150 PN40 для H2S"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "задвижка",
+        "subtype": null,
+        "designation": "DN150 PN4 H2S",
+        "name": "задвижка DN150 PN4",
+        "geometry": {
+          "dn": 150.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": 4.0,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": "PN40"
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": "H2S",
+          "h2s_confirmed": true,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "geometry",
+            "material"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Найди задвижку DN150 PN40 для H2S"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "задвижка",
+      "dn": 150.0,
+      "pn": 4.0,
+      "raw_value": "PN40",
+      "medium": "H2S",
+      "h2s_confirmed": true
+    },
+    "changes": {},
+    "context": {},
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "search"
+    ],
+    "error": null
+  },
+  {
+    "id": 2,
+    "query": "Найди заглушку 426 на 12 из стали 09ГСФ",
+    "operation": "search",
+    "operations": [
+      "search"
+    ],
+    "confidence": 0.94,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "заглушка",
+      "subtype": null,
+      "designation": "DN426 δ12 09",
+      "name": "заглушка DN426",
+      "geometry": {
+        "dn": 426.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": 12.0,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": null,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": null
+      },
+      "material": {
+        "steel_grade": "09",
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": null,
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "pressure",
+          "environment"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Найди заглушку 426 на 12 из стали 09ГСФ"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "заглушка",
+        "subtype": null,
+        "designation": "DN426 δ12 09",
+        "name": "заглушка DN426",
+        "geometry": {
+          "dn": 426.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": 12.0,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": "09",
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "pressure",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Найди заглушку 426 на 12 из стали 09ГСФ"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "заглушка",
+      "dn": 426.0,
+      "wall_thickness": 12.0,
+      "steel_grade": "09"
+    },
+    "changes": {},
+    "context": {},
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "search"
+    ],
+    "error": null
+  },
+  {
+    "id": 3,
+    "query": "Подбери переход с 219 на 159 для газа",
+    "operation": "replace",
+    "operations": [
+      "replace",
+      "assemble"
+    ],
+    "confidence": 0.91,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "переход",
+      "subtype": null,
+      "designation": "DN219 219x159",
+      "name": "переход DN219",
+      "geometry": {
+        "dn": 219.0,
+        "d1": 219.0,
+        "d2": 159.0,
+        "wall_thickness": null,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": null,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": null
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": null,
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "pressure",
+          "material",
+          "environment"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Подбери переход с 219 на 159 для газа"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "переход",
+        "subtype": null,
+        "designation": "DN219 219x159",
+        "name": "переход DN219",
+        "geometry": {
+          "dn": 219.0,
+          "d1": 219.0,
+          "d2": 159.0,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "pressure",
+            "material",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Подбери переход с 219 на 159 для газа"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "переход",
+      "dn": 219.0,
+      "d1": 219.0,
+      "d2": 159.0
+    },
+    "changes": {},
+    "context": {},
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "assembly_planning",
+      "replacement_matching"
+    ],
+    "error": null
+  },
+  {
+    "id": 4,
+    "query": "Собери список деталей для участка DN150 длиной сто метров",
+    "operation": "plan",
+    "operations": [
+      "plan",
+      "assemble"
+    ],
+    "confidence": 0.73,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": null,
+      "subtype": null,
+      "designation": "DN150",
+      "name": null,
+      "geometry": {
+        "dn": 150.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": null,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": null,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": null
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": null,
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "item_type",
+          "geometry",
+          "pressure",
+          "material",
+          "environment"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Собери список деталей для участка DN150 длиной сто метров"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": null,
+        "subtype": null,
+        "designation": "DN150",
+        "name": null,
+        "geometry": {
+          "dn": 150.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "item_type",
+            "geometry",
+            "pressure",
+            "material",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Собери список деталей для участка DN150 длиной сто метров"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "dn": 150.0
+    },
+    "changes": {},
+    "context": {
+      "length_meters": 100.0
+    },
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "assembly_planning",
+      "maintenance_planning"
+    ],
+    "error": null
+  },
+  {
+    "id": 5,
+    "query": "Нужно заменить шесть метров трубы 108 на 6",
+    "operation": "replace",
+    "operations": [
+      "replace"
+    ],
+    "confidence": 0.91,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "труба",
+      "subtype": null,
+      "designation": "DN108 δ6",
+      "name": "труба DN108",
+      "geometry": {
+        "dn": 108.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": 6.0,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": null,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": null
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": null,
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "pressure",
+          "material",
+          "environment"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Нужно заменить шесть метров трубы 108 на 6"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "труба",
+        "subtype": null,
+        "designation": "DN108 δ6",
+        "name": "труба DN108",
+        "geometry": {
+          "dn": 108.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": 6.0,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "pressure",
+            "material",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Нужно заменить шесть метров трубы 108 на 6"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "труба",
+      "dn": 108.0,
+      "wall_thickness": 6.0
+    },
+    "changes": {},
+    "context": {
+      "length_meters": 6.0
+    },
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "replacement_matching"
+    ],
+    "error": null
+  },
+  {
+    "id": 6,
+    "query": "Объясни, что означает отвод 90 426 на 10",
+    "operation": "explain",
+    "operations": [
+      "explain"
+    ],
+    "confidence": 0.91,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "отвод",
+      "subtype": null,
+      "designation": "DN426 δ10 90°",
+      "name": "отвод 90° DN426",
+      "geometry": {
+        "dn": 426.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": 10.0,
+        "wall_thickness_2": null,
+        "angle": 90.0,
+        "radius": null
+      },
+      "pressure": {
+        "pn": null,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": null
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": null,
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "pressure",
+          "material",
+          "environment"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Объясни, что означает отвод 90 426 на 10"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "отвод",
+        "subtype": null,
+        "designation": "DN426 δ10 90°",
+        "name": "отвод 90° DN426",
+        "geometry": {
+          "dn": 426.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": 10.0,
+          "wall_thickness_2": null,
+          "angle": 90.0,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "pressure",
+            "material",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Объясни, что означает отвод 90 426 на 10"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "отвод",
+      "dn": 426.0,
+      "wall_thickness": 10.0,
+      "angle": 90.0
+    },
+    "changes": {},
+    "context": {},
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "knowledge_search"
+    ],
+    "error": null
+  },
+  {
+    "id": 7,
+    "query": "Заменить трубу из стали 20 на 09Г2С",
+    "operation": "replace",
+    "operations": [
+      "replace"
+    ],
+    "confidence": 0.76,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "труба",
+      "subtype": null,
+      "designation": "20",
+      "name": "труба",
+      "geometry": {
+        "dn": null,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": null,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": null,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": null
+      },
+      "material": {
+        "steel_grade": "20",
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": null,
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "dn",
+          "geometry",
+          "pressure",
+          "environment"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Заменить трубу из стали 20 на 09Г2С"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "труба",
+        "subtype": null,
+        "designation": "20",
+        "name": "труба",
+        "geometry": {
+          "dn": null,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": "20",
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "dn",
+            "geometry",
+            "pressure",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Заменить трубу из стали 20 на 09Г2С"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "труба",
+      "steel_grade": "20"
+    },
+    "changes": {
+      "material_from": "20",
+      "material_to": "09Г2С"
+    },
+    "context": {},
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "impact_analysis",
+      "replacement_matching"
+    ],
+    "error": null
+  },
+  {
+    "id": 8,
+    "query": "Поставить задвижку DN200 вместо DN150",
+    "operation": "replace",
+    "operations": [
+      "replace"
+    ],
+    "confidence": 0.73,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "задвижка",
+      "subtype": null,
+      "designation": "DN200",
+      "name": "задвижка DN200",
+      "geometry": {
+        "dn": 200.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": null,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": null,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": null
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": null,
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "geometry",
+          "pressure",
+          "material",
+          "environment"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Поставить задвижку DN200 вместо DN150"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "задвижка",
+        "subtype": null,
+        "designation": "DN200",
+        "name": "задвижка DN200",
+        "geometry": {
+          "dn": 200.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "geometry",
+            "pressure",
+            "material",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Поставить задвижку DN200 вместо DN150"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "задвижка",
+      "dn": 200.0
+    },
+    "changes": {
+      "dn_to": 200.0,
+      "dn_from": 150.0
+    },
+    "context": {},
+    "references": [],
+    "ambiguities": [
+      "В запросе указано несколько значений DN"
+    ],
+    "required_capabilities": [
+      "impact_analysis",
+      "replacement_matching"
+    ],
+    "error": null
+  },
+  {
+    "id": 9,
+    "query": "Покажи участок UNIT-SYN-H2S-001",
+    "operation": "search",
+    "operations": [
+      "search"
+    ],
+    "confidence": 0.75,
+    "card": null,
+    "cards": [],
+    "filters": {
+      "medium": "H2S",
+      "h2s_confirmed": true
+    },
+    "changes": {},
+    "context": {},
+    "references": [
+      "UNIT-SYN-H2S-001"
+    ],
+    "ambiguities": [],
+    "required_capabilities": [
+      "search",
+      "topology"
+    ],
+    "error": null
+  },
+  {
+    "id": 10,
+    "query": "Сломалась задвижка COMP-SYN-010 на участке UNIT-SYN-H2S-001",
+    "operation": "repair",
+    "operations": [
+      "repair"
+    ],
+    "confidence": 0.8,
+    "card": null,
+    "cards": [],
+    "filters": {
+      "item_type": "задвижка",
+      "medium": "H2S",
+      "h2s_confirmed": true
+    },
+    "changes": {},
+    "context": {},
+    "references": [
+      "COMP-SYN-010",
+      "UNIT-SYN-H2S-001"
+    ],
+    "ambiguities": [],
+    "required_capabilities": [
+      "repair_planning",
+      "topology"
+    ],
+    "error": null
+  },
+  {
+    "id": 11,
+    "query": "Задвижка DN150 PN40 УХЛ1",
+    "operation": "search",
+    "operations": [
+      "search"
+    ],
+    "confidence": 0.86,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "задвижка",
+      "subtype": null,
+      "designation": "DN150 PN4",
+      "name": "задвижка DN150 PN4",
+      "geometry": {
+        "dn": 150.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": null,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": 4.0,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": "PN40"
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": null,
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": "УХЛ"
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "geometry",
+          "material",
+          "environment"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Задвижка DN150 PN40 УХЛ1"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "задвижка",
+        "subtype": null,
+        "designation": "DN150 PN4",
+        "name": "задвижка DN150 PN4",
+        "geometry": {
+          "dn": 150.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": 4.0,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": "PN40"
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": "УХЛ"
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "geometry",
+            "material",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Задвижка DN150 PN40 УХЛ1"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "задвижка",
+      "dn": 150.0,
+      "pn": 4.0,
+      "raw_value": "PN40",
+      "climate_version": "УХЛ"
+    },
+    "changes": {},
+    "context": {},
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "search"
+    ],
+    "error": null
+  },
+  {
+    "id": 12,
+    "query": "Нужно два отвода 90 426 на 10",
+    "operation": "search",
+    "operations": [
+      "search"
+    ],
+    "confidence": 0.91,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "отвод",
+      "subtype": null,
+      "designation": "DN426 δ10 90°",
+      "name": "отвод 90° DN426",
+      "geometry": {
+        "dn": 426.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": 10.0,
+        "wall_thickness_2": null,
+        "angle": 90.0,
+        "radius": null
+      },
+      "pressure": {
+        "pn": null,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": null
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": null,
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "pressure",
+          "material",
+          "environment"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Нужно два отвода 90 426 на 10"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "отвод",
+        "subtype": null,
+        "designation": "DN426 δ10 90°",
+        "name": "отвод 90° DN426",
+        "geometry": {
+          "dn": 426.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": 10.0,
+          "wall_thickness_2": null,
+          "angle": 90.0,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "pressure",
+            "material",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Нужно два отвода 90 426 на 10"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "отвод",
+      "dn": 426.0,
+      "wall_thickness": 10.0,
+      "angle": 90.0
+    },
+    "changes": {},
+    "context": {
+      "quantity": 2
+    },
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "search"
+    ],
+    "error": null
+  },
+  {
+    "id": 13,
+    "query": "Проверь хватает ли труб и отводов по две штуки",
+    "operation": "check",
+    "operations": [
+      "check"
+    ],
+    "confidence": 0.75,
+    "card": null,
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "отвод",
+        "subtype": null,
+        "designation": null,
+        "name": "отвод",
+        "geometry": {
+          "dn": null,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "dn",
+            "geometry",
+            "pressure",
+            "material",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Проверь хватает ли труб и отводов по две штуки"
+          }
+        ]
+      },
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "труба",
+        "subtype": null,
+        "designation": null,
+        "name": "труба",
+        "geometry": {
+          "dn": null,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "dn",
+            "geometry",
+            "pressure",
+            "material",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Проверь хватает ли труб и отводов по две штуки"
+          }
+        ]
+      }
+    ],
+    "filters": {},
+    "changes": {},
+    "context": {
+      "quantity": 2
+    },
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "compatibility_check"
+    ],
+    "error": null
+  },
+  {
+    "id": 14,
+    "query": "Найди трубу 108 на 6 из стали 20",
+    "operation": "search",
+    "operations": [
+      "search"
+    ],
+    "confidence": 0.94,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "труба",
+      "subtype": null,
+      "designation": "DN108 δ6 20",
+      "name": "труба DN108",
+      "geometry": {
+        "dn": 108.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": 6.0,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": null,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": null
+      },
+      "material": {
+        "steel_grade": "20",
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": null,
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "pressure",
+          "environment"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Найди трубу 108 на 6 из стали 20"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "труба",
+        "subtype": null,
+        "designation": "DN108 δ6 20",
+        "name": "труба DN108",
+        "geometry": {
+          "dn": 108.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": 6.0,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": "20",
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": null,
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "pressure",
+            "environment"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Найди трубу 108 на 6 из стали 20"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "труба",
+      "dn": 108.0,
+      "wall_thickness": 6.0,
+      "steel_grade": "20"
+    },
+    "changes": {},
+    "context": {},
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "search"
+    ],
+    "error": null
+  },
+  {
+    "id": 15,
+    "query": "Переход 219 на 159 для CO2",
+    "operation": "search",
+    "operations": [
+      "search"
+    ],
+    "confidence": 0.94,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "переход",
+      "subtype": null,
+      "designation": "DN219 219x159 CO2",
+      "name": "переход DN219",
+      "geometry": {
+        "dn": 219.0,
+        "d1": 219.0,
+        "d2": 159.0,
+        "wall_thickness": null,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": null,
+        "working_pressure_mpa": null,
+        "test_pressure_mpa": null,
+        "raw_value": null
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": "CO2",
+        "h2s_confirmed": null,
+        "co2_confirmed": true,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": null,
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "pressure",
+          "material"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Переход 219 на 159 для CO2"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "переход",
+        "subtype": null,
+        "designation": "DN219 219x159 CO2",
+        "name": "переход DN219",
+        "geometry": {
+          "dn": 219.0,
+          "d1": 219.0,
+          "d2": 159.0,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": null,
+          "working_pressure_mpa": null,
+          "test_pressure_mpa": null,
+          "raw_value": null
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": "CO2",
+          "h2s_confirmed": null,
+          "co2_confirmed": true,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": null,
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "pressure",
+            "material"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Переход 219 на 159 для CO2"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "переход",
+      "dn": 219.0,
+      "d1": 219.0,
+      "d2": 159.0,
+      "medium": "CO2",
+      "co2_confirmed": true
+    },
+    "changes": {},
+    "context": {},
+    "references": [],
+    "ambiguities": [],
+    "required_capabilities": [
+      "search"
+    ],
+    "error": null
+  }
+]
