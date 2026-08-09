@@ -11,17 +11,17 @@ from .dictionaries import OPERATION_ALIASES
 class OperationParser:
 
     OPERATION_PRIORITY = {
-    "repair": 100,
-    "inventory": 100,    
-    "replace": 95,
-    "check": 95,      
-    "impact": 85,        
-    "plan": 80,     
-    "explain": 70,       
-    "search": 50,        
-    "document": 40,      
-    "assemble": 35,       
-    "calculate": 30,
+        "repair": 100,
+        "replace": 95,
+        "inventory": 90,   
+        "check": 85,          
+        "impact": 80,
+        "plan": 75,
+        "explain": 70,
+        "search": 50,
+        "assemble": 40,
+        "document": 35,        
+        "calculate": 30,
     }
 
     KEYWORD_MAP = {
@@ -292,6 +292,9 @@ class OperationParser:
             # Проверяем что не "установлены ни на одном" (false positive)
             if not re.search(r'установлены?\s+ни\s+на\s+одном', text_lower):
                 found.add("inventory")
+
+        if re.search(r'(?:есть ли|сколько|хватает ли|достаточно ли)', text_lower):
+            found.add("inventory")
 
         # repair – только при явных признаках поломки
         if any(word in text_lower for word in ["сломал", "поврежд", "утечк", "отказал"]):

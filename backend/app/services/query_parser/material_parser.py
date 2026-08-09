@@ -1,10 +1,10 @@
-# query_parser/material_parser.py
+# query_parser/material_parser.py – полностью заменить файл
 
 import re
 from typing import Dict, Any
 
 from .dictionaries import STEEL_GRADES, STRENGTH_CLASSES
-from .normalizers import (
+from .normalizersPars import (
     normalize_steel,
     normalize_strength_class,
 )
@@ -22,7 +22,7 @@ class MaterialParser:
         normalized = text.upper()
 
         # ---------------------------------------------------------
-        # 0. Проверяем замену материала
+        # 1. Проверяем замену: "стали 20 на 09Г2С" -> исходная сталь 20
         # ---------------------------------------------------------
         replacement_match = re.search(
             r'(?:из\s+)?стали?\s+([0-9а-яёa-z]+)\s+(?:на|в|вместо)\s+([0-9а-яёa-z]+)',
@@ -31,44 +31,45 @@ class MaterialParser:
         )
         if replacement_match:
             steel_from = replacement_match.group(1).upper()
-            if steel_from not in ["УЧАСТКЕ", "СКЛАДЕ", "НЕТ", "ЕСТЬ"]:
-                result["steel_grade"] = steel_from
-                # Дальше не идём, т.к. это замена, а не поиск
+            steel_to = replacement_match.group(2).upper()
+            garbage_words = ["УЧАСТКЕ", "СКЛАДЕ", "НЕТ", "ЕСТЬ"]
+            if steel_from not in garbage_words and steel_to not in garbage_words:
+                result["steel_grade"] = steel_from  # исходная сталь
+                return result
 
         # ---------------------------------------------------------
-        # 1. Простая сталь (сталь 20, сталь 45) – ИСПРАВЛЕНО
-        # ---------------------------------------------------------
-        if result["steel_grade"] is None:
-            simple_match = re.search(
-                r'(?:стал[иь])\s+(\d+)',
-                normalized,
-                re.IGNORECASE  # добавлено для надёжности
-            )
-            if simple_match:
-                result["steel_grade"] = simple_match.group(1)
-
-        # ---------------------------------------------------------
-        # 2. Составные марки стали
+        # 2. Составные марки (09Г2С, 09ГСФ, 13ХФА)
         # ---------------------------------------------------------
         if result["steel_grade"] is None:
             composite_grades = [g for g in STEEL_GRADES if len(g) > 2]
             for steel in composite_grades:
                 pattern = rf"(?<!\w){re.escape(steel)}(?!\w)"
                 if re.search(pattern, normalized):
-                    result["steel_grade"] = normalize_steel(steel)
+                    result["steel_grade"] = steel
                     break
 
         # ---------------------------------------------------------
-        # 3. Класс прочности
+        # 3. Простая сталь (сталь 20, сталь 45)
+        # ---------------------------------------------------------
+        if result["steel_grade"] is None:
+            simple_match = re.search(
+                r'(?:стал[иь])\s+(\d+)',
+                normalized,
+            )
+            if simple_match:
+                result["steel_grade"] = simple_match.group(1)
+
+        # ---------------------------------------------------------
+        # 4. Класс прочности
         # ---------------------------------------------------------
         for strength in STRENGTH_CLASSES:
             pattern = rf"(?<!\w){re.escape(strength)}(?!\w)"
             if re.search(pattern, normalized):
-                result["strength_class"] = normalize_strength_class(strength)
+                result["strength_class"] = strength
                 break
 
         # ---------------------------------------------------------
-        # 4. ГОСТ / ТУ
+        # 5. ГОСТ/ТУ
         # ---------------------------------------------------------
         standard = re.search(
             r"\b(?:ГОСТ|ТУ)\s+[\d\-]+(?:\.[\d\-]+)?",

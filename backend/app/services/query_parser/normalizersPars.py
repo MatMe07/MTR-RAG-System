@@ -12,7 +12,7 @@ def normalize_decimal(value: str) -> float:
 
 
 def normalize_steel(value: str) -> str:
-    return value.upper().replace(" ", "")
+    return value.upper()
 
 
 def normalize_strength_class(value: str) -> str:

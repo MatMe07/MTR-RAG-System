@@ -40,7 +40,32 @@ class ItemTypeParser:
                     found.add(normalized)
 
         return list(found)
-
+    def parse_subtype(self, text: str) -> Optional[str]:
+        text_lower = text.lower()
+        
+        subtype_patterns = [
+            # Для задвижек
+            (r'клинов(?:ая|ой|ую)', "клиновая"),
+            (r'параллельн(?:ая|ой|ую)', "параллельная"),
+            (r'шиберн(?:ая|ой|ую)', "шиберная"),
+            # Для кранов
+            (r'шаров(?:ой|ая|ую)', "шаровой"),
+            (r'пробков(?:ый|ая|ую)', "пробковый"),
+            # Для переходов
+            (r'концентрическ(?:ий|ая|ое)', "концентрический"),
+            (r'эксцентрическ(?:ий|ая|ое)', "эксцентрический"),
+            # Для отводов
+            (r'крутоизогнут(?:ый|ая|ое)', "крутоизогнутый"),
+            (r'гнут(?:ый|ая|ое)', "гнутый"),
+            (r'сварн(?:ой|ая|ое)', "сварной"),
+            (r'штампованн(?:ый|ая|ое)', "штампованный"),
+        ]
+        
+        for pattern, subtype in subtype_patterns:
+            if re.search(pattern, text_lower):
+                return subtype
+        
+        return None
     def parse(self, text: str) -> Optional[str]:
         res = self.parse_all(text)
         return res[0] if res else None

@@ -3,7 +3,7 @@
 import re
 from typing import Dict, Any, Optional
 
-from .normalizers import normalize_decimal
+from .normalizersPars import normalize_decimal
 
 
 class PressureParser:

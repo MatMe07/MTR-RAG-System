@@ -3,7 +3,7 @@
 import re
 from typing import Dict, Any
 
-from .normalizers import normalize_decimal
+from .normalizersPars import normalize_decimal
 
 
 class GeometryParser:
@@ -22,13 +22,15 @@ class GeometryParser:
         normalized = text.lower()
 
         # ---------------------------------------------------------
-        # 1. Сначала определяем тип детали
+        # 0. Определяем тип детали
         # ---------------------------------------------------------
-        is_transition = bool(re.search(r"\bпереход(?:а|ом)?\b", normalized))
+        is_transition = bool(re.search(r"\bпереход(?:а|ом|е)?\b", normalized))
+        is_tee = bool(re.search(r"\bтройник(?:а|у|ом|е|ов)?\b", normalized))
         is_elbow = bool(re.search(r"\bотвод(?:а|у|ом|е|ов)?|ог|окш\b", normalized))
+        is_pipe = bool(re.search(r"\bтруб(?:а|ы|у|ой|е|ам)?\b", normalized))
 
         # ---------------------------------------------------------
-        # 2. DN / Ду
+        # 1. DN / Ду
         # ---------------------------------------------------------
         dn_patterns = [
             r"\bdn\s*[-:]?\s*(\d+(?:[.,]\d+)?)",
@@ -41,39 +43,42 @@ class GeometryParser:
                 break
 
         # ---------------------------------------------------------
-        # 2.1 ДИАМЕТР (НОВЫЙ)
+        # 1.1 ДИАМЕТР
         # ---------------------------------------------------------
-        diam_match = re.search(r'\bдиаметр(?:ом|е|а)?\s*(\d+(?:[.,]\d+)?)', normalized)
-        if diam_match and result["dn"] is None:
-            result["dn"] = normalize_decimal(diam_match.group(1))
+        if result["dn"] is None:
+            diam_match = re.search(r'\bдиаметр(?:ом|е|а)?\s*(\d+(?:[.,]\d+)?)', normalized)
+            if diam_match:
+                result["dn"] = normalize_decimal(diam_match.group(1))
 
         # ---------------------------------------------------------
-        # 2.2 "на X" как DN (если одно число и не переход)
+        # 1.2 "на X" как DN (если одно число и не переход/тройник)
         # ---------------------------------------------------------
-        if not is_transition:
+        if not is_transition and not is_tee:
             single_on = re.search(r'\bна\s+(\d+(?:[.,]\d+)?)\b', normalized)
             if single_on and not re.search(r'\d+\s*на\s*\d+', normalized):
                 if result["dn"] is None:
                     result["dn"] = normalize_decimal(single_on.group(1))
 
         # ---------------------------------------------------------
-        # 3. Переход: "219 на 159"
+        # 2. Переход или тройник: "219 на 159" или "219х159"
+        #    Для них d1 и d2, НЕ wall_thickness
         # ---------------------------------------------------------
-        if is_transition:
-            transition_match = re.search(
+        if is_transition or is_tee:
+            size_match = re.search(
                 r"(\d+(?:[.,]\d+)?)\s*(?:x|х|×|на)\s*(\d+(?:[.,]\d+)?)",
                 normalized,
             )
-            if transition_match:
-                result["d1"] = normalize_decimal(transition_match.group(1))
-                result["d2"] = normalize_decimal(transition_match.group(2))
+            if size_match:
+                result["d1"] = normalize_decimal(size_match.group(1))
+                result["d2"] = normalize_decimal(size_match.group(2))
                 if result["dn"] is None:
                     result["dn"] = result["d1"]
+                # НЕ присваиваем wall_thickness для переходов и тройников
 
         # ---------------------------------------------------------
-        # 4. Диаметр x толщина (только если НЕ переход)
+        # 3. Диаметр x толщина (только для труб и отводов)
         # ---------------------------------------------------------
-        if not is_transition:
+        if is_pipe or is_elbow:
             diameter_wall = re.search(
                 r"\b(\d+(?:[.,]\d+)?)\s*"
                 r"(?:x|х|×|на)\s*"
@@ -83,18 +88,20 @@ class GeometryParser:
             if diameter_wall:
                 first = normalize_decimal(diameter_wall.group(1))
                 second = normalize_decimal(diameter_wall.group(2))
-                
                 if result["dn"] is None:
                     result["dn"] = first
                 if result["wall_thickness"] is None:
                     result["wall_thickness"] = second
 
+        # ---------------------------------------------------------
+        # 3.1 Стенка (отдельное слово)
+        # ---------------------------------------------------------
         wall_match = re.search(r'\bстенк(?:а|и|ой)\s*(\d+(?:[.,]\d+)?)', normalized)
         if wall_match:
             result["wall_thickness"] = normalize_decimal(wall_match.group(1))
-            
+
         # ---------------------------------------------------------
-        # 5. Угол (существующий + новые)
+        # 4. Угол
         # ---------------------------------------------------------
         angle_patterns = [
             r"\bугол(?:ом)?\s*(?:поворота\s*)?(\d+(?:[.,]\d+)?)",
@@ -106,17 +113,17 @@ class GeometryParser:
                 result["angle"] = normalize_decimal(match.group(1))
                 break
 
-        # 5.1 "прямой угол" (НОВЫЙ)
+        # 4.1 "прямой угол" -> 90
         if result["angle"] is None and re.search(r'\bпрямой\s+угол\b', normalized):
             result["angle"] = 90.0
 
-        # 5.2 слитные ОКШ90, ОГ90 (НОВЫЙ)
+        # 4.2 слитные ОКШ90, ОГ90
         if result["angle"] is None:
             abbr_match = re.search(r'\b(?:окш|ог)\s*(\d{1,3})\b', normalized, re.IGNORECASE)
             if abbr_match:
                 result["angle"] = float(abbr_match.group(1))
 
-        # Для "отвод 90 426 на 10" (все падежи)
+        # 4.3 Для "отвод 90 426 на 10" (все падежи)
         if is_elbow and result["angle"] is None:
             angle_match = re.search(
                 r"\b(?:отвод(?:а|у|ом|е|ов)?|окш|ог)\s+(30|45|60|90)\s+",
@@ -126,7 +133,7 @@ class GeometryParser:
                 result["angle"] = float(angle_match.group(1))
 
         # ---------------------------------------------------------
-        # 6. Радиус
+        # 5. Радиус
         # ---------------------------------------------------------
         radius = re.search(
             r"\b(?:радиус|r)\s*[:=]?\s*([0-9.,]+\s*d|[0-9.,]+)",

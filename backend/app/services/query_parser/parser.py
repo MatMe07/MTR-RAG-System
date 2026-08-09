@@ -68,36 +68,41 @@ class QueryParser:
             operations = ["search"]
 
         primary_operation = self._select_primary_operation(operations)
-        if "explain" in operations and "replace" in operations:
-            if re.search(r'^(?:объясни|расскажи|что означает|чем отличается)', text, re.IGNORECASE):
-                primary_operation = "explain"
-            else:
-                primary_operation = "replace"
+        # if (2<=operations.__len__()< 3):
+        #     print(text)
+        #     print(operations)
+        #     print(primary_operation)
+        #     print("---------")
+        # if "explain" in operations and "replace" in operations:
+        #     if re.search(r'^(?:объясни|расскажи|что означает|чем отличается)', text, re.IGNORECASE):
+        #         primary_operation = "explain"
+        #     else:
+        #         primary_operation = "replace"
         
-        # 2. Если есть replace и assemble – replace важнее
-        if "replace" in operations and "assemble" in operations:
-            primary_operation = "replace"
+        # # 2. Если есть replace и assemble – replace важнее
+        # if "replace" in operations and "assemble" in operations:
+        #     primary_operation = "replace"
         
-        # 3. Если есть inventory и repair, но нет признаков поломки – inventory
-        if "inventory" in operations and "repair" in operations:
-            if not re.search(r'(?:сломал|поврежд|утечк|отказал)', text, re.IGNORECASE):
-                primary_operation = "inventory"
+        # # 3. Если есть inventory и repair, но нет признаков поломки – inventory
+        # if "inventory" in operations and "repair" in operations:
+        #     if not re.search(r'(?:сломал|поврежд|утечк|отказал)', text, re.IGNORECASE):
+        #         primary_operation = "inventory"
         
-        # 4. Если есть check и repair, но нет признаков поломки – check
-        if "check" in operations and "repair" in operations:
-            if not re.search(r'(?:сломал|поврежд|утечк|отказал)', text, re.IGNORECASE):
-                primary_operation = "check"
+        # # 4. Если есть check и repair, но нет признаков поломки – check
+        # if "check" in operations and "repair" in operations:
+        #     if not re.search(r'(?:сломал|поврежд|утечк|отказал)', text, re.IGNORECASE):
+        #         primary_operation = "check"
         
-        # 5. Если есть impact и repair – impact важнее
-        if "impact" in operations and "repair" in operations:
-            primary_operation = "impact"
+        # # 5. Если есть impact и repair – impact важнее
+        # if "impact" in operations and "repair" in operations:
+        #     primary_operation = "impact"
         
-        if "repair" in operations and "replace" in operations:
-            if re.search(r'(?:сломал|поврежд|утечк|отказал)', text, re.IGNORECASE):
-                primary_operation = "repair"
-            else:
-                # нет признаков поломки – replace важнее
-                primary_operation = "replace"
+        # if "repair" in operations and "replace" in operations:
+        #     if re.search(r'(?:сломал|поврежд|утечк|отказал)', text, re.IGNORECASE):
+        #         primary_operation = "repair"
+        #     else:
+        #         # нет признаков поломки – replace важнее
+        #         primary_operation = "replace"
         # -----------------------------------------------------
         # 2. Извлечение сущностей
         # -----------------------------------------------------
@@ -278,8 +283,8 @@ class QueryParser:
         # -----------------------------------------------------
         # 11. Итог
         # -----------------------------------------------------
-
-        return ParsedQuery(
+        
+        parsed = ParsedQuery(
             original_query=text,
             operation=primary_operation,
             operations=operations,
@@ -294,6 +299,8 @@ class QueryParser:
             required_capabilities=required_capabilities,
             confidence=confidence,
         )
+        # print(parsed.operation)
+        return parsed
         
         
     def _get_missing_fields(self, card: Optional[ItemCard]) -> List[str]:
@@ -342,18 +349,18 @@ class QueryParser:
     # =========================================================
 
     def _select_primary_operation(self, operations: List[str]) -> str:
-        # Если есть explain и replace, но запрос начинается с explain - приоритет explain
-        if "explain" in operations and operations[0] == "explain":
+        # Если есть explain – он всегда главный (объяснение)
+        if "explain" in operations:
             return "explain"
         
+        # Если есть impact – он важнее repair
         if "impact" in operations and "repair" in operations:
             return "impact"
         
-        # Стандартный приоритет
         priority = {
             "repair": 100,
             "replace": 95,
-            "impact": 85,
+            "impact": 90,
             "plan": 80,
             "check": 75,
             "inventory": 70,
@@ -429,8 +436,13 @@ class QueryParser:
             text_lower,
         )
         if diameter_match:
-            changes["dn_to"] = float(diameter_match.group(1))
-            changes["dn_from"] = float(diameter_match.group(2))
+            first = float(diameter_match.group(1))
+            second = float(diameter_match.group(2))
+            # from – то что было, to – то что ставим
+            # Если первое число = новое, второе = старое
+            # По умолчанию: первое = to, второе = from
+            changes["dn_to"] = first
+            changes["dn_from"] = second
 
         # Материал: "стали 20 на 09Г2С" -> from=20, to=09Г2С
         material_match = re.search(
@@ -504,7 +516,30 @@ class QueryParser:
         
         if quantity:
             context['quantity'] = quantity
+            
+        units_count = None
         
+        # "трёх таких же участков" -> 3
+        units_match = re.search(
+            r'(' + '|'.join(['одн','дв','трёх','тр','четырёх','четыр','пяти','пят','шести','шест','семи','сем','восьми','вос','девяти','девят','десяти','десят']) + r')\s*(?:таких же\s*)?участков',
+            text_lower
+        )
+        if units_match:
+            units_words = {
+                'одн':1,'дв':2,'трёх':3,'тр':3,'четырёх':4,'четыр':4,
+                'пяти':5,'пят':5,'шести':6,'шест':6,'семи':7,'сем':7,
+                'восьми':8,'вос':8,'девяти':9,'девят':9,'десяти':10,'десят':10
+            }
+            units_count = units_words.get(units_match.group(1))
+        
+        # "три участка"
+        if units_count is None:
+            units_match = re.search(r'(\d+)\s*(?:таких же\s*)?участков', text_lower)
+            if units_match:
+                units_count = int(units_match.group(1))
+        
+        if units_count:
+            context['units_count'] = units_count
         # ---------------------------------------------------------
         # 2. Длина в метрах
         # ---------------------------------------------------------
@@ -551,7 +586,6 @@ class QueryParser:
     def _build_filters(self, geometry=None, pressure=None, material=None, environment=None, item_type=None, item_types=None) -> Dict[str, Any]:
         filters = {}
 
-        # Если несколько типов – не добавляем item_type в filters
         if item_types and len(item_types) > 1:
             pass
         elif item_type:
@@ -560,7 +594,21 @@ class QueryParser:
             elif isinstance(item_type, dict):
                 filters.update(item_type)
 
-        for obj in [geometry, pressure, material, environment]:
+        # Добавляем параметры
+        if geometry and isinstance(geometry, dict):
+            # Для переходов и тройников используем d1 и d2, а не wall_thickness
+            if geometry.get('d1') and geometry.get('d2'):
+                filters["d1"] = geometry["d1"]
+                filters["d2"] = geometry["d2"]
+            if geometry.get('dn'):
+                filters["dn"] = geometry["dn"]
+            if geometry.get('wall_thickness') and not geometry.get('d1'):
+                filters["wall_thickness"] = geometry["wall_thickness"]
+            if geometry.get('angle'):
+                filters["angle"] = geometry["angle"]
+
+        # Добавляем остальное
+        for obj in [pressure, material, environment]:
             if obj:
                 if isinstance(obj, dict):
                     for k, v in obj.items():
@@ -624,11 +672,11 @@ class QueryParser:
 
         if isinstance(item_type, dict):
             base_type = item_type.get("item_type")
-            subtype = item_type.get("subtype")
+            subtype = item_type.get("subtype")            
         else:
             base_type = item_type
-            subtype = None
-
+            subtype = self.item_type_parser.parse_subtype(text)
+            
         temp_card = ItemCard(
             card_id=None,
             item_type=base_type,
@@ -643,6 +691,15 @@ class QueryParser:
             extraction=Extraction(confidence=0.0, method="user_query", missing_fields=[]),
             sources=[Source(type="user_query", fragment=text)],
         )
+        if temp_card.material and temp_card.material.steel_grade:
+            # Проверяем изменения в тексте
+            changes = self._extract_changes(text)
+            if changes.get('material_from'):
+                temp_card.material.steel_grade = changes['material_from']
+                # Перестраиваем designation с новым материалом
+                temp_card.designation = self._build_designation(
+                    geometry_obj, pressure_obj, temp_card.material, environment_obj
+                )
         
         missing = self._get_missing_fields(temp_card)
         temp_card.extraction.missing_fields = missing

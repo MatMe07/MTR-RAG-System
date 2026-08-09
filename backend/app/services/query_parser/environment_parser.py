@@ -18,12 +18,15 @@ class EnvironmentParser:
         }
 
         normalized = text.lower()
+        
+        has_unit_h2s = bool(re.search(r'unit[\-_\s]*h2s', normalized, re.IGNORECASE))
+        has_unit_co2 = bool(re.search(r'unit[\-_\s]*co2', normalized, re.IGNORECASE))
 
         # ---------------------------------------------------------
         # 0. Проверка: H2S/CO2 в названии UNIT – ИСПРАВЛЕНО
         # ---------------------------------------------------------
         # Усиленная проверка на UNIT-...-H2S-... или UNIT_SYN_H2S
-        if re.search(r'unit[\-_\s]*h2s', normalized) or re.search(r'unit[\-_\s]*co2', normalized):
+        if has_unit_h2s or has_unit_co2:
             # Среда в названии участка – игнорируем
             pass
         else:
