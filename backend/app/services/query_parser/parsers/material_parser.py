@@ -4,7 +4,7 @@ import re
 from typing import Dict, Any
 
 from .dictionaries import STEEL_GRADES, STRENGTH_CLASSES
-from .normalizersPars import (
+from .normalizers.normalizers import (
     normalize_steel,
     normalize_strength_class,
 )

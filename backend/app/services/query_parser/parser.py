@@ -3,16 +3,16 @@
 import re
 from typing import Any, Dict, List, Optional
 
-from .operation_parser import OperationParser
-from .item_type_parser import ItemTypeParser
-from .geometry_parser import GeometryParser
-from .pressure_parser import PressureParser
-from .material_parser import MaterialParser
-from .environment_parser import EnvironmentParser
-from .component_parser import ComponentParser
-from .unit_parser import UnitParser
-from .normative_parser import NormativeParser
-from .context_parser import ContextParser
+from parsers.operation_parser import OperationParser
+from parsers.item_type_parser import ItemTypeParser
+from parsers.geometry_parser import GeometryParser
+from parsers.pressure_parser import PressureParser
+from parsers.material_parser import MaterialParser
+from parsers.environment_parser import EnvironmentParser
+from parsers.component_parser import ComponentParser
+from parsers.unit_parser import UnitParser
+from parsers.normative_parser import NormativeParser
+from parsers.context_parser import ContextParser
 from .ambiguity_detector import AmbiguityDetector
 
 from app.schemas import (
@@ -47,7 +47,6 @@ class QueryParser:
         if not text or not text.strip():
             return ParsedQuery(
                 original_query=text or "",
-                operation="unknown",
                 operations=[],
                 confidence=0.0,
                 ambiguities=["Пустой запрос"],
@@ -58,149 +57,60 @@ class QueryParser:
         # -----------------------------------------------------
         # 1. Операции
         # -----------------------------------------------------
-
-        operations = self._safe_parse(
-            self.operation_parser.parse_all,
-            text
-        )
-
+        operations = self._safe_parse(self.operation_parser.parse_all, text)
         if not operations or operations == ["unknown"]:
             operations = ["search"]
 
-        primary_operation = self._select_primary_operation(operations)
-        # if (2<=operations.__len__()< 3):
-        #     print(text)
-        #     print(operations)
-        #     print(primary_operation)
-        #     print("---------")
-        # if "explain" in operations and "replace" in operations:
-        #     if re.search(r'^(?:объясни|расскажи|что означает|чем отличается)', text, re.IGNORECASE):
-        #         primary_operation = "explain"
-        #     else:
-        #         primary_operation = "replace"
-        
-        # # 2. Если есть replace и assemble – replace важнее
-        # if "replace" in operations and "assemble" in operations:
-        #     primary_operation = "replace"
-        
-        # # 3. Если есть inventory и repair, но нет признаков поломки – inventory
-        # if "inventory" in operations and "repair" in operations:
-        #     if not re.search(r'(?:сломал|поврежд|утечк|отказал)', text, re.IGNORECASE):
-        #         primary_operation = "inventory"
-        
-        # # 4. Если есть check и repair, но нет признаков поломки – check
-        # if "check" in operations and "repair" in operations:
-        #     if not re.search(r'(?:сломал|поврежд|утечк|отказал)', text, re.IGNORECASE):
-        #         primary_operation = "check"
-        
-        # # 5. Если есть impact и repair – impact важнее
-        # if "impact" in operations and "repair" in operations:
-        #     primary_operation = "impact"
-        
-        # if "repair" in operations and "replace" in operations:
-        #     if re.search(r'(?:сломал|поврежд|утечк|отказал)', text, re.IGNORECASE):
-        #         primary_operation = "repair"
-        #     else:
-        #         # нет признаков поломки – replace важнее
-        #         primary_operation = "replace"
         # -----------------------------------------------------
         # 2. Извлечение сущностей
         # -----------------------------------------------------
+        item_types = self._safe_parse(self.item_type_parser.parse_multiple, text) or []
+        geometry = self._safe_parse(self.geometry_parser.parse, text) or {}
+        pressure = self._safe_parse(self.pressure_parser.parse, text) or {}
+        material = self._safe_parse(self.material_parser.parse, text) or {}
+        environment = self._safe_parse(self.environment_parser.parse, text) or {}
+        component_ids = self._safe_parse(self.component_parser.parse, text) or []
+        unit_ids = self._safe_parse(self.unit_parser.parse, text) or []
+        normative = self._safe_parse(self.normative_parser.parse, text) or {}
 
-        item_type = self._safe_parse(
-            self.item_type_parser.parse,
-            text
-        )
-        
-        item_types = self._safe_parse(self.item_type_parser.parse_multiple, text)
-        if not item_types:
-            item_types = []
-
-        geometry = self._safe_parse(
-            self.geometry_parser.parse,
-            text
-        )
-
-        pressure = self._safe_parse(
-            self.pressure_parser.parse,
-            text
-        )
-
-        material = self._safe_parse(
-            self.material_parser.parse,
-            text
-        )
-
-        environment = self._safe_parse(
-            self.environment_parser.parse,
-            text
-        )
-
-        component_ids = self._safe_parse(
-            self.component_parser.parse,
-            text
-        )
-
-        unit_ids = self._safe_parse(
-            self.unit_parser.parse,
-            text
-        )
-
-        normative = self._safe_parse(
-            self.normative_parser.parse,
-            text
-        )
         if material and isinstance(material, dict) and normative:
             material_standard = material.get("standard")
             normative_gost = normative.get("gost_tu") if isinstance(normative, dict) else None
             if material_standard and normative_gost and material_standard == normative_gost:
-                material["standard"] = None
+                # ✅ Создаём новый словарь вместо мутации
+                material = {**material, "standard": None}
 
         # -----------------------------------------------------
         # 3. Контекст
         # -----------------------------------------------------
-
-        context = self._extract_context(text)
-
-        if context is None:
-            context = {}
-
-        if not isinstance(context, dict):
-            context = {}
+        context = self._extract_context(text) or {}
 
         # -----------------------------------------------------
         # 4. References
         # -----------------------------------------------------
-
-        references = self._extract_references(
-            text,
-            component_ids,
-            unit_ids
-        )
+        references = self._extract_references(text, component_ids, unit_ids)
 
         # -----------------------------------------------------
         # 5. Changes
         # -----------------------------------------------------
-
         changes = self._extract_changes(text)
 
         # -----------------------------------------------------
         # 6. Filters
         # -----------------------------------------------------
-
-        filters = self._build_filters(
+        technical_filters = self._build_filters(
             geometry=geometry,
             pressure=pressure,
             material=material,
             environment=environment,
-            item_type=item_type,
             item_types=item_types,
         )
+
+        stock_filters = self._extract_stock_filters(text)
 
         # -----------------------------------------------------
         # 7. Ambiguities
         # -----------------------------------------------------
-
         ambiguities = self._detect_ambiguities(
             text=text,
             geometry=geometry,
@@ -212,11 +122,9 @@ class QueryParser:
         # -----------------------------------------------------
         # 8. ItemCards
         # -----------------------------------------------------
-
-        # Основная карточка – только если один тип детали
         card = None
         cards = []
-        
+
         if len(item_types) == 1:
             card = self._build_card(
                 text=text,
@@ -230,8 +138,6 @@ class QueryParser:
             if card:
                 cards = [card]
         elif len(item_types) > 1:
-            # Не создаём основную карточку при множественных типах
-            # Но создаём отдельные карточки для каждого типа
             for it_type in item_types:
                 type_card = self._build_card(
                     text=text,
@@ -245,7 +151,6 @@ class QueryParser:
                 if type_card:
                     cards.append(type_card)
         else:
-            # Нет item_type – пробуем создать карточку без типа
             card = self._build_card(
                 text=text,
                 item_type=None,
@@ -259,9 +164,30 @@ class QueryParser:
                 cards = [card]
 
         # -----------------------------------------------------
-        # 9. Capabilities
+        # 9. Impact Analysis
         # -----------------------------------------------------
+        impact_analysis = self._extract_impact_analysis(text, changes)
 
+        # -----------------------------------------------------
+        # 10. Unit / Component Context
+        # -----------------------------------------------------
+        unit_context = self._extract_unit_context(text, unit_ids, environment)
+        component_context = self._extract_component_context(text, component_ids)
+
+        # -----------------------------------------------------
+        # 11. Required Agents
+        # -----------------------------------------------------
+        required_agents = self._determine_required_agents(
+            operations=operations,
+            component_ids=component_ids,
+            unit_ids=unit_ids,
+            references=references,
+            ambiguities=ambiguities,
+        )
+
+        # -----------------------------------------------------
+        # 12. Capabilities
+        # -----------------------------------------------------
         required_capabilities = self._detect_capabilities(
             operations=operations,
             text=text,
@@ -270,9 +196,8 @@ class QueryParser:
         )
 
         # -----------------------------------------------------
-        # 10. Confidence
+        # 13. Confidence
         # -----------------------------------------------------
-
         confidence = self._calculate_confidence(
             text=text,
             operations=operations,
@@ -280,29 +205,199 @@ class QueryParser:
             ambiguities=ambiguities,
         )
 
+        confidence_details = self._build_confidence_details(
+            operations=operations,
+            card=card,
+            ambiguities=ambiguities,
+        )
+
         # -----------------------------------------------------
-        # 11. Итог
+        # 14. Итог
         # -----------------------------------------------------
-        
-        parsed = ParsedQuery(
+        return ParsedQuery(
             original_query=text,
-            operation=primary_operation,
             operations=operations,
             item_types=item_types,
+            component_ids=component_ids or [],
+            unit_ids=unit_ids or [],
             card=card,
             cards=cards,
-            filters=filters,
-            changes=changes,
-            context=context,
+            technical_filters=technical_filters,
+            stock_filters=stock_filters,
+            proposed_changes=changes,
+            impact_analysis=impact_analysis,
+            unit_context=unit_context,
+            component_context=component_context,
             references=references,
             ambiguities=ambiguities,
+            required_agents=required_agents,
             required_capabilities=required_capabilities,
             confidence=confidence,
+            confidence_details=confidence_details,
         )
-        # print(parsed.operation)
-        return parsed
+    
+    def _extract_stock_filters(self, text: str) -> Dict[str, Any]:
+        filters = {}
+        text_lower = text.lower()
+
+        match = re.search(r'(?:больше|более|свыше)\s*(\d+)', text_lower)
+        if match:
+            filters["quantity_min"] = int(match.group(1))
+
+        match = re.search(r'(?:меньше|менее|не более)\s*(\d+)', text_lower)
+        if match:
+            filters["quantity_max"] = int(match.group(1))
+
+        if re.search(r'\bсклад\b', text_lower):
+            filters["stock_category"] = "main"
+
+        return filters
         
         
+    def _extract_impact_analysis(self, text: str, changes: Dict) -> Dict[str, Any]:
+        analysis = {}
+        text_lower = text.lower()
+        checks = []
+
+        if re.search(r'(?:проверить|проверь|убедиться|убедитесь)', text_lower):
+            checks.append("проверить совместимость с соседними деталями")
+        if re.search(r'\bдавлени[ея]\b', text_lower):
+            checks.append("проверить давление в системе")
+        if re.search(r'\bтемператур[аы]\b', text_lower):
+            checks.append("проверить температуру")
+        if re.search(r'\bсред[аы]|h2s|co2\b', text_lower):
+            checks.append("проверить совместимость со средой")
+
+        if checks:
+            analysis["required_checks"] = checks
+
+        if changes:
+            if changes.get("dn_from") or changes.get("dn_to"):
+                analysis["affected_components"] = ["фланцы", "прокладки", "болты"]
+            if changes.get("medium"):
+                analysis["affected_components"] = analysis.get("affected_components", []) + ["уплотнения", "материал деталей"]
+
+        return analysis
+
+
+    # =========================================================
+    # CONTEXT
+    # =========================================================
+
+    def _extract_unit_context(self, text: str, unit_ids: List[str], environment: Dict) -> Dict[str, Any]:
+        context = {}
+        text_lower = text.lower()
+
+        if unit_ids:
+            context["unit_id"] = unit_ids[0]
+
+        if environment and environment.get("medium"):
+            context["medium"] = environment["medium"]
+
+        temp_match = re.search(r'температур[аы]?\s*[-+]?(\d+(?:[.,]\d+)?)', text_lower)
+        if temp_match:
+            context["temperature"] = float(temp_match.group(1).replace(',', '.'))
+
+        press_match = re.search(r'давлени[ея]?\s*[-+]?(\d+(?:[.,]\d+)?)', text_lower)
+        if press_match:
+            context["pressure"] = float(press_match.group(1).replace(',', '.'))
+
+        return context
+
+
+    def _extract_component_context(self, text: str, component_ids: List[str]) -> Dict[str, Any]:
+        context = {}
+        text_lower = text.lower()
+
+        if component_ids:
+            context["component_id"] = component_ids[0]
+
+        pos_match = re.search(r'\b(до|после|перед|за|между)\s+(?:COMP-|компонент|деталь)', text_lower)
+        if pos_match:
+            context["position"] = pos_match.group(1)
+
+        if re.search(r'\bсоседн(?:ий|яя|ее|ие)\b', text_lower):
+            context["connections"] = ["соседние детали"]
+
+        return context
+
+
+    # =========================================================
+    # REQUIRED AGENTS
+    # =========================================================
+
+    def _determine_required_agents(
+        self,
+        operations: List[str],
+        component_ids: List[str],
+        unit_ids: List[str],
+        references: List[str],
+        ambiguities: List[str]
+    ) -> List[str]:
+        agents = set()
+
+        mapping = {
+            "search": "search",
+            "replace": "search",
+            "repair": "search",
+            "plan": "plan",
+            "check": "rules",
+            "inventory": "inventory",
+            "explain": "knowledge",
+            "impact": "impact",
+            "assemble": "plan",
+            "calculate": "rules",
+        }
+
+        for op in operations:
+            if op in mapping:
+                agents.add(mapping[op])
+
+        if component_ids or unit_ids:
+            agents.add("topology")
+
+        if references:
+            agents.add("knowledge")
+
+        if ambiguities:
+            agents.add("human")
+
+        return sorted(agents)
+
+
+    # =========================================================
+    # CONFIDENCE DETAILS
+    # =========================================================
+
+    def _build_confidence_details(
+        self,
+        operations: List[str],
+        card: Optional[ItemCard],
+        ambiguities: List[str]
+    ) -> Dict[str, float]:
+        details = {}
+
+        if operations:
+            details["operations"] = min(1.0, len(operations) * 0.2 + 0.2)
+        else:
+            details["operations"] = 0.0
+
+        if card:
+            missing = card.extraction.missing_fields if card.extraction else []
+            if missing:
+                details["card"] = max(0.0, 1.0 - len(missing) * 0.1)
+            else:
+                details["card"] = 1.0
+        else:
+            details["card"] = 0.0
+
+        if ambiguities:
+            details["ambiguities"] = max(0.0, 1.0 - len(ambiguities) * 0.2)
+        else:
+            details["ambiguities"] = 1.0
+
+        return details
+    
     def _get_missing_fields(self, card: Optional[ItemCard]) -> List[str]:
         """Определяет какие поля отсутствуют в карточке"""
         missing = []

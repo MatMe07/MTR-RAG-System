@@ -8,10 +8,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.services.query_parser import QueryParser
 from pprint import pprint
+from app.services.llm_service import LLMService
 
-from app.services.query_parser.enhanced.hybrid_parser import HybridParser
+from backend.app.services.query_parser.hybrid_parser import HybridParser
 
-parser = HybridParser()
+# parser = HybridParser()
+llm = LLMService()
+from app.services.entity_extractor import get_entity_extractor
+extractor = get_entity_extractor()
 
 def main():
     # parser = QueryParser()
@@ -407,29 +411,38 @@ def main():
     "Переход 219 на 159 для CO2",
 ]
     
+    questionsd = ["Найди замину задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет?"]
+    
     results = []
-
-    for i, query in enumerate(questions, start=1):
+    for i, query in enumerate(questionsd, start=1):
         try:
             # if i != 22: continue
-            result = parser.parse(query)
+            
+            parsed = extractor.extract(
+    query
+)
             # results.append(result)
             
             results.append({
                 "id": i,
                 "query": query,
-                "operation": result.operation,
-                "operations": result.operations,
-                "confidence": result.confidence,
-                "card": result.card.model_dump() if result.card else None,
-                "cards": [c.model_dump() for c in result.cards] if result.cards else [],
-                "filters": result.filters,
-                "changes": result.changes,
-                "context": result.context,
-                "references": result.references,
-                "ambiguities": result.ambiguities,
-                "required_capabilities": result.required_capabilities,
-                "error": None
+                "operation": parsed.operations if parsed.operations else ["unknown"],
+                "confidence": parsed.confidence,
+                "card": parsed.card.model_dump() if parsed.card else None,
+                "cards": [c.model_dump() for c in parsed.cards] if parsed.cards else [],
+                "filters": parsed.technical_filters,
+                "changes": parsed.proposed_changes,
+                "context": {
+                    "unit_context": parsed.unit_context,
+                    "component_context": parsed.component_context
+                },
+                "references": parsed.references,
+                "ambiguities": parsed.ambiguities,
+                "required_agents": parsed.required_agents,
+                "required_capabilities": parsed.required_capabilities,
+                "component_ids": parsed.component_ids,
+                "unit_ids": parsed.unit_ids,
+                "item_types": parsed.item_types
             })
         
         except Exception as e:

@@ -3,7 +3,7 @@
 import re
 from typing import Dict, Any
 
-from .normalizersPars import normalize_decimal
+from .normalizers.normalizers import normalize_decimal
 
 
 class GeometryParser:

@@ -237,6 +237,7 @@ class OperationParser:
         scores: Dict[str, float] = {}
 
         for word in words:
+            
             for operation, targets in self.FUZZY_WORDS.items():
                 for target in targets:
                     score = fuzz.ratio(word, target)

@@ -19,47 +19,50 @@ class EnvironmentParser:
 
         normalized = text.lower()
         
-        has_unit_h2s = bool(re.search(r'unit[\-_\s]*h2s', normalized, re.IGNORECASE))
-        has_unit_co2 = bool(re.search(r'unit[\-_\s]*co2', normalized, re.IGNORECASE))
+        has_unit_h2s = bool(re.search(r'unit[\-_\s]*h2s', normalized))
+        has_unit_co2 = bool(re.search(r'unit[\-_\s]*co2', normalized))
 
-        # ---------------------------------------------------------
-        # 0. Проверка: H2S/CO2 в названии UNIT – ИСПРАВЛЕНО
-        # ---------------------------------------------------------
-        # Усиленная проверка на UNIT-...-H2S-... или UNIT_SYN_H2S
         if has_unit_h2s or has_unit_co2:
-            # Среда в названии участка – игнорируем
             pass
         else:
-            # ---------------------------------------------------------
-            # 1. Среда
-            # ---------------------------------------------------------
+            # 1. Сначала ищем специфические среды (нефть, газ, вода)
             for alias, medium in MEDIUM_ALIASES.items():
-                if re.search(rf"(?<![а-яёa-z]){re.escape(alias)}(?![а-яёa-z])", normalized):
-                    result["medium"] = medium
-                    if medium == "H2S":
-                        result["h2s_confirmed"] = True
-                    elif medium == "CO2":
-                        result["co2_confirmed"] = True
-                    break
+                
+                if medium in ["нефть", "природный газ", "вода"]:
+                    # print(re.search(rf"(?<![а-яёa-z]){re.escape(alias)}(?![а-яёa-z])", normalized))
+                    if re.search(rf"(?<![а-яёa-z]){re.escape(alias)}(?![а-яёa-z])", normalized):
+                        result["medium"] = medium
+                        break
+            
+            # 2. Если не нашли, ищем H2S/CO2
+            if result["medium"] is None:
+                for alias, medium in MEDIUM_ALIASES.items():
+                    if medium in ["H2S", "CO2"]:
+                        if re.search(rf"(?<![а-яёa-z]){re.escape(alias)}(?![а-яёa-z])", normalized):
+                            result["medium"] = medium
+                            if medium == "H2S":
+                                result["h2s_confirmed"] = True
+                            elif medium == "CO2":
+                                result["co2_confirmed"] = True
+                            break
 
-            if re.search(r"(?:для|с|на)\s+h2s", normalized):
-                result["h2s_confirmed"] = True
-                if result["medium"] is None:
+            # 3. Если всё ещё None, пробуем через "для X"
+            if result["medium"] is None:
+                if re.search(r"(?:для|с|на)\s+h2s", normalized):
                     result["medium"] = "H2S"
-
-            if re.search(r"(?:для|с|на)\s+co2", normalized):
-                result["co2_confirmed"] = True
-                if result["medium"] is None:
+                    result["h2s_confirmed"] = True
+                elif re.search(r"(?:для|с|на)\s+co2", normalized):
                     result["medium"] = "CO2"
+                    result["co2_confirmed"] = True
 
-        # ---------------------------------------------------------
-        # 2. Климат
-        # ---------------------------------------------------------
+        # Если h2s_confirmed true, но medium null – заполняем
+        if result["h2s_confirmed"] and result["medium"] is None:
+            result["medium"] = "H2S"
+        if result["co2_confirmed"] and result["medium"] is None:
+            result["medium"] = "CO2"
+
         result["climate_version"] = self._parse_climate(text)
-
-        # ---------------------------------------------------------
-        # 3. Температура
-        # ---------------------------------------------------------
+        
         temp_keywords = r"(?:температур[аы]|град|до\s*|от\s*|при\s*)"
         temp_match = re.search(
             rf"{temp_keywords}([-+]?\d+(?:[.,]\d+)?)",
@@ -80,7 +83,8 @@ class EnvironmentParser:
             if alias in ['ухл', 'ухл1', 'хл', 'хл1', 'т']:
                 if re.search(rf"(?<![а-яёa-z]){re.escape(alias)}(?![а-яёa-z])", text_lower):
                     return climate
-
+        if re.search(r'\b(?:север|севера|северный|северное)\b', text_lower):
+                    return "ХЛ"
         # 2. Ищем "У" как климатическое исполнение
         #    ТОЛЬКО если это не предлог "у" в начале предложения или части слова
         #    Ищем "У" в конце строки, после запятой, после тире, или в скобках

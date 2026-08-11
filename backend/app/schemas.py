@@ -200,32 +200,106 @@ class ExpertReviewResponse(BaseModel):
     success: bool
     message: str
     review_id: int
-    
+
 class ParsedQuery(BaseModel):
-    original_query: str
-
-    operation: str
-    operations: List[str] = Field(default_factory=list)
+    """Результат парсинга пользовательского запроса для инженерной системы."""
     
-    item_types: List[str] = Field(default_factory=list)
-
-    card: Optional[ItemCard] = None
-    cards: List[ItemCard] = Field(default_factory=list)
-
-    filters: Dict[str, Any] = Field(default_factory=dict)
-    changes: Dict[str, Any] = Field(default_factory=dict)
-    context: Dict[str, Any] = Field(default_factory=dict)
-    references: List[str] = Field(default_factory=list)
-    ambiguities: List[str] = Field(default_factory=list)
-    required_capabilities: List[str] = Field(default_factory=list)
-
+    # ===== Исходный запрос =====
+    original_query: str = Field(..., description="Исходный текст запроса")
+    
+    # ===== Операции (что нужно сделать) =====
+    operations: List[str] = Field(
+        default_factory=list,
+        description="Список операций: find, replace, check, plan, explain, calculate, compare, analyze"
+    )
+    
+    # ===== Целевые объекты =====
+    item_types: List[str] = Field(
+        default_factory=list,
+        description="Типы изделий: отвод, труба, задвижка, заглушка, переход, тройник"
+    )
+    component_ids: List[str] = Field(
+        default_factory=list,
+        description="ID компонентов: COMP-SYN-010"
+    )
+    unit_ids: List[str] = Field(
+        default_factory=list,
+        description="ID участков: UNIT-SYN-H2S-001"
+    )
+    
+    # ===== Карточки =====
+    card: Optional[ItemCard] = Field(
+        None,
+        description="Одна основная карточка (для простых запросов)"
+    )
+    cards: List[ItemCard] = Field(
+        default_factory=list,
+        description="Несколько карточек (для составных запросов)"
+    )
+    
+    # ===== Фильтры для поиска =====
+    technical_filters: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Технические фильтры: dn, angle, wall_thickness, pressure, steel_grade, strength_class, medium"
+    )
+    stock_filters: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Складские фильтры: quantity_min, quantity_max, location, stock_category"
+    )
+    
+    # ===== Изменения и их анализ =====
+    proposed_changes: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Предлагаемые изменения: from_value → to_value (например, DN150 → DN200)"
+    )
+    impact_analysis: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Анализ влияния: что проверить при замене, какие детали затронуты"
+    )
+    
+    # ===== Контекст =====
+    unit_context: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Контекст участка: unit_id, medium, temperature, pressure"
+    )
+    component_context: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Контекст компонента: component_id, position, connections"
+    )
+    
+    # ===== Ссылки на нормативную базу =====
+    references: List[str] = Field(
+        default_factory=list,
+        description="Упомянутые ГОСТы, ТУ, паспорта"
+    )
+    
+    # ===== Неоднозначности =====
+    ambiguities: List[str] = Field(
+        default_factory=list,
+        description="Что нужно уточнить у пользователя"
+    )
+    
+    # ===== Требуемые возможности =====
+    required_agents: List[str] = Field(
+        default_factory=list,
+        description="Какие агенты нужны: search, inventory, rules, knowledge, topology, impact, plan"
+    )
+    required_capabilities: List[str] = Field(
+        default_factory=list,
+        description="Свободное описание требуемых возможностей"
+    )
+    
+    # ===== Уверенность =====
     confidence: float = Field(
         1.0,
         ge=0.0,
-        le=1.0
+        le=1.0,
+        description="Общая уверенность в парсинге"
     )
-    
-
+    confidence_details: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Детали уверенности по каждому полю"
+    )
 
 class DocumentInfo(BaseModel):
     id: int
