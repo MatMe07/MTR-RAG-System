@@ -1,35 +1,34 @@
 [
   {
     "id": 1,
-    "query": "Найди замину задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет?",
+    "query": "Сколько отводов 90 426 на 10 есть на складе и какие из них подходят для H2S?",
     "operation": [
-      "replace",
       "inventory",
-      "search"
+      "check"
     ],
-    "confidence": 0.94,
+    "confidence": 0.79,
     "card": {
       "card_id": null,
       "mtr_code": null,
       "ksm_code": null,
-      "item_type": "задвижка",
+      "item_type": "отвод",
       "subtype": null,
-      "designation": "DN150 PN4 H2S",
-      "name": "задвижка DN150 PN4",
+      "designation": "90° H2S",
+      "name": "отвод 90°",
       "geometry": {
-        "dn": 150.0,
+        "dn": null,
         "d1": null,
         "d2": null,
         "wall_thickness": null,
         "wall_thickness_2": null,
-        "angle": null,
+        "angle": 90.0,
         "radius": null
       },
       "pressure": {
-        "pn": 4.0,
+        "pn": null,
         "working_pressure_mpa": null,
         "test_pressure_mpa": null,
-        "raw_value": "PN40"
+        "raw_value": null
       },
       "material": {
         "steel_grade": null,
@@ -44,11 +43,15 @@
         "climate_version": null
       },
       "coating": null,
-      "normative": null,
+      "normative": {
+        "gost_tu": null,
+        "lnd_sections": []
+      },
       "extraction": {
         "confidence": 0.0,
-        "method": "user_query",
+        "method": "hybrid",
         "missing_fields": [
+          "dn",
           "geometry",
           "material"
         ]
@@ -59,7 +62,7 @@
           "file": null,
           "page": null,
           "row": null,
-          "fragment": "Найди замину задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет?"
+          "fragment": "Сколько отводов 90 426 на 10 есть на складе и какие из них подходят для H2S?"
         }
       ]
     },
@@ -68,24 +71,24 @@
         "card_id": null,
         "mtr_code": null,
         "ksm_code": null,
-        "item_type": "задвижка",
+        "item_type": "отвод",
         "subtype": null,
-        "designation": "DN150 PN4 H2S",
-        "name": "задвижка DN150 PN4",
+        "designation": "90° H2S",
+        "name": "отвод 90°",
         "geometry": {
-          "dn": 150.0,
+          "dn": null,
           "d1": null,
           "d2": null,
           "wall_thickness": null,
           "wall_thickness_2": null,
-          "angle": null,
+          "angle": 90.0,
           "radius": null
         },
         "pressure": {
-          "pn": 4.0,
+          "pn": null,
           "working_pressure_mpa": null,
           "test_pressure_mpa": null,
-          "raw_value": "PN40"
+          "raw_value": null
         },
         "material": {
           "steel_grade": null,
@@ -100,7 +103,169 @@
           "climate_version": null
         },
         "coating": null,
-        "normative": null,
+        "normative": {
+          "gost_tu": null,
+          "lnd_sections": []
+        },
+        "extraction": {
+          "confidence": 0.0,
+          "method": "hybrid",
+          "missing_fields": [
+            "dn",
+            "geometry",
+            "material"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Сколько отводов 90 426 на 10 есть на складе и какие из них подходят для H2S?"
+          }
+        ]
+      }
+    ],
+    "filters": {
+      "item_type": "отвод",
+      "angle": 90.0,
+      "medium": "H2S",
+      "h2s_confirmed": true
+    },
+    "changes": {},
+    "context": {
+      "unit_context": {
+        "medium": "H2S"
+      },
+      "component_context": {}
+    },
+    "references": [],
+    "ambiguities": [
+      "LLM проверка не удалась: Error code: 403 - {'success': False, 'error': 'Access denied by security policy.'}"
+    ],
+    "required_agents": [
+      "inventory",
+      "rules"
+    ],
+    "required_capabilities": [
+      "compatibility_check",
+      "inventory"
+    ],
+    "component_ids": [],
+    "unit_ids": [],
+    "item_types": [
+      "отвод"
+    ]
+  },
+  {
+    "id": 2,
+    "query": "Подготовь список деталей и документов для плановой замены задвижки DN200 PN63 на участке UNIT-SYN-GAS-001?",
+    "operation": [
+      "replace",
+      "plan",
+      "document"
+    ],
+    "confidence": 0.89,
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "задвижка",
+      "subtype": null,
+      "designation": "DN200 PN6.3 пар",
+      "name": "задвижка DN200 PN6.3",
+      "geometry": {
+        "dn": 200.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": null,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": 6.3,
+        "working_pressure_mpa": 6.3,
+        "test_pressure_mpa": null,
+        "raw_value": "PN63"
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": "пар",
+        "h2s_confirmed": null,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": {
+        "gost_tu": null,
+        "lnd_sections": []
+      },
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "geometry",
+          "material"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Подготовь список деталей и документов для плановой замены задвижки DN200 PN63 на участке UNIT-SYN-GAS-001?"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "задвижка",
+        "subtype": null,
+        "designation": "DN200 PN6.3 пар",
+        "name": "задвижка DN200 PN6.3",
+        "geometry": {
+          "dn": 200.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": 6.3,
+          "working_pressure_mpa": 6.3,
+          "test_pressure_mpa": null,
+          "raw_value": "PN63"
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": "пар",
+          "h2s_confirmed": null,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": {
+          "gost_tu": null,
+          "lnd_sections": []
+        },
         "extraction": {
           "confidence": 0.0,
           "method": "user_query",
@@ -115,38 +280,47 @@
             "file": null,
             "page": null,
             "row": null,
-            "fragment": "Найди замину задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет?"
+            "fragment": "Подготовь список деталей и документов для плановой замены задвижки DN200 PN63 на участке UNIT-SYN-GAS-001?"
           }
         ]
       }
     ],
     "filters": {
-      "dn": 150.0,
-      "pn": 4.0,
-      "raw_value": "PN40",
-      "medium": "H2S",
-      "h2s_confirmed": true
+      "item_type": "задвижка",
+      "dn": 200.0,
+      "pn": 6.3,
+      "working_pressure_mpa": 6.3,
+      "raw_value": "PN63",
+      "medium": "пар"
     },
     "changes": {},
     "context": {
       "unit_context": {
-        "medium": "H2S"
+        "unit_id": "UNIT-SYN-GAS-001",
+        "medium": "пар"
       },
       "component_context": {}
     },
-    "references": [],
+    "references": [
+      "UNIT-SYN-GAS-001"
+    ],
     "ambiguities": [],
     "required_agents": [
-      "inventory",
-      "search"
+      "knowledge",
+      "plan",
+      "search",
+      "topology"
     ],
     "required_capabilities": [
-      "inventory",
+      "document_search",
+      "maintenance_planning",
       "replacement_matching",
-      "search"
+      "topology"
     ],
     "component_ids": [],
-    "unit_ids": [],
+    "unit_ids": [
+      "UNIT-SYN-GAS-001"
+    ],
     "item_types": [
       "задвижка"
     ]

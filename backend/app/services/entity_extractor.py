@@ -1,7 +1,7 @@
 # backend/app/services/entity_extractor.py
 
 from app.schemas import ParsedQuery
-from backend.app.services.query_parser.hybrid_parser import HybridParser
+from app.services.query_parser.hybrid_parser import HybridParser
 from app.services.llm_service import LLMService
 
 
@@ -16,7 +16,7 @@ class EntityExtractor:
         
         # 2. Если результат не уверенный или есть неоднозначности
         #    — вызываем LLM для проверки и исправления
-        if parsed.confidence < 0.8 or parsed.ambiguities:
+        if parsed.confidence < 0.85 or parsed.ambiguities:
             parsed = self.llm.validate_and_correct_query(parsed)
         
         return parsed

@@ -11,7 +11,7 @@ class Settings:
     QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
     QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "")
     COLLECTION_NAME = "tplink_DOCS"
-    USE_LOCAL_LLM=True
+    USE_LOCAL_LLM=False
 
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
     EMBEDDING_DEVICE = "cpu"

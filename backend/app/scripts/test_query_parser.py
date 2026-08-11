@@ -10,10 +10,10 @@ from app.services.query_parser import QueryParser
 from pprint import pprint
 from app.services.llm_service import LLMService
 
-from backend.app.services.query_parser.hybrid_parser import HybridParser
+# from .app.services.
 
 # parser = HybridParser()
-llm = LLMService()
+llm = LLMService()  
 from app.services.entity_extractor import get_entity_extractor
 extractor = get_entity_extractor()
 
@@ -411,7 +411,8 @@ def main():
     "Переход 219 на 159 для CO2",
 ]
     
-    questionsd = ["Найди замину задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет?"]
+    questionsd = ["Сколько отводов 90 426 на 10 есть на складе и какие из них подходят для H2S?",
+                  "Подготовь список деталей и документов для плановой замены задвижки DN200 PN63 на участке UNIT-SYN-GAS-001?"]
     
     results = []
     for i, query in enumerate(questionsd, start=1):

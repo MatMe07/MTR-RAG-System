@@ -88,6 +88,7 @@ class ItemCard(BaseModel):
     #     return v.lower()
 
 class QueryIntent(BaseModel):
+    """Интент запроса"""
     operation: Optional[str] = None
     workflow: Optional[str] = None
 
@@ -210,21 +211,21 @@ class ParsedQuery(BaseModel):
     # ===== Операции (что нужно сделать) =====
     operations: List[str] = Field(
         default_factory=list,
-        description="Список операций: find, replace, check, plan, explain, calculate, compare, analyze"
+        description="Список операций: search, replace, check, plan, explain, inventory, impact, assemble, calculate, document, repair"
     )
     
     # ===== Целевые объекты =====
     item_types: List[str] = Field(
         default_factory=list,
-        description="Типы изделий: отвод, труба, задвижка, заглушка, переход, тройник"
+        description="Типы изделий: отвод, труба, задвижка, заглушка, переход, тройник, кран, фланец, прокладка, болт"
     )
     component_ids: List[str] = Field(
         default_factory=list,
-        description="ID компонентов: COMP-SYN-010"
+        description="ID компонентов: COMP-XXX"
     )
     unit_ids: List[str] = Field(
         default_factory=list,
-        description="ID участков: UNIT-SYN-H2S-001"
+        description="ID участков: UNIT-XXX"
     )
     
     # ===== Карточки =====
@@ -282,7 +283,7 @@ class ParsedQuery(BaseModel):
     # ===== Требуемые возможности =====
     required_agents: List[str] = Field(
         default_factory=list,
-        description="Какие агенты нужны: search, inventory, rules, knowledge, topology, impact, plan"
+        description="Какие агенты нужны: search, inventory, rules, knowledge, topology, impact, plan, human"
     )
     required_capabilities: List[str] = Field(
         default_factory=list,
