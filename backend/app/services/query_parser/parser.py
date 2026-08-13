@@ -209,6 +209,14 @@ class QueryParser:
             cards=cards,
             technical_filters=technical_filters,
             stock_filters=stock_filters,
+            units_count=context.get('units_count'),
+            length_m=context.get('length_meters'),
+            limit=context.get('limit'),
+            timeframe=context.get('timeframe'),
+            urgency=context.get('urgency'),
+            sort_by=context.get('sort_by'),
+            on_stock=self._extract_on_stock(text),
+            not_installed=self._extract_not_installed(text),
             proposed_changes=changes,
             impact_analysis=impact_analysis,
             unit_context=unit_context,
@@ -342,26 +350,84 @@ class QueryParser:
 
         return changes
 
+    # Числительные для складских фильтров
+    STOCK_NUMERALS = {
+        "один": 1, "одну": 1, "одна": 1, "одного": 1, "одним": 1,
+        "два": 2, "две": 2, "двух": 2, "двумя": 2,
+        "три": 3, "трёх": 3, "трех": 3, "тремя": 3,
+        "четыре": 4, "четырёх": 4, "четырех": 4,
+        "пять": 5, "пяти": 5, "пятью": 5,
+        "десять": 10, "десяти": 10,
+        "двадцать": 20, "двадцати": 20,
+        "тридцать": 30, "тридцати": 30,
+        "сорок": 40, "сорока": 40,
+        "пятьдесят": 50, "пятидесяти": 50,
+        "шестьдесят": 60, "шестидесяти": 60,
+        "семьдесят": 70, "семидесяти": 70,
+        "восемьдесят": 80, "восьмидесяти": 80,
+        "девяносто": 90, "девяноста": 90,
+        "сто": 100, "ста": 100,
+        "двести": 200, "двухсот": 200,
+        "триста": 300, "пятьсот": 500,
+        "тысяча": 1000, "тысячи": 1000,
+    }
+
+    def _parse_quantity_token(self, token: str) -> Optional[int]:
+        """Преобразование числа или числительного в количество"""
+        token = token.lower()
+        if token.isdigit():
+            return int(token)
+        return self.STOCK_NUMERALS.get(token)
+
     def _extract_stock_filters(self, text: str) -> Dict[str, Any]:
         """Извлечение складских фильтров"""
         filters = {}
         text_lower = text.lower()
 
         # Количество: больше/более/свыше X
-        match = re.search(r'(?:больше|более|свыше)\s*(\d+)', text_lower)
+        match = re.search(r'(?:больше|более|свыше)\s+([а-яё]+|\d+)', text_lower)
         if match:
-            filters["quantity_min"] = int(match.group(1))
+            qty = self._parse_quantity_token(match.group(1))
+            if qty is not None:
+                filters["quantity_min"] = qty
 
         # Количество: меньше/менее/не более X
-        match = re.search(r'(?:меньше|менее|не более)\s*(\d+)', text_lower)
+        match = re.search(r'(?:меньше|менее|не более)\s+([а-яё]+|\d+)', text_lower)
         if match:
-            filters["quantity_max"] = int(match.group(1))
+            qty = self._parse_quantity_token(match.group(1))
+            if qty is not None:
+                filters["quantity_max"] = qty
+
+        # Safety stock: "один полный комплект должен оставаться на складе"
+        match = re.search(r'(один|одну|одна|1|два|две|2|три|3)\s+(?:полный\s+)?комплект\b', text_lower)
+        if match and re.search(r'оставаться|остается|остаётся', text_lower):
+            qty = self._parse_quantity_token(match.group(1))
+            if qty is not None:
+                filters["quantity_min"] = qty
 
         # Категория склада
-        if re.search(r'\bсклад\b', text_lower):
+        if re.search(r'склад\w*', text_lower):
             filters["stock_category"] = "main"
 
         return filters
+
+    @staticmethod
+    def _extract_on_stock(text: str) -> Optional[bool]:
+        """Есть ли товар на складе: «нет на складе» -> False, «есть/в наличии» -> True."""
+        text_lower = text.lower()
+        if re.search(r'(?:нет|нету|нет в наличии|отсутств\w+|не имеется|не хватает)[^.!?;]{0,40}(?:на складе|на склад|в наличии)', text_lower):
+            return False
+        if re.search(r'(?:есть|имеется|в наличии|есть на складе)', text_lower):
+            return True
+        return None
+
+    @staticmethod
+    def _extract_not_installed(text: str) -> Optional[bool]:
+        """«не установлены ни на одном участке» -> True."""
+        text_lower = text.lower()
+        if re.search(r'не\s+установл\w+', text_lower):
+            return True
+        return None
 
     def _extract_impact_analysis(self, text: str, changes: Dict) -> Dict[str, Any]:
         """Извлечение анализа влияния изменений"""
@@ -547,7 +613,7 @@ class QueryParser:
         Возвращает (main_card, cards_list)
         """
         # Проверка на участок без параметров
-        if self._is_unit_without_params(text, geometry, pressure, material):
+        if self._is_unit_without_params(text, item_types, geometry, pressure, material, environment):
             return None, []
 
         has_data = any(x is not None for x in [item_types, geometry, pressure, material, environment, normative])
@@ -610,9 +676,14 @@ class QueryParser:
             )
             return card, [card] if card else []
 
-    def _is_unit_without_params(self, text: str, geometry: Dict, pressure: Dict, material: Dict) -> bool:
+    def _is_unit_without_params(self, text: str, item_types: List[str],
+                                geometry: Dict, pressure: Dict, material: Dict,
+                                environment: Dict) -> bool:
         """Проверка, что запрос про участок без параметров детали"""
         if not re.search(r'\b(?:участок|схема|состоит|участке)\b', text, re.IGNORECASE):
+            return False
+
+        if item_types:
             return False
 
         has_params = False
@@ -624,6 +695,10 @@ class QueryParser:
                 has_params = True
         if material and isinstance(material, dict):
             if material.get('steel_grade'):
+                has_params = True
+        if environment and isinstance(environment, dict):
+            if any([environment.get('medium'), environment.get('h2s_confirmed'),
+                    environment.get('co2_confirmed'), environment.get('temperature_min_c')]):
                 has_params = True
 
         return not has_params

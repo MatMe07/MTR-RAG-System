@@ -71,7 +71,7 @@ class EnvironmentParser:
     
     # Паттерны для температуры
     TEMPERATURE_PATTERNS = [
-        (r'(?:температур[аы]|град)\s*[:]?\s*([-+]?\d+(?:[.,]\d+)?)\s*(?:°?C|°|градус[а]?)?',
+        (r'(?:температур\w*|град)\s*[:]?\s*([-+]?\d+(?:[.,]\d+)?)\s*(?:°?C|°|градус[а]?)?',
          'temperature_min_c', 100, "температура X°C"),
         (r'(?:до|от|при)\s*([-+]?\d+(?:[.,]\d+)?)\s*(?:°?C|°|градус[а]?)?',
          'temperature_min_c', 90, "до X°C"),
@@ -91,10 +91,10 @@ class EnvironmentParser:
             (r'углекисл(?:ый|ая|ое)', True),
         ],
         "medium": [
-            (r'агрессивн(?:ая|ой|ую)', "H2S"),
-            (r'коррозионн(?:ая|ой|ую)', "H2S"),
-            (r'нейтральн(?:ая|ой|ую)', "вода"),
-            (r'горюч(?:ая|ой|ую)', "нефть"),
+            (r'агрессивн\w*', "H2S"),
+            (r'коррозионн\w*', "H2S"),
+            (r'нейтральн\w*', "вода"),
+            (r'горюч\w*', "нефть"),
         ],
     }
     
@@ -175,7 +175,23 @@ class EnvironmentParser:
         if result.get("co2_confirmed") and result.get("medium") is None:
             result["medium"] = "CO2"
         
+        # 9. Отрицание подтверждения: «ещё не подтверждены для CO2» -> co2_confirmed=False
+        self._apply_confirmation_negation(normalized, result)
+        
         return result
+
+    def _apply_confirmation_negation(self, text: str, result: Dict[str, Any]) -> None:
+        """
+        Отрицание пригодности: «не подтверждены/неподтверждённые/без подтверждения для CO2»
+        снимает флаг подтверждения, ранее выставленный по упоминанию среды.
+        """
+        if not re.search(r'(?:ещё\s+не|еще\s+не|не|неподтвержд\w*|без\s+подтвержд\w*)\s*подтвержд\w*|неподтвержд\w+', text):
+            return
+        medium = result.get("medium")
+        if medium == "H2S":
+            result["h2s_confirmed"] = False
+        elif medium == "CO2":
+            result["co2_confirmed"] = False
 
     # =========================================================
     # ПРИМЕНЕНИЕ ПАТТЕРНОВ
@@ -286,7 +302,7 @@ class EnvironmentParser:
             
             matches = self.fuzzy_matcher.match(word, all_aliases)
             for matched_alias, score in matches:
-                if score >= 80:
+                if score >= 85:
                     medium = MEDIUM_ALIASES[matched_alias]
                     result["medium"] = medium
                     if medium == "H2S":

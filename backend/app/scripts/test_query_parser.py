@@ -415,52 +415,94 @@ def main():
                   "Подготовь список деталей и документов для плановой замены задвижки DN200 PN63 на участке UNIT-SYN-GAS-001?"]
     
     results = []
-    for i, query in enumerate(questionsd, start=1):
+    for i, query in enumerate(questions, start=1):
         try:
-            # if i != 22: continue
-            
-            parsed = extractor.extract(
-    query
-)
-            # results.append(result)
+            parsed = extractor.extract(query)
             
             results.append({
                 "id": i,
                 "query": query,
+                
+                # === Основные поля ===
                 "operation": parsed.operations if parsed.operations else ["unknown"],
                 "confidence": parsed.confidence,
+                "confidence_details": parsed.confidence_details,
+                
+                # === Карточки ===
                 "card": parsed.card.model_dump() if parsed.card else None,
                 "cards": [c.model_dump() for c in parsed.cards] if parsed.cards else [],
-                "filters": parsed.technical_filters,
-                "changes": parsed.proposed_changes,
-                "context": {
-                    "unit_context": parsed.unit_context,
-                    "component_context": parsed.component_context
-                },
-                "references": parsed.references,
-                "ambiguities": parsed.ambiguities,
-                "required_agents": parsed.required_agents,
-                "required_capabilities": parsed.required_capabilities,
+                
+                # === Целевые объекты ===
+                "item_types": parsed.item_types,
                 "component_ids": parsed.component_ids,
                 "unit_ids": parsed.unit_ids,
-                "item_types": parsed.item_types
+                
+                # === Фильтры ===
+                "technical_filters": parsed.technical_filters,
+                "stock_filters": parsed.stock_filters,
+                
+                # === Параметры ===
+                "units_count": parsed.units_count,
+                "length_m": parsed.length_m,
+                "limit": parsed.limit,
+                "timeframe": parsed.timeframe,
+                "urgency": parsed.urgency,
+                "sort_by": parsed.sort_by,
+                "on_stock": parsed.on_stock,
+                "not_installed": parsed.not_installed,
+                
+                # === Изменения и анализ ===
+                "proposed_changes": parsed.proposed_changes,
+                "impact_analysis": parsed.impact_analysis,
+                
+                # === Контекст ===
+                "unit_context": parsed.unit_context,
+                "component_context": parsed.component_context,
+                
+                # === Ссылки ===
+                "references": parsed.references,
+                
+                # === Неоднозначности ===
+                "ambiguities": parsed.ambiguities,
+                
+                # === Требуемые возможности ===
+                "required_agents": parsed.required_agents,
+                "required_capabilities": parsed.required_capabilities,
             })
         
         except Exception as e:
             results.append({
                 "id": i,
                 "query": query,
+                "error": str(e),
+                
+                # Заполняем None/пустыми значениями для единообразия
                 "operation": None,
                 "confidence": 0.0,
+                "confidence_details": {},
                 "card": None,
                 "cards": [],
-                "filters": {},
-                "changes": {},
-                "context": {},
+                "item_types": [],
+                "component_ids": [],
+                "unit_ids": [],
+                "technical_filters": {},
+                "stock_filters": {},
+                "units_count": None,
+                "length_m": None,
+                "limit": None,
+                "timeframe": None,
+                "urgency": None,
+                "sort_by": None,
+                "on_stock": None,
+                "not_installed": None,
+                "proposed_changes": {},
+                "impact_analysis": {},
+                "unit_context": {},
+                "component_context": {},
                 "references": [],
                 "ambiguities": [],
+                "required_agents": [],
                 "required_capabilities": [],
-                "error": str(e)
             })
 
     print(json.dumps(results, ensure_ascii=False, indent=2))

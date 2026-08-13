@@ -2,8 +2,7 @@
 
 import json
 import re
-from typing import Optional, Dict, Any
-from langchain_openai import ChatOpenAI
+from typing import Optional, Dict, Any, Type
 
 from app.core.config import settings
 from app.schemas import (
@@ -232,34 +231,89 @@ QUERY_VALIDATION_PROMPT = """
 # backend/app/services/llm_service.py (только класс LLMService)
 
 class LLMService:
+    """LLM-клиент с фолбэком OpenRouter -> локальная Ollama.
+
+    Основной провайдер: OpenRouter (ключ из .env). Если запрос к нему падает
+    или таймаутит, автоматически переключаемся на Ollama. Если ключа OpenRouter
+    нет или USE_LOCAL_LLM=true — сразу работаем через Ollama. ChatOpenAI
+    импортируется лениво, чтобы сервис можно было загружать без установленных
+    langchain-зависимостей (например, в офлайн-тестах).
+    """
+
     def __init__(self):
         self.use_local = getattr(settings, "USE_LOCAL_LLM", False)
-        
-        self.api_key = "ollama" if self.use_local else settings.OPENROUTER_API_KEY
-        self.base_url = "http://localhost:11434/v1" if self.use_local else settings.OPENROUTER_BASE_URL
-        self.model = "qwen2.5:3b" if self.use_local else settings.LLM_MODEL
+
+        # Если явно не включён локальный режим, но ключа нет — всё равно уходим
+        # в Ollama, чтобы сервис не падал из-за конфигурации.
+        self.api_key = None if self.use_local else settings.OPENROUTER_API_KEY
+        self.base_url = settings.OPENROUTER_BASE_URL
+        self.model = settings.LLM_MODEL
         self.temperature = settings.LLM_TEMPERATURE
+
         self._llm = None
+        self._fallback = None
+
+    def _make_client(self, base_url, api_key, model, json_mode=False):
+        """Создаёт ChatOpenAI-совместимый клиент (ленивый импорт)."""
+        from langchain_openai import ChatOpenAI
+
+        extra_kwargs = {}
+        if json_mode:
+            extra_kwargs["model_kwargs"] = {"response_format": {"type": "json_object"}}
+        return ChatOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            model=model,
+            temperature=self.temperature,
+            **extra_kwargs
+        )
 
     @property
     def llm(self):
+        """Основной клиент: OpenRouter (если настроен), иначе Ollama."""
         if self._llm is None:
-            if not self.use_local and not self.api_key:
-                raise ValueError("OPENROUTER_API_KEY не задан. Добавьте его в .env")
-                
-            # Дополнительные параметры для гарантированного JSON в режиме Ollama
-            extra_kwargs = {}
-            if self.use_local:
-                extra_kwargs["model_kwargs"] = {"response_format": {"type": "json_object"}}
-
-            self._llm = ChatOpenAI(
-                api_key=self.api_key,
-                base_url=self.base_url,
-                model=self.model,
-                temperature=self.temperature,
-                **extra_kwargs
-            )
+            if not self.use_local and self.api_key and self.base_url:
+                self._llm = self._make_client(
+                    self.base_url, self.api_key, self.model, json_mode=False
+                )
+            else:
+                self._llm = self._make_client(
+                    settings.OLLAMA_BASE_URL, "ollama", settings.OLLAMA_MODEL, json_mode=True
+                )
         return self._llm
+
+    @property
+    def fallback_llm(self):
+        """Локальный фолбэк (Ollama). Есть только когда основной — OpenRouter."""
+        if self.use_local:
+            return None
+        if self.api_key and self.base_url:
+            if self._fallback is None:
+                self._fallback = self._make_client(
+                    settings.OLLAMA_BASE_URL, "ollama", settings.OLLAMA_MODEL, json_mode=True
+                )
+            return self._fallback
+        return None
+
+    def invoke(self, prompt: str):
+        """Вызывает основную модель, при сбое — фолбэк Ollama."""
+        try:
+            return self.llm.invoke(prompt)
+        except Exception:
+            fb = self.fallback_llm
+            if fb is None:
+                raise
+            return fb.invoke(prompt)
+
+    def structured_invoke(self, prompt: str, schema: Type):
+        """Вызывает модель со structured output, при сбое — фолбэк Ollama."""
+        try:
+            return self.llm.with_structured_output(schema).invoke(prompt)
+        except Exception:
+            fb = self.fallback_llm
+            if fb is None:
+                raise
+            return fb.with_structured_output(schema).invoke(prompt)
 
     def parse_query(self, query: str) -> ItemCard:
         if re.match(r'^[A-Z]{3}-[A-Z]{3}-[A-Z]{3}-\d{6}$', query.strip()):
@@ -270,7 +324,7 @@ class LLMService:
             )
         normalized = normalize_query(query)
         prompt = QUERY_TO_CARD_PROMPT.format(query=normalized["normalized_text"])
-        response = self.llm.invoke(prompt).content
+        response = self.invoke(prompt).content
         return self._extract_card_from_response(
             response,
             {"type": "user_query", "text": query}
@@ -278,12 +332,12 @@ class LLMService:
 
     def extract_card_from_text(self, text: str, source: Dict[str, Any]) -> ItemCard:
         prompt = PASSPORT_TO_CARD_PROMPT.format(text=text[:4000])
-        response = self.llm.invoke(prompt).content
+        response = self.invoke(prompt).content
         return self._extract_card_from_response(response, source)
 
     def generate_explanation(self, result: Dict[str, Any]) -> Dict[str, Any]:
         prompt = EXPLAIN_MATCH_PROMPT.format(result=json.dumps(result, ensure_ascii=False))
-        response = self.llm.invoke(prompt).content
+        response = self.invoke(prompt).content
         return self._parse_explanation_response(response)
 
     def parse_engineering_query(self, query: str) -> ParsedQuery:
@@ -298,16 +352,14 @@ class LLMService:
 
         # 2. Привязываем схему ParsedQuery к нашей модели
         # Благодаря этому LangChain сам заставит Ollama/Qwen вернуть структуру строго по схеме
-        structured_llm = self.llm.with_structured_output(ParsedQuery)
-
-        # 3. Вызываем модель
+        # 3. Вызываем модель (с фолбэком OpenRouter -> Ollama)
         try:
             # Передаем промпт и текст
             prompt = ENTITY_EXTRACTION_PROMPT.format(query=query)
 
             # МАГИЯ: invoke вернет НЕ строку, а уже готовый объект класса ParsedQuery!
             # Все вложенные Geometry, Pressure, Material уже будут внутри, проверенные на типы данных.
-            parsed_result = structured_llm.invoke(prompt)
+            parsed_result = self.structured_invoke(prompt, ParsedQuery)
 
             # Проставляем исходный запрос, если нужно
             parsed_result.original_query = query
@@ -409,7 +461,7 @@ class LLMService:
         )
         
         try:
-            response = self.llm.invoke(prompt).content
+            response = self.invoke(prompt).content
             data = json.loads(response)
             
             # Обновляем parsed данными от LLM

@@ -248,6 +248,16 @@ class ParsedQuery(BaseModel):
         description="Складские фильтры: quantity_min, quantity_max, location, stock_category"
     )
     
+    # ===== Параметры количества, сроков и сортировки =====
+    units_count: Optional[int] = Field(None, description="Количество участков (множитель), например трёх таких же участков -> 3")
+    length_m: Optional[float] = Field(None, description="Длина нового участка в метрах, например длиной сто метров -> 100")
+    limit: Optional[int] = Field(None, description="Лимит выдаваемых позиций (топ-N), например выбери пять деталей -> 5")
+    timeframe: Optional[str] = Field(None, description="Временные рамки: next_week, next_month, next_year, immediate")
+    urgency: Optional[str] = Field(None, description="Срочность: high")
+    sort_by: Optional[str] = Field(None, description="Сортировка результатов: procurement_urgency, risk, priority")
+    on_stock: Optional[bool] = Field(None, description="True=только в наличии, False=только отсутствующие на складе")
+    not_installed: Optional[bool] = Field(None, description="True=не установлены ни на одном участке")
+    
     # ===== Изменения и их анализ =====
     proposed_changes: Dict[str, Any] = Field(
         default_factory=dict,
@@ -301,6 +311,69 @@ class ParsedQuery(BaseModel):
         default_factory=dict,
         description="Детали уверенности по каждому полю"
     )
+
+
+class AgentRequest(BaseModel):
+    """Запрос к агентскому слою."""
+    query: str = Field(..., description="Пользовательский запрос")
+
+
+class RouteRequest(BaseModel):
+    """Запрос маршрутизации (L4)."""
+    query: str = Field(..., description="Пользовательский запрос")
+
+
+class RouteResponse(BaseModel):
+    """Решение маршрутизатора: ordinary | agent | clarification."""
+    route: str = Field(..., description="ordinary | agent | clarification")
+    intent: str = Field("", description="Интент запроса")
+    intent_label: str = Field("", description="Человекочитаемое имя интента")
+    mode: str = Field("", description="Режим исполнения")
+    reasons: List[str] = Field(default_factory=list, description="Причины решения")
+    required_tools: List[str] = Field(default_factory=list, description="Тулы для агентного пути")
+    exact_codes: List[str] = Field(default_factory=list, description="Точные коды из запроса")
+    missing_parameters: List[str] = Field(default_factory=list, description="Чего не хватает")
+    llm_refined: bool = Field(False, description="Уточнял ли решение LLM")
+    router_confidence: Optional[float] = Field(None, description="Уверенность LLM-маршрутизатора")
+
+
+class AgentSource(BaseModel):
+    """Источник факта в ответе агента."""
+    kind: str = Field(..., description="catalog, stock, object_graph, passport, tu, lnd, standard, regulation, expert_decisions")
+    id: Optional[str] = Field(None, description="Идентификатор источника (card_id, unit_id, source_id и т.п.)")
+    fragment: Optional[str] = Field(None, description="Фрагмент/краткое описание источника")
+
+
+class AgentComponent(BaseModel):
+    """Одна позиция в ответе агента."""
+    mtr_code: Optional[str] = None
+    ksm_code: Optional[str] = None
+    name: Optional[str] = Field(None, description="Наименование детали")
+    item_type: Optional[str] = None
+    quantity: Optional[float] = Field(None, description="Остаток или рекомендуемое количество")
+    status: Optional[str] = Field(None, description="Статус/причина включения в ответ")
+    detail: Optional[str] = Field(None, description="Дополнительное объяснение")
+    source_id: Optional[str] = Field(None, description="card_id или component_id источника")
+
+
+class AgentAnswer(BaseModel):
+    """Структурированный ответ агентского слоя."""
+    query: str = Field(..., description="Исходный запрос")
+    intent: Optional[str] = Field(None, description="Класс интента: catalog_search, replacement, inventory, maintenance, object_configuration, document_search, impact_analysis, equipment_guidance")
+    intent_label: Optional[str] = Field(None, description="Человекочитаемое имя интента")
+    route: Optional[str] = Field(None, description="ordinary | agent | clarification")
+    mode: Optional[str] = Field(None, description="Режим исполнения")
+    tools_used: List[str] = Field(default_factory=list, description="Запущенные тулы")
+    answer: str = Field(default="", description="Текстовый ответ пользователю")
+    components: List[AgentComponent] = Field(default_factory=list, description="Позиции ответа")
+    warnings: List[str] = Field(default_factory=list, description="Предупреждения")
+    sources: List[AgentSource] = Field(default_factory=list, description="Источники")
+    missing_parameters: List[str] = Field(default_factory=list, description="Чего не хватает для полного ответа")
+    human_review_required: bool = Field(False, description="Требуется ли проверка экспертом")
+    parsed_confidence: Optional[float] = Field(None, description="Уверенность парсера")
+    review_verdict: Optional[str] = Field(None, description="Вердикт ревьюера: pass | needs_review")
+    review_issues: List[str] = Field(default_factory=list, description="Замечания ревьюера")
+
 
 class DocumentInfo(BaseModel):
     id: int

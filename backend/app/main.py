@@ -4,22 +4,43 @@ import os
 import shutil
 import uuid
 from typing import List, Optional
+print("start1")
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+print("start2")
+
 
 from app.database import get_db
 from app.schemas import (
     SearchRequest, SearchResponse, MatchResult,
-    ExpertReviewRequest, ItemCard
+    ExpertReviewRequest, ItemCard, AgentRequest, AgentAnswer,
+    RouteRequest, RouteResponse
 )
+print("start3")
+
 from app.services.search_service import SearchService
+print("start4")
+
 from app.services.rules_engine import RulesEngine
+print("start5")
+
 from app.services.llm_service import LLMService
+print("start6")
+
 from app.services.embedding_service import EmbeddingService
 from app.services.expert_service import ExpertService
-from app.services.ocr_service import get_ocr_service
+print("start7")
+# from app.services.ocr_service import get_ocr_service
+print("start8")
+
+from app.services.agents.executor import execute_agent_query
+print("start9")
+
+from app.services.llm_router import LlmRouter
+from app.services.search_router import route_query_text
+print("start10")
 
 
 app = FastAPI(
@@ -31,18 +52,65 @@ app = FastAPI(
 UPLOAD_DIR = "uploads/passports"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-llm = LLMService()
-embeddings = EmbeddingService()
-ocr = get_ocr_service()
+# ============================================================
+# 🔥 ЛЕНИВАЯ ИНИЦИАЛИЗАЦИЯ (вместо глобальной)
+# ============================================================
+
+_llm = None
+_embeddings = None
+_ocr = None
+
+
+def get_llm():
+    global _llm
+    if _llm is None:
+        print("🔴 Инициализация LLMService...", flush=True)
+        _llm = LLMService()
+        print("✅ LLMService инициализирован", flush=True)
+    return _llm
+
+
+def get_embeddings():
+    global _embeddings
+    if _embeddings is None:
+        print("🔴 Инициализация EmbeddingService...", flush=True)
+        _embeddings = EmbeddingService()
+        print("✅ EmbeddingService инициализирован", flush=True)
+    return _embeddings
+
+
+def get_ocr():
+    global _ocr
+    if _ocr is None:
+        print("🔴 Инициализация OCR...", flush=True)
+        # _ocr = get_ocr_service()
+        print("✅ OCR инициализирован", flush=True)
+    return _ocr
 
 
 def get_search_service(db: Session = Depends(get_db)):
     rules = RulesEngine(db)
-    return SearchService(db, rules, llm, embeddings)
+    return SearchService(db, rules, get_llm(), get_embeddings())
 
 
 def get_expert_service(db: Session = Depends(get_db)):
     return ExpertService(db)
+
+
+# ============================================================
+# 🔥 ПРОВЕРКА ЗАГРУЗКИ (для отладки)
+# ============================================================
+
+print("🔴 main.py загружается...", flush=True)
+
+# ============================================================
+# ЭНДПОИНТЫ
+# ============================================================
+
+@app.on_event("startup")
+async def startup_event():
+    """Выполняется при старте (но уже после загрузки main.py)"""
+    print("✅ FastAPI стартовал!", flush=True)
 
 
 @app.get("/health")
@@ -57,6 +125,28 @@ async def search(
 ):
     try:
         return search_service.search(request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/agent", response_model=AgentAnswer)
+async def agent_query(request: AgentRequest):
+    """Агентский слой: парсит запрос (rule-based + LLM-коррекция) и запускает план тулов."""
+    try:
+        return execute_agent_query(request.query)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/route", response_model=RouteResponse)
+async def route_query(request: RouteRequest):
+    """Маршрутизация (L4): детерминированная + LLM-уточнение, если оно неоднозначно."""
+    try:
+        decision = LlmRouter().route(request.query)
+        return RouteResponse(**{
+            key: decision.get(key)
+            for key in RouteResponse.model_fields
+        })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -83,7 +173,9 @@ async def upload_passport(
     db.flush()
 
     try:
-        pages = ocr.extract_text_from_pdf(file_path)
+        # Используем ленивый OCR
+        ocr_service = get_ocr()
+        pages = ocr_service.extract_text_from_pdf(file_path)
         
         for page in pages:
             page_record = DocumentPage(
@@ -97,13 +189,14 @@ async def upload_passport(
 
         doc.page_count = len(pages)
         doc.ocr_status = "done"
-        # Явно конвертируем numpy float в Python float
         doc.ocr_confidence = float(np.mean([p['confidence'] for p in pages])) if pages else 0.0
 
         full_text = "\n".join([p['text'] for p in pages if p['text']])
         if full_text.strip():
             try:
-                card = llm.extract_card_from_text(
+                # Используем ленивый LLM
+                llm_service = get_llm()
+                card = llm_service.extract_card_from_text(
                     full_text,
                     {"document_id": doc.id, "file_name": file.filename}
                 )

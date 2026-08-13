@@ -29,6 +29,7 @@ SEARCH_MODES = {
     "Семантический поиск": "vector",
     "Поиск по паспорту": "passport",
     "Проверка аналога": "filter",
+    "Агентный запрос": "agent",
 }
 
 LEGACY_MODE_LABELS = {
@@ -37,6 +38,7 @@ LEGACY_MODE_LABELS = {
     "семантический поиск": "Семантический поиск",
     "поиск по паспорту": "Поиск по паспорту",
     "проверка аналога": "Проверка аналога",
+    "агентный запрос": "Агентный запрос",
 }
 
 STATUS_LABELS = {
@@ -100,6 +102,33 @@ TOOL_LABELS = {
     "explanation_generator": "объяснение параметров",
     "object_builder": "состав объекта",
     "impact_analyzer": "влияние изменения",
+    "duplicate_detector": "проверка дублей",
+    "priority_ranker": "приоритизация рисков",
+    "inventory_calculator": "расчёт запаса",
+}
+
+AGENT_SOURCE_LABELS = {
+    "catalog": "Каталог",
+    "stock": "Склад",
+    "object_graph": "Граф объекта",
+    "passport": "Паспорт",
+    "tu": "ТУ",
+    "lnd": "ЛНД",
+    "standard": "ГОСТ/ТУ",
+    "regulation": "Регуляторика",
+    "expert_decisions": "Решения экспертов",
+}
+
+INTENT_LABELS = {
+    "catalog_search": "Поиск по каталогу",
+    "replacement": "Подбор замены",
+    "inventory": "Склад и запас",
+    "maintenance": "План ТОиР",
+    "object_configuration": "Сборка участка",
+    "document_search": "Поиск документов",
+    "impact_analysis": "Анализ влияния",
+    "equipment_guidance": "Справочная информация",
+    "duplicates": "Проверка дублей",
 }
 
 
@@ -216,6 +245,10 @@ def search_backend(
     top_k: int = 20,
 ) -> dict[str, Any]:
     selected_mode = mode_code(mode_label)
+
+    if selected_mode == "agent":
+        return agent_backend(query, mode_label)
+
     document_id = None
 
     if selected_mode == "passport":
@@ -238,6 +271,72 @@ def search_backend(
     }
     data = post_json("/search", payload)
     return transform_backend_response(data, query, mode_label)
+
+
+def transform_agent_response(
+    data: dict[str, Any],
+    query: str,
+    mode_label: str,
+) -> dict[str, Any]:
+    return {
+        "search_id": str(uuid.uuid4()),
+        "query": query,
+        "mode": "Агентный запрос",
+        "mode_code": mode_code(mode_label),
+        "query_card": {},
+        "total_found": 0,
+        "search_time_ms": None,
+        "backend_connected": True,
+        "error": None,
+        "candidates": [],
+        "agent": {
+            "intent": data.get("intent"),
+            "intent_label": data.get("intent_label"),
+            "route": data.get("route"),
+            "tools_used": data.get("tools_used") or [],
+            "answer": data.get("answer") or "",
+            "components": [
+                {
+                    "mtr_code": component.get("mtr_code"),
+                    "ksm_code": component.get("ksm_code"),
+                    "name": component.get("name"),
+                    "item_type": component.get("item_type"),
+                    "quantity": component.get("quantity"),
+                    "status": component.get("status"),
+                    "detail": component.get("detail"),
+                    "source_id": component.get("source_id"),
+                }
+                for component in data.get("components") or []
+                if isinstance(component, dict)
+            ],
+            "warnings": data.get("warnings") or [],
+            "sources": [
+                {
+                    "kind": source.get("kind"),
+                    "id": source.get("id"),
+                    "fragment": source.get("fragment"),
+                }
+                for source in data.get("sources") or []
+                if isinstance(source, dict)
+            ],
+            "missing_parameters": data.get("missing_parameters") or [],
+            "human_review_required": bool(data.get("human_review_required")),
+            "execution_mode": data.get("mode"),
+            "parsed_confidence": data.get("parsed_confidence"),
+            "review_verdict": data.get("review_verdict"),
+            "review_issues": data.get("review_issues") or [],
+        },
+    }
+
+
+def agent_backend(
+    query: str,
+    mode_label: str,
+) -> dict[str, Any]:
+    if not query.strip():
+        raise BackendAPIError("Введите запрос для агентного слоя.")
+    data = post_json("/agent", {"query": query.strip()}, timeout=200)
+    return transform_agent_response(data, query, mode_label)
 
 
 def save_expert_review(
@@ -933,6 +1032,101 @@ def render_styles() -> None:
     )
 
 
+def render_agent_answer(current: dict[str, Any]) -> None:
+    agent = current.get("agent") or {}
+    if not agent:
+        st.caption("Агентный слой не вернул структурированный ответ.")
+        return
+
+    st.markdown("### Ответ агентного слоя")
+    summary = st.columns(4)
+    intent_label = agent.get("intent_label") or INTENT_LABELS.get(
+        agent.get("intent") or "",
+        agent.get("intent") or "не определен",
+    )
+    summary[0].metric("Задача", intent_label)
+    tools = [TOOL_LABELS.get(tool, tool) for tool in agent.get("tools_used") or []]
+    summary[1].metric("Тулы", ", ".join(tools) if tools else "—")
+    summary[2].metric("Позиции", len(agent.get("components") or []))
+    summary[3].metric(
+        "Проверка эксперта",
+        "нужна" if agent.get("human_review_required") else "не обязательна",
+    )
+
+    answer = (agent.get("answer") or "").strip()
+    if answer:
+        for paragraph in answer.splitlines():
+            if paragraph.strip():
+                st.markdown(paragraph)
+    else:
+        st.caption("Текстовый ответ не сформирован.")
+
+    execution_mode = agent.get("execution_mode")
+    if execution_mode:
+        mode_hint = {
+            "llm_augmented": "LLM-синтез",
+            "offline_rules": "офлайн-правила",
+        }.get(execution_mode, execution_mode)
+        st.caption(f"Режим сборки ответа: {mode_hint}")
+
+    if agent.get("human_review_required"):
+        st.warning(
+            "Ответ носит рекомендательный характер и требует проверки экспертом."
+        )
+
+    review_verdict = agent.get("review_verdict")
+    review_issues = agent.get("review_issues") or []
+    if review_verdict:
+        if review_verdict == "pass":
+            st.success("Авторевью: ответ проходит проверку.")
+        elif review_verdict == "needs_review":
+            st.warning("Авторевью: ответ требует проверки.")
+        if review_issues:
+            st.markdown("**Замечания авторевью:**")
+            for issue in review_issues:
+                st.markdown(f"- {issue}")
+
+    for warning in agent.get("warnings") or []:
+        st.warning(warning)
+
+    missing = agent.get("missing_parameters") or []
+    if missing:
+        st.error(
+            "Не хватает данных для полного ответа: " + ", ".join(missing)
+        )
+
+    components = agent.get("components") or []
+    if components:
+        st.markdown("#### Позиции ответа")
+        table_rows = [
+            {
+                "Код КСМ": component.get("ksm_code") or "—",
+                "Код МТР": component.get("mtr_code") or "—",
+                "Наименование": component.get("name") or "—",
+                "Тип": component.get("item_type") or "—",
+                "Кол-во": component.get("quantity"),
+                "Статус": component.get("status") or "—",
+                "Детали": component.get("detail") or "",
+            }
+            for component in components
+        ]
+        st.dataframe(table_rows, hide_index=True, width="stretch")
+
+    sources = agent.get("sources") or []
+    if sources:
+        with st.expander("Источники"):
+            for number, source in enumerate(sources, start=1):
+                label = AGENT_SOURCE_LABELS.get(
+                    source.get("kind"),
+                    source.get("kind") or "Источник",
+                )
+                location = source.get("id") or ""
+                fragment = source.get("fragment")
+                if fragment:
+                    location = f"{location} · {fragment}".strip(" ·")
+                st.markdown(f"**{number}. {label}**: {location or '—'}")
+
+
 def render_app() -> None:
     st.set_page_config(page_title="Подбор аналогов МТР", layout="wide")
     render_styles()
@@ -1011,6 +1205,10 @@ def render_app() -> None:
 
     if current.get("error"):
         st.error(current["error"])
+
+    if current.get("mode_code") == "agent":
+        render_agent_answer(current)
+        return
 
     render_query_processing(
         current.get("query") or "",

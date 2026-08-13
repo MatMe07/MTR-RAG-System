@@ -1,4 +1,5 @@
-SELECT count(1)  FROM mtr_items;
+SELECT *  FROM mtr_items
+where mtr_code = 'MTR-SYN-REG-000006';
 -- TRUNCATE TABLE mtr_items CASCADE;
 -- TRUNCATE TABLE ksm_items CASCADE;
 -- TRUNCATE TABLE documents CASCADE;

@@ -95,7 +95,6 @@ class OperationParser:
             "влияние", "риск",
             "придётся заменить",
             "придется заменить",
-            "что проверить",
             "какие соседние",
             "затронет",
         ],
@@ -150,6 +149,7 @@ class OperationParser:
             (r'пополн', 7),
             (r'закуп', 7),
             (r'запас', 7),  
+            (r'из\s+каких\s+деталей', 8),
             (r'(?:есть ли|сколько|хватает ли|достаточно ли)', 10),
         ],
         "repair": [
@@ -169,6 +169,7 @@ class OperationParser:
             (r'хвата', 8),
             (r'достаточ', 8),
             (r'подход', 8),
+            (r'дубл', 10),
         ],
         "explain": [
             (r'объясн', 10),
@@ -353,13 +354,19 @@ class OperationParser:
         result = operations.copy()
         
         if "inventory" in result:
-            if re.search(r'установлены?\s+ни\s+на\s+одном', text):
+            # Поиск дублей — это search/check, а не инвентаризация
+            if re.search(r'дубл', text):
                 result.discard("inventory")
-            if re.search(r'не\s+установлены', text):
+            # "не установлены ни на одном участке" без складских сигналов — не инвентаризация
+            elif re.search(r'(?:установлены?\s+ни\s+на\s+одном|не\s+установлены)', text) \
+                    and not re.search(r'остат|склад|запас', text):
                 result.discard("inventory")
         
         if "repair" in result:
             if re.search(r'без\s+ремонта', text):
+                result.discard("repair")
+            # "подтверждены" похоже на "повреждены" при fuzzy-сравнении
+            if re.search(r'подтвержд', text):
                 result.discard("repair")
         
         if "document" in result:
@@ -369,6 +376,19 @@ class OperationParser:
             has_gost = bool(re.search(r'(?:гост|ту)\s+[\d\-]+', text))
             if not has_document_words and not has_gost:
                 result.discard("document")
+        
+        if "plan" in result:
+            # "состоит"/'поставить' похожи на "составить" при fuzzy-сравнении
+            plan_signals = re.search(r'план|обслужив|перечисл|комплект|порядок\s+работ|список\s+деталей', text)
+            if re.search(r'состоит', text) and not plan_signals:
+                result.discard("plan")
+            if re.search(r'поставить', text) and not plan_signals:
+                result.discard("plan")
+        
+        if "assemble" in result:
+            # Safety stock: "комплект должен оставаться на складе" — не сборка
+            if re.search(r'комплект.*?(?:оставаться|остается|остаётся|должен)', text):
+                result.discard("assemble")
         
         return result
 

@@ -47,7 +47,7 @@ class GeometryParser:
         (r'от\s*(\d+(?:[.,]\d+)?)\s+(?:до|на)\s*(\d+(?:[.,]\d+)?)', ['d1', 'd2'], 70, "от X до Y"),
     ]
     
-    # Паттерны для извлечения толщины стенки
+    # Паттерны для извлечения толщины стенки (словесные - применяются всегда)
     WALL_PATTERNS = [
         (r'стенк(?:а|и|ой)\s*[:]?\s*(\d+(?:[.,]\d+)?)', ['wall_thickness'], 100, "стенка X"),
         (r'стенкой\s*(\d+(?:[.,]\d+)?)', ['wall_thickness'], 100, "стенкой X"),
@@ -55,7 +55,11 @@ class GeometryParser:
         (r'толщин(?:а|ы|ой)\s*[:]?\s*(\d+(?:[.,]\d+)?)', ['wall_thickness'], 90, "толщина X"),
         (r'δ\s*[:]?\s*(\d+(?:[.,]\d+)?)', ['wall_thickness'], 80, "δ X"),
         (r'стенка\s+(\d+(?:[.,]\d+)?)', ['wall_thickness'], 80, "стенка X"),
-        # ✅ Добавлен паттерн для "426 на 12" где второе число - стенка
+    ]
+    
+    # Числовые паттерны толщины стенки - только для труб/отводов/заглушек,
+    # чтобы не конфликтовать с d1/d2 у переходов и тройников
+    NUMERIC_WALL_PATTERNS = [
         (r'\b(\d+)\s+на\s+(\d+)\b', ['dn', 'wall_thickness'], 70, "X на Y"),
     ]
     
@@ -79,17 +83,35 @@ class GeometryParser:
     
     # Паттерны для специальных случаев (отводы с форматом "отвод 90 426 на 10")
     ELBOW_SPECIAL_PATTERNS = [
-        (r'\b(?:отвод(?:а|у|ом|е|ов)?|окш|ог)\s+(30|45|60|90)\s+(\d+(?:[.,]\d+)?)\s+(?:на|x|х|×)\s+(\d+(?:[.,]\d+)?)',
-         ['angle', 'dn', 'wall_thickness'], 100, "отвод угол DN на стенку"),
-        (r'\b(?:отвод(?:а|у|ом|е|ов)?|окш|ог)\s+(\d+(?:[.,]\d+)?)\s+(?:на|x|х|×)\s+(\d+(?:[.,]\d+)?)',
-         ['dn', 'wall_thickness'], 90, "отвод DN на стенку"),
+        # "ОКШ90-159x10-К48-09Г2С-УХЛ" / "ОГ90-530x8" - обозначение отвода
+        (r'\b(?:окш|ог)\s*(\d{1,3})\s*[-\s]\s*(\d+(?:[.,]\d+)?)\s*(?:x|х|×)\s*(\d+(?:[.,]\d+)?)',
+         ['angle', 'dn', 'wall_thickness'], 100, "ОКШ90-159x10 обозначение"),
+        # "отвод 90 159х10" / "отвод 90 426 на 10" (пробелы вокруг разделителя необязательны)
+        (r'\b(?:отвод(?:а|у|ом|е|ов)?|окш|ог)\s+(30|45|60|90)\s+(\d+(?:[.,]\d+)?)\s*(?:на\s*|x|х|×)\s*(\d+(?:[.,]\d+)?)',
+         ['angle', 'dn', 'wall_thickness'], 90, "отвод угол DN на стенку"),
+        (r'\b(?:отвод(?:а|у|ом|е|ов)?|окш|ог)\s+(\d+(?:[.,]\d+)?)\s*(?:на\s*|x|х|×)\s*(\d+(?:[.,]\d+)?)',
+         ['dn', 'wall_thickness'], 80, "отвод DN на стенку"),
+    ]
+
+    # Паттерны для "XхY" (DN х толщина стенки) у труб/отводов/заглушек,
+    # где "х" пишется слитно: "труба 108х4", "заглушка 426x12"
+    SIZE_WALL_PATTERNS = [
+        (r'\b(\d+(?:[.,]\d+)?)\s*(?:x|х|×)\s*(\d+(?:[.,]\d+)?)',
+         ['dn', 'wall_thickness'], 60, "XхY (DN х стенка)"),
+    ]
+
+    # Паттерны для задвижек/кранов вида "ЗКЛ 150х16" (DN х PN в барах)
+    VALVE_SIZE_PATTERNS = [
+        (r'\b(?:задвижк\w*|кран\w*)\s*(?:ЗКЛ\s*)?(\d+(?:[.,]\d+)?)\s*(?:x|х|×)\s*(\d+(?:[.,]\d+)?)',
+         ['dn'], 90, "задвижка DNхPN (DN)"),
     ]
     
     # Типы деталей для контекстного парсинга
     ITEM_TYPES = {
         'transition': ['переход', 'перехода', 'переходу', 'переходом', 'переходе'],
         'tee': ['тройник', 'тройника', 'тройнику', 'тройником', 'тройнике'],
-        'elbow': ['отвод', 'отвода', 'отводу', 'отводом', 'отводе', 'окш', 'ог'],
+        'elbow': ['отвод', 'отвода', 'отводу', 'отводом', 'отводе', 'отводов',
+                  'отводы', 'отводам', 'отводами', 'окш', 'ог'],
         'pipe': ['труба', 'трубы', 'трубу', 'трубой', 'трубе', 'труб'],
         'cap': ['заглушка', 'заглушки', 'заглушку', 'заглушкой', 'заглушке'],
         'valve': ['задвижка', 'задвижки', 'задвижку', 'задвижкой', 'задвижке'],
@@ -144,9 +166,18 @@ class GeometryParser:
         if result.get('dn') is None:
             self._apply_dn_patterns(normalized, result, is_transition)
         
-        # 4. Паттерны для толщины стенки
-        if is_pipe or is_elbow or is_cap or is_valve:
-            self._apply_wall_patterns(normalized, result)
+        # 4. Паттерны для толщины стенки (словесные - применяются всегда)
+        self._apply_wall_patterns(normalized, result)
+        
+        # 4a. Числовые паттерны "X на Y" и "XхY" (DN х стенка) -
+        #     только для труб/отводов/заглушек (не для переходов и задвижек)
+        if (is_pipe or is_elbow or is_cap) and result.get('dn') is None:
+            self._apply_patterns(normalized, self.NUMERIC_WALL_PATTERNS, result)
+            self._apply_patterns(normalized, self.SIZE_WALL_PATTERNS, result)
+        
+        # 4b. Паттерны для задвижек/кранов "ЗКЛ 150х16" (DN х PN)
+        if is_valve and result.get('dn') is None:
+            self._apply_patterns(normalized, self.VALVE_SIZE_PATTERNS, result)
         
         # 5. Паттерны для углов
         if is_elbow or result.get('angle') is None:
@@ -287,6 +318,9 @@ class GeometryParser:
             "dn": self.DN_PATTERNS,
             "transition": self.TRANSITION_PATTERNS,
             "wall": self.WALL_PATTERNS,
+            "numeric_wall": self.NUMERIC_WALL_PATTERNS,
+            "size_wall": self.SIZE_WALL_PATTERNS,
+            "valve_size": self.VALVE_SIZE_PATTERNS,
             "angle": self.ANGLE_PATTERNS,
             "radius": self.RADIUS_PATTERNS,
             "elbow_special": self.ELBOW_SPECIAL_PATTERNS,

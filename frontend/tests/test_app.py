@@ -209,6 +209,74 @@ class FrontendAppTest(unittest.TestCase):
                 reviewer="Эксперт",
             )
 
+    def test_agent_mode_label_maps_to_backend_code(self):
+        self.assertEqual("agent", app.mode_code("Агентный запрос"))
+
+    def test_transform_agent_response_keeps_structure(self):
+        data = {
+            "intent": "inventory",
+            "intent_label": "Склад и запас",
+            "tools_used": ["graph_search", "stock_query"],
+            "answer": "Граф объекта: 6 компонентов.\nСклад: отобрано 6 позиций.",
+            "warnings": ["Нужна проверка"],
+            "human_review_required": True,
+            "components": [
+                {
+                    "ksm_code": "KSM-1",
+                    "mtr_code": "MTR-1",
+                    "name": "Труба",
+                    "item_type": "труба",
+                    "quantity": 5,
+                    "status": "на складе",
+                    "detail": "x1",
+                    "source_id": "c1",
+                }
+            ],
+            "sources": [
+                {"kind": "object_graph", "id": "UNIT-1", "fragment": None}
+            ],
+            "missing_parameters": [],
+        }
+
+        result = app.transform_agent_response(
+            data,
+            query="Состав участка и остатки",
+            mode_label="Агентный запрос",
+        )
+
+        self.assertEqual("agent", result["mode_code"])
+        self.assertEqual("inventory", result["agent"]["intent"])
+        self.assertEqual(2, len(result["agent"]["tools_used"]))
+        self.assertEqual("KSM-1", result["agent"]["components"][0]["ksm_code"])
+        self.assertTrue(result["agent"]["human_review_required"])
+
+    @patch("frontend.app.post_json")
+    def test_agent_backend_posts_to_agent_endpoint(self, post_mock):
+        post_mock.return_value = {"intent": "inventory", "answer": "ok"}
+
+        result = app.agent_backend(
+            query="Состав участка и остатки",
+            mode_label="Агентный запрос",
+        )
+
+        path, payload = post_mock.call_args.args[:2]
+        self.assertEqual("/agent", path)
+        self.assertEqual({"query": "Состав участка и остатки"}, payload)
+        self.assertEqual("inventory", result["agent"]["intent"])
+
+    @patch("frontend.app.post_json")
+    def test_search_backend_dispatches_agent_mode(self, post_mock):
+        post_mock.return_value = {"intent": "inventory", "answer": "ok"}
+
+        result = app.search_backend(
+            query="Состав участка и остатки",
+            mode_label="Агентный запрос",
+        )
+
+        path = post_mock.call_args.args[0]
+        self.assertEqual("/agent", path)
+        self.assertEqual("agent", result["mode_code"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -225,6 +225,11 @@ OPERATION_ALIASES: Dict[str, str] = {
     "комплект": "plan",
     "обслуживание": "plan",
     
+    # ===== СБОРКА/КОМПЛЕКТАЦИЯ =====
+    "собери": "assemble",
+    "собрать": "assemble",
+    "сборка": "assemble",
+    
     # ===== РАСЧЁТ =====
     "посчитай": "calculate",
     "посчитать": "calculate",

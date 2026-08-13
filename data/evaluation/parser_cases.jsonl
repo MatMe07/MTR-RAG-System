@@ -1,0 +1,56 @@
+{"case_id": "PC001", "query": "Найди аналог отвода ОКШ90-159x10-К48-09Г2С-УХЛ", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 159.0, "wall_thickness": 10.0, "strength_class": "К48", "steel_grade": "09Г2С", "climate_version": "УХЛ"}, "note": "AQ013 designation"}
+{"case_id": "PC002", "query": "Найти аналог заглушки ОКШ90-219x10-К48-09Г2С-УХЛ", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 219.0, "wall_thickness": 10.0, "strength_class": "К48", "steel_grade": "09Г2С", "climate_version": "УХЛ"}, "note": "AQ014 designation превалирует над 'заглушка'"}
+{"case_id": "PC003", "query": "подбери отвод ОКШ90-159x10-К48-09Г2С-УХЛ, но конец под приварку", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 159.0, "wall_thickness": 10.0, "strength_class": "К48", "steel_grade": "09Г2С", "climate_version": "УХЛ"}, "note": "AQ015"}
+{"case_id": "PC004", "query": "отвод ОКШ 90 159х10 УХЛ", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 159.0, "wall_thickness": 10.0, "climate_version": "УХЛ"}, "note": "ОКШ через пробел"}
+{"case_id": "PC005", "query": "отвод ОГ 90 530х8 УХЛ", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 530.0, "wall_thickness": 8.0, "climate_version": "УХЛ"}, "note": "ОГ через пробел"}
+{"case_id": "PC006", "query": "отвод ОКШ 90 426х10 К48", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 426.0, "wall_thickness": 10.0, "strength_class": "К48"}, "note": "ОКШ без УХЛ"}
+{"case_id": "PC007", "query": "отвод ОГ 90 530х8", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 530.0, "wall_thickness": 8.0}, "note": "ОГ без УХЛ"}
+{"case_id": "PC008", "query": "Какой аналог отвода 90 426 на 10 подойдет для H2S", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 426.0, "wall_thickness": 10.0, "medium": "H2S", "h2s_confirmed": true}, "note": "AQ002"}
+{"case_id": "PC009", "query": "Найди отвод 90 конец под приварку сталь 20 159 на 10 на складе", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 159.0, "wall_thickness": 10.0, "steel_grade": "20"}, "note": "AQ007"}
+{"case_id": "PC010", "query": "Найди все варианты отвода 90 159 на 10", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 159.0, "wall_thickness": 10.0}, "note": "AQ011"}
+{"case_id": "PC011", "query": "найди аналог для отвода 45 325×10 К52", "expected": {"item_type": "отвод", "angle": 45.0, "dn": 325.0, "wall_thickness": 10.0, "strength_class": "К52"}, "note": "AQ018"}
+{"case_id": "PC012", "query": "найди аналоги отвода 90 530х10 09Г2С, УХЛ", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 530.0, "wall_thickness": 10.0, "steel_grade": "09Г2С", "climate_version": "УХЛ"}, "note": "AQ021"}
+{"case_id": "PC013", "query": "найди отвод 45 530х10 с H2S, угол не указан но нужен 90", "expected": {"item_type": "отвод", "angle": 45.0, "dn": 530.0, "wall_thickness": 10.0, "medium": "H2S", "h2s_confirmed": true}, "note": "AQ024"}
+{"case_id": "PC014", "query": "найди отвод с H2S с углом 90 и с температурой -40", "expected": {"item_type": "отвод", "angle": 90.0, "medium": "H2S", "h2s_confirmed": true, "temperature_min_c": -40.0}, "note": "AQ025"}
+{"case_id": "PC015", "query": "найди отвод 90 dn219 PN160 К52 УХЛ", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 219.0, "pn": 16.0, "strength_class": "К52", "climate_version": "УХЛ"}, "note": "AQ027/038"}
+{"case_id": "PC016", "query": "найди отвод 90 159х10 09Г2С", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 159.0, "wall_thickness": 10.0, "steel_grade": "09Г2С"}, "note": "AQ030"}
+{"case_id": "PC017", "query": "найди отвод 60 325х10 К52", "expected": {"item_type": "отвод", "angle": 60.0, "dn": 325.0, "wall_thickness": 10.0, "strength_class": "К52"}, "note": "AQ032"}
+{"case_id": "PC018", "query": "найди отвод 90 219х8 09Г2С с H2S", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 219.0, "wall_thickness": 8.0, "steel_grade": "09Г2С", "medium": "H2S", "h2s_confirmed": true}, "note": "AQ033"}
+{"case_id": "PC019", "query": "Найди все отводы 90 с PN160", "expected": {"item_type": "отвод", "angle": 90.0, "pn": 16.0}, "note": "AQ035"}
+{"case_id": "PC020", "query": "найди отвод 90 DN200 PN160 09Г2С УХЛ", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 200.0, "pn": 16.0, "steel_grade": "09Г2С", "climate_version": "УХЛ"}, "note": "AQ036"}
+{"case_id": "PC021", "query": "найди отвод 90 DN200 PN160 УХЛ", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 200.0, "pn": 16.0, "climate_version": "УХЛ"}, "note": "AQ037"}
+{"case_id": "PC022", "query": "найди отвод 90 печной печной 09Г2С", "expected": {"item_type": "отвод", "angle": 90.0, "steel_grade": "09Г2С"}, "note": "AQ039 опечатка/повтор"}
+{"case_id": "PC023", "query": "найди отвод 90 530x10 09Г2С ухл бесповной с соединением конца под приварку", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 530.0, "wall_thickness": 10.0, "steel_grade": "09Г2С", "climate_version": "УХЛ"}, "note": "AQ040"}
+{"case_id": "PC024", "query": "найди отвод 90 426 на 10", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 426.0, "wall_thickness": 10.0}, "note": "простой отвод"}
+{"case_id": "PC025", "query": "отвод 90 159х10 К48", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 159.0, "wall_thickness": 10.0, "strength_class": "К48"}, "note": "из скрипта"}
+{"case_id": "PC026", "query": "отвод гнутый 90 530х8", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 530.0, "wall_thickness": 8.0}, "note": "гнутый"}
+{"case_id": "PC027", "query": "отвод 45 219х8", "expected": {"item_type": "отвод", "angle": 45.0, "dn": 219.0, "wall_thickness": 8.0}, "note": "45"}
+{"case_id": "PC028", "query": "отвод 90 DN200 среда H2S температура -40°C", "expected": {"item_type": "отвод", "angle": 90.0, "dn": 200.0, "medium": "H2S", "h2s_confirmed": true, "temperature_min_c": -40.0}, "note": "полный кейс"}
+{"case_id": "PC029", "query": "найди отвод 45 530х10 с H2S", "expected": {"item_type": "отвод", "angle": 45.0, "dn": 530.0, "wall_thickness": 10.0, "medium": "H2S", "h2s_confirmed": true}, "note": "угол+среда"}
+{"case_id": "PC030", "query": "Подбери трубу 108 на 6 сталь 20 для метанового участка", "expected": {"item_type": "труба", "dn": 108.0, "wall_thickness": 6.0, "steel_grade": "20"}, "note": "AQ004"}
+{"case_id": "PC031", "query": "труба 108х4 сталь 20", "expected": {"item_type": "труба", "dn": 108.0, "wall_thickness": 4.0, "steel_grade": "20"}, "note": "труба х"}
+{"case_id": "PC032", "query": "труба бесшовная 159х6", "expected": {"item_type": "труба", "subtype": "бесшовная", "dn": 159.0, "wall_thickness": 6.0}, "note": "бесшовная"}
+{"case_id": "PC033", "query": "труба 325х8 09Г2С", "expected": {"item_type": "труба", "dn": 325.0, "wall_thickness": 8.0, "steel_grade": "09Г2С"}, "note": "труба 09Г2С"}
+{"case_id": "PC034", "query": "найди аналог для перехода 325х219 сталь 20", "expected": {"item_type": "переход", "d1": 325.0, "d2": 219.0, "steel_grade": "20"}, "note": "AQ016"}
+{"case_id": "PC035", "query": "Подбери аналог тройника 219 на 159 сталь 20", "expected": {"item_type": "тройник", "d1": 219.0, "d2": 159.0, "steel_grade": "20"}, "note": "AQ006 тройник"}
+{"case_id": "PC036", "query": "найди аналог для тройника 219х159 сталь 20", "expected": {"item_type": "тройник", "d1": 219.0, "d2": 159.0, "steel_grade": "20"}, "note": "AQ017"}
+{"case_id": "PC037", "query": "переход 219x159", "expected": {"item_type": "переход", "d1": 219.0, "d2": 159.0}, "note": "переход x"}
+{"case_id": "PC038", "query": "переход концентрический 219х159", "expected": {"item_type": "переход", "d1": 219.0, "d2": 159.0}, "note": "концентрический"}
+{"case_id": "PC039", "query": "переход эксцентрический 325х219", "expected": {"item_type": "переход", "d1": 325.0, "d2": 219.0}, "note": "эксцентрический"}
+{"case_id": "PC040", "query": "тройник равнопроходный DN100", "expected": {"item_type": "тройник", "dn": 100.0}, "note": "равнопроходный"}
+{"case_id": "PC041", "query": "тройник 159х89", "expected": {"item_type": "тройник", "d1": 159.0, "d2": 89.0}, "note": "тройник 159x89"}
+{"case_id": "PC042", "query": "тройник DN200 PN63", "expected": {"item_type": "тройник", "dn": 200.0, "pn": 6.3}, "note": "тройник PN63"}
+{"case_id": "PC043", "query": "Проверь аналог задвижки 30с41нж DN150 PN16", "expected": {"item_type": "задвижка", "dn": 150.0, "pn": 1.6}, "note": "AQ012 30с41нж"}
+{"case_id": "PC044", "query": "найди задвижку DN200 PN160 равноточная сталь 09Г2С сталь 20 давление 16 МПа", "expected": {"item_type": "задвижка", "dn": 200.0, "pn": 16.0, "steel_grade": "09Г2С"}, "note": "AQ019"}
+{"case_id": "PC045", "query": "найди задвижку с условным проходом DN 150, PN 40, сталь корпуса сталь 20, конец под приварку, клиновая", "expected": {"item_type": "задвижка", "dn": 150.0, "pn": 4.0, "steel_grade": "20", "subtype": "клиновая"}, "note": "AQ022"}
+{"case_id": "PC046", "query": "найди задвижку с условным проходом DN 150, PN 40, конец под приварку, клиновая, клапан сталь 45", "expected": {"item_type": "задвижка", "dn": 150.0, "pn": 4.0, "subtype": "клиновая"}, "note": "AQ023 сталь 45"}
+{"case_id": "PC047", "query": "задвижка DN150 PN40", "expected": {"item_type": "задвижка", "dn": 150.0, "pn": 4.0}, "note": "простая задвижка"}
+{"case_id": "PC048", "query": "задвижка клиновая DN200", "expected": {"item_type": "задвижка", "subtype": "клиновая", "dn": 200.0}, "note": "клиновая DN200"}
+{"case_id": "PC049", "query": "задвижка ЗКЛ 150х16", "expected": {"item_type": "задвижка", "subtype": "клиновая", "dn": 150.0, "pn": 1.6}, "note": "ЗКЛ"}
+{"case_id": "PC050", "query": "задвижка стальная DN150 PN16", "expected": {"item_type": "задвижка", "dn": 150.0, "pn": 1.6}, "note": "стальная PN16"}
+{"case_id": "PC051", "query": "найди заглушку 426x12 09ГСФ с плоской крышкой", "expected": {"item_type": "заглушка", "dn": 426.0, "wall_thickness": 12.0, "steel_grade": "09ГСФ"}, "note": "AQ029"}
+{"case_id": "PC052", "query": "заглушка 426 на 12 09ГСФ", "expected": {"item_type": "заглушка", "dn": 426.0, "wall_thickness": 12.0, "steel_grade": "09ГСФ"}, "note": "заглушка на"}
+{"case_id": "PC053", "query": "заглушка эллиптическая DN150", "expected": {"item_type": "заглушка", "subtype": "эллиптическая", "dn": 150.0}, "note": "эллиптическая"}
+{"case_id": "PC054", "query": "заглушка плоская DN200", "expected": {"item_type": "заглушка", "dn": 200.0}, "note": "плоская"}
+{"case_id": "PC055", "query": "найди заглушку 426x12 09ГСФ с H2S и без", "expected": {"item_type": "заглушка", "dn": 426.0, "wall_thickness": 12.0, "steel_grade": "09ГСФ"}, "note": "AQ029b и без"}
+{"case_id": "PC056", "query": "найди трубопроводную арматуру для DN150 PN40", "expected": {"dn": 150.0, "pn": 4.0}, "note": "AQ028 арматура (item_type нет)"}

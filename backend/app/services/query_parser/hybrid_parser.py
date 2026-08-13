@@ -80,13 +80,9 @@ class HybridParser:
         if card and card.subtype is None and natasha.get("subtype"):
             card.subtype = natasha["subtype"]
         
-        # 2. Добавляем отсутствующие операции
-        if natasha.get("operations"):
-            for op in natasha["operations"]:
-                if op not in rule.operations:
-                    rule.operations.append(op)
-            # Сортируем по приоритету
-            rule.operations = self._sort_operations(rule.operations)
+        # 2. Операции: rule-based результат авторитетен (natasha добавляет шум).
+        #    Natasha используется только как fallback, если rule не нашёл ничего.
+        rule.operations = self._merge_operations(rule.operations, natasha.get("operations", []), text)
         
         # 3. Добавляем ID компонентов и участков (из Natasha)
         if natasha.get("component_ids"):
@@ -152,15 +148,8 @@ class HybridParser:
         references = self._merge_unique_lists(rule.references, natasha.get("references", []))
         ambiguities = self._merge_unique_lists(rule.ambiguities, natasha.get("ambiguities", []))
         
-        # ✅ 3. Объединяем операции (ВАЖНО: Natasha может добавить новые операции)
-        operations = self._merge_unique_lists(rule.operations, natasha.get("operations", []))
-        operations = self._sort_operations(operations)
-        
-        # Валидация операций
-        valid_operations = get_operations()
-        operations = [op for op in operations if op in valid_operations]
-        if not operations:
-            operations = ["search"]
+        # ✅ 3. Объединяем операции (rule авторитетен; natasha только как fallback)
+        operations = self._merge_operations(rule.operations, natasha.get("operations", []), text)
         
         # 4. Объединяем фильтры (Natasha дополняет rule)
         technical_filters = self._merge_filters(rule.technical_filters, natasha.get("filters", {}))
@@ -220,6 +209,14 @@ class HybridParser:
             cards=rule.cards or ([card] if card and card.item_type else []),
             technical_filters=technical_filters,
             stock_filters=stock_filters,
+            units_count=rule.units_count,
+            length_m=rule.length_m,
+            limit=rule.limit,
+            timeframe=rule.timeframe,
+            urgency=rule.urgency,
+            sort_by=rule.sort_by,
+            on_stock=rule.on_stock,
+            not_installed=rule.not_installed,
             proposed_changes=proposed_changes,
             impact_analysis=rule.impact_analysis or {},
             unit_context=unit_context,
@@ -360,6 +357,22 @@ class HybridParser:
             if item not in result:
                 result.append(item)
         return result
+
+    def _merge_operations(self, rule_ops: List[str], natasha_ops: List[str], text: str) -> List[str]:
+        """
+        Объединение операций: rule-based результат авторитетен,
+        natasha используется только как fallback при пустом rule-результате.
+        """
+        rule_ops = [op for op in (rule_ops or []) if op != "unknown"]
+        if rule_ops:
+            return self._sort_operations(rule_ops)
+
+        valid_operations = get_operations()
+        natasha_ops = [op for op in (natasha_ops or []) if op in valid_operations]
+        if natasha_ops:
+            return self._sort_operations(natasha_ops)
+
+        return ["search"]
 
     def _merge_filters(self, base: Dict, override: Dict) -> Dict:
         """

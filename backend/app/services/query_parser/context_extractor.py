@@ -48,6 +48,8 @@ class ContextExtractor:
         context['length_meters'] = self._extract_length(text_lower)
         context['timeframe'] = self._extract_timeframe(text_lower)
         context['urgency'] = self._extract_urgency(text_lower)
+        context['limit'] = self._extract_limit(text_lower)
+        context['sort_by'] = self._extract_sort_by(text_lower)
         
         # Удаляем None значения
         return {k: v for k, v in context.items() if v is not None}
@@ -93,23 +95,52 @@ class ContextExtractor:
         if match:
             return float(match.group(1))
         
-        # Слова + метры
+        # Слова + метры (только полные единицы, чтобы не срабатывало на «одном» -> одн/о+м)
         for word, num in self.NUM_WORDS.items():
-            if re.search(rf'{word}\s*(?:м|метр|метров|метра)', text_lower):
+            if re.search(rf'\b{word}\b\s*(?:метров|метра|метр|метры)', text_lower):
                 return float(num)
         
         return None
     
     def _extract_timeframe(self, text_lower: str) -> Optional[str]:
         """Извлечение временных рамок"""
-        if re.search(r'следующ(?:ая|ей|ую)?\s*недел[ея]', text_lower):
+        if re.search(r'следующ\w*\s*недел[ея]', text_lower):
             return 'next_week'
-        elif re.search(r'сегодня|сейчас', text_lower):
+        elif re.search(r'следующ\w*\s*месяц\w*', text_lower):
+            return 'next_month'
+        elif re.search(r'следующ\w*\s*год\w*', text_lower):
+            return 'next_year'
+        elif re.search(r'прямо сейчас|сейчас же|немедленно|сегодня', text_lower):
             return 'immediate'
         return None
     
     def _extract_urgency(self, text_lower: str) -> Optional[str]:
         """Извлечение срочности"""
-        if re.search(r'срочн|важн|критич', text_lower):
+        # «по срочности закупки» — это сортировка, а не срочность
+        if re.search(r'(?<!по\s)(?:срочн|критич|немедленн|безотлагательн)', text_lower):
             return 'high'
+        return None
+    
+    def _extract_limit(self, text_lower: str) -> Optional[int]:
+        """Извлечение лимита выдаваемых позиций ("выбери пять деталей" -> 5)"""
+        pattern = (r'(?:выбери|отбери|возьми|покажи|найди|учитывай|ограничься|ограничь)'
+                   r'\s+(?:топ\s*|лучших\s*|первых\s*)?(\d+|' + '|'.join(self.NUM_WORDS.keys()) + r')\s+детал\w*')
+        match = re.search(pattern, text_lower)
+        if match:
+            token = match.group(1)
+            if token.isdigit():
+                return int(token)
+            return self.NUM_WORDS.get(token)
+        return None
+    
+    def _extract_sort_by(self, text_lower: str) -> Optional[str]:
+        """Извлечение сортировки результатов"""
+        if re.search(r'по\s+срочност\w*\s+закуп\w*', text_lower):
+            return 'procurement_urgency'
+        elif re.search(r'по\s+срочност\w*', text_lower):
+            return 'urgency'
+        elif re.search(r'(?:сам\w*\s+высок\w*|максимальн\w*|наибольш\w*)\s*риск\w*|по\s+риск\w*', text_lower):
+            return 'risk'
+        elif re.search(r'по\s+приоритет\w*', text_lower):
+            return 'priority'
         return None

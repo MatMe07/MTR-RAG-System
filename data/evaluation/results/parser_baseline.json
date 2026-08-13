@@ -1,0 +1,1774 @@
+[
+  {
+    "parser": "query_parser (rule) / parser_cases",
+    "cases_total": 56,
+    "cases_ok": 56,
+    "case_accuracy": 1.0,
+    "field_stats": {
+      "item_type": {
+        "accuracy": 1.0,
+        "checked": 55,
+        "ok": 55,
+        "fail_cases": []
+      },
+      "subtype": {
+        "accuracy": 1.0,
+        "checked": 6,
+        "ok": 6,
+        "fail_cases": []
+      },
+      "designation": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "dn": {
+        "accuracy": 1.0,
+        "checked": 46,
+        "ok": 46,
+        "fail_cases": []
+      },
+      "d1": {
+        "accuracy": 1.0,
+        "checked": 7,
+        "ok": 7,
+        "fail_cases": []
+      },
+      "d2": {
+        "accuracy": 1.0,
+        "checked": 7,
+        "ok": 7,
+        "fail_cases": []
+      },
+      "angle": {
+        "accuracy": 1.0,
+        "checked": 29,
+        "ok": 29,
+        "fail_cases": []
+      },
+      "wall_thickness": {
+        "accuracy": 1.0,
+        "checked": 29,
+        "ok": 29,
+        "fail_cases": []
+      },
+      "pn": {
+        "accuracy": 1.0,
+        "checked": 13,
+        "ok": 13,
+        "fail_cases": []
+      },
+      "steel_grade": {
+        "accuracy": 1.0,
+        "checked": 21,
+        "ok": 21,
+        "fail_cases": []
+      },
+      "strength_class": {
+        "accuracy": 1.0,
+        "checked": 8,
+        "ok": 8,
+        "fail_cases": []
+      },
+      "medium": {
+        "accuracy": 1.0,
+        "checked": 6,
+        "ok": 6,
+        "fail_cases": []
+      },
+      "h2s_confirmed": {
+        "accuracy": 1.0,
+        "checked": 6,
+        "ok": 6,
+        "fail_cases": []
+      },
+      "co2_confirmed": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "temperature_min_c": {
+        "accuracy": 1.0,
+        "checked": 2,
+        "ok": 2,
+        "fail_cases": []
+      },
+      "climate_version": {
+        "accuracy": 1.0,
+        "checked": 10,
+        "ok": 10,
+        "fail_cases": []
+      },
+      "operations": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "item_types": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "component_ids": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "unit_ids": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "stock_filters": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "proposed_changes": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "units_count": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "length_m": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "limit": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "timeframe": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "urgency": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "sort_by": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "on_stock": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "not_installed": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      }
+    },
+    "mean_latency_ms": 56.02916441067204,
+    "case_results": [
+      {
+        "case_id": "PC001",
+        "query": "Найди аналог отвода ОКШ90-159x10-К48-09Г2С-УХЛ",
+        "note": "AQ013 designation",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC002",
+        "query": "Найти аналог заглушки ОКШ90-219x10-К48-09Г2С-УХЛ",
+        "note": "AQ014 designation превалирует над 'заглушка'",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC003",
+        "query": "подбери отвод ОКШ90-159x10-К48-09Г2С-УХЛ, но конец под прива",
+        "note": "AQ015",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC004",
+        "query": "отвод ОКШ 90 159х10 УХЛ",
+        "note": "ОКШ через пробел",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC005",
+        "query": "отвод ОГ 90 530х8 УХЛ",
+        "note": "ОГ через пробел",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC006",
+        "query": "отвод ОКШ 90 426х10 К48",
+        "note": "ОКШ без УХЛ",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC007",
+        "query": "отвод ОГ 90 530х8",
+        "note": "ОГ без УХЛ",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC008",
+        "query": "Какой аналог отвода 90 426 на 10 подойдет для H2S",
+        "note": "AQ002",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC009",
+        "query": "Найди отвод 90 конец под приварку сталь 20 159 на 10 на скла",
+        "note": "AQ007",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC010",
+        "query": "Найди все варианты отвода 90 159 на 10",
+        "note": "AQ011",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC011",
+        "query": "найди аналог для отвода 45 325×10 К52",
+        "note": "AQ018",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC012",
+        "query": "найди аналоги отвода 90 530х10 09Г2С, УХЛ",
+        "note": "AQ021",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC013",
+        "query": "найди отвод 45 530х10 с H2S, угол не указан но нужен 90",
+        "note": "AQ024",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC014",
+        "query": "найди отвод с H2S с углом 90 и с температурой -40",
+        "note": "AQ025",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC015",
+        "query": "найди отвод 90 dn219 PN160 К52 УХЛ",
+        "note": "AQ027/038",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC016",
+        "query": "найди отвод 90 159х10 09Г2С",
+        "note": "AQ030",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC017",
+        "query": "найди отвод 60 325х10 К52",
+        "note": "AQ032",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC018",
+        "query": "найди отвод 90 219х8 09Г2С с H2S",
+        "note": "AQ033",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC019",
+        "query": "Найди все отводы 90 с PN160",
+        "note": "AQ035",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC020",
+        "query": "найди отвод 90 DN200 PN160 09Г2С УХЛ",
+        "note": "AQ036",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC021",
+        "query": "найди отвод 90 DN200 PN160 УХЛ",
+        "note": "AQ037",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC022",
+        "query": "найди отвод 90 печной печной 09Г2С",
+        "note": "AQ039 опечатка/повтор",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC023",
+        "query": "найди отвод 90 530x10 09Г2С ухл бесповной с соединением конц",
+        "note": "AQ040",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC024",
+        "query": "найди отвод 90 426 на 10",
+        "note": "простой отвод",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC025",
+        "query": "отвод 90 159х10 К48",
+        "note": "из скрипта",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC026",
+        "query": "отвод гнутый 90 530х8",
+        "note": "гнутый",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC027",
+        "query": "отвод 45 219х8",
+        "note": "45",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC028",
+        "query": "отвод 90 DN200 среда H2S температура -40°C",
+        "note": "полный кейс",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC029",
+        "query": "найди отвод 45 530х10 с H2S",
+        "note": "угол+среда",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC030",
+        "query": "Подбери трубу 108 на 6 сталь 20 для метанового участка",
+        "note": "AQ004",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC031",
+        "query": "труба 108х4 сталь 20",
+        "note": "труба х",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC032",
+        "query": "труба бесшовная 159х6",
+        "note": "бесшовная",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC033",
+        "query": "труба 325х8 09Г2С",
+        "note": "труба 09Г2С",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC034",
+        "query": "найди аналог для перехода 325х219 сталь 20",
+        "note": "AQ016",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC035",
+        "query": "Подбери аналог тройника 219 на 159 сталь 20",
+        "note": "AQ006 тройник",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC036",
+        "query": "найди аналог для тройника 219х159 сталь 20",
+        "note": "AQ017",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC037",
+        "query": "переход 219x159",
+        "note": "переход x",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC038",
+        "query": "переход концентрический 219х159",
+        "note": "концентрический",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC039",
+        "query": "переход эксцентрический 325х219",
+        "note": "эксцентрический",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC040",
+        "query": "тройник равнопроходный DN100",
+        "note": "равнопроходный",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC041",
+        "query": "тройник 159х89",
+        "note": "тройник 159x89",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC042",
+        "query": "тройник DN200 PN63",
+        "note": "тройник PN63",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC043",
+        "query": "Проверь аналог задвижки 30с41нж DN150 PN16",
+        "note": "AQ012 30с41нж",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC044",
+        "query": "найди задвижку DN200 PN160 равноточная сталь 09Г2С сталь 20 ",
+        "note": "AQ019",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC045",
+        "query": "найди задвижку с условным проходом DN 150, PN 40, сталь корп",
+        "note": "AQ022",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC046",
+        "query": "найди задвижку с условным проходом DN 150, PN 40, конец под ",
+        "note": "AQ023 сталь 45",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC047",
+        "query": "задвижка DN150 PN40",
+        "note": "простая задвижка",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC048",
+        "query": "задвижка клиновая DN200",
+        "note": "клиновая DN200",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC049",
+        "query": "задвижка ЗКЛ 150х16",
+        "note": "ЗКЛ",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC050",
+        "query": "задвижка стальная DN150 PN16",
+        "note": "стальная PN16",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC051",
+        "query": "найди заглушку 426x12 09ГСФ с плоской крышкой",
+        "note": "AQ029",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC052",
+        "query": "заглушка 426 на 12 09ГСФ",
+        "note": "заглушка на",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC053",
+        "query": "заглушка эллиптическая DN150",
+        "note": "эллиптическая",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC054",
+        "query": "заглушка плоская DN200",
+        "note": "плоская",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC055",
+        "query": "найди заглушку 426x12 09ГСФ с H2S и без",
+        "note": "AQ029b и без",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC056",
+        "query": "найди трубопроводную арматуру для DN150 PN40",
+        "note": "AQ028 арматура (item_type нет)",
+        "ok": true,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "parser": "hybrid_parser / parser_cases",
+    "cases_total": 56,
+    "cases_ok": 56,
+    "case_accuracy": 1.0,
+    "field_stats": {
+      "item_type": {
+        "accuracy": 1.0,
+        "checked": 55,
+        "ok": 55,
+        "fail_cases": []
+      },
+      "subtype": {
+        "accuracy": 1.0,
+        "checked": 6,
+        "ok": 6,
+        "fail_cases": []
+      },
+      "designation": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "dn": {
+        "accuracy": 1.0,
+        "checked": 46,
+        "ok": 46,
+        "fail_cases": []
+      },
+      "d1": {
+        "accuracy": 1.0,
+        "checked": 7,
+        "ok": 7,
+        "fail_cases": []
+      },
+      "d2": {
+        "accuracy": 1.0,
+        "checked": 7,
+        "ok": 7,
+        "fail_cases": []
+      },
+      "angle": {
+        "accuracy": 1.0,
+        "checked": 29,
+        "ok": 29,
+        "fail_cases": []
+      },
+      "wall_thickness": {
+        "accuracy": 1.0,
+        "checked": 29,
+        "ok": 29,
+        "fail_cases": []
+      },
+      "pn": {
+        "accuracy": 1.0,
+        "checked": 13,
+        "ok": 13,
+        "fail_cases": []
+      },
+      "steel_grade": {
+        "accuracy": 1.0,
+        "checked": 21,
+        "ok": 21,
+        "fail_cases": []
+      },
+      "strength_class": {
+        "accuracy": 1.0,
+        "checked": 8,
+        "ok": 8,
+        "fail_cases": []
+      },
+      "medium": {
+        "accuracy": 1.0,
+        "checked": 6,
+        "ok": 6,
+        "fail_cases": []
+      },
+      "h2s_confirmed": {
+        "accuracy": 1.0,
+        "checked": 6,
+        "ok": 6,
+        "fail_cases": []
+      },
+      "co2_confirmed": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "temperature_min_c": {
+        "accuracy": 1.0,
+        "checked": 2,
+        "ok": 2,
+        "fail_cases": []
+      },
+      "climate_version": {
+        "accuracy": 1.0,
+        "checked": 10,
+        "ok": 10,
+        "fail_cases": []
+      },
+      "operations": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "item_types": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "component_ids": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "unit_ids": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "stock_filters": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "proposed_changes": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "units_count": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "length_m": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "limit": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "timeframe": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "urgency": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "sort_by": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "on_stock": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "not_installed": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      }
+    },
+    "mean_latency_ms": 85.01192912495169,
+    "case_results": [
+      {
+        "case_id": "PC001",
+        "query": "Найди аналог отвода ОКШ90-159x10-К48-09Г2С-УХЛ",
+        "note": "AQ013 designation",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC002",
+        "query": "Найти аналог заглушки ОКШ90-219x10-К48-09Г2С-УХЛ",
+        "note": "AQ014 designation превалирует над 'заглушка'",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC003",
+        "query": "подбери отвод ОКШ90-159x10-К48-09Г2С-УХЛ, но конец под прива",
+        "note": "AQ015",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC004",
+        "query": "отвод ОКШ 90 159х10 УХЛ",
+        "note": "ОКШ через пробел",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC005",
+        "query": "отвод ОГ 90 530х8 УХЛ",
+        "note": "ОГ через пробел",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC006",
+        "query": "отвод ОКШ 90 426х10 К48",
+        "note": "ОКШ без УХЛ",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC007",
+        "query": "отвод ОГ 90 530х8",
+        "note": "ОГ без УХЛ",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC008",
+        "query": "Какой аналог отвода 90 426 на 10 подойдет для H2S",
+        "note": "AQ002",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC009",
+        "query": "Найди отвод 90 конец под приварку сталь 20 159 на 10 на скла",
+        "note": "AQ007",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC010",
+        "query": "Найди все варианты отвода 90 159 на 10",
+        "note": "AQ011",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC011",
+        "query": "найди аналог для отвода 45 325×10 К52",
+        "note": "AQ018",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC012",
+        "query": "найди аналоги отвода 90 530х10 09Г2С, УХЛ",
+        "note": "AQ021",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC013",
+        "query": "найди отвод 45 530х10 с H2S, угол не указан но нужен 90",
+        "note": "AQ024",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC014",
+        "query": "найди отвод с H2S с углом 90 и с температурой -40",
+        "note": "AQ025",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC015",
+        "query": "найди отвод 90 dn219 PN160 К52 УХЛ",
+        "note": "AQ027/038",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC016",
+        "query": "найди отвод 90 159х10 09Г2С",
+        "note": "AQ030",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC017",
+        "query": "найди отвод 60 325х10 К52",
+        "note": "AQ032",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC018",
+        "query": "найди отвод 90 219х8 09Г2С с H2S",
+        "note": "AQ033",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC019",
+        "query": "Найди все отводы 90 с PN160",
+        "note": "AQ035",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC020",
+        "query": "найди отвод 90 DN200 PN160 09Г2С УХЛ",
+        "note": "AQ036",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC021",
+        "query": "найди отвод 90 DN200 PN160 УХЛ",
+        "note": "AQ037",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC022",
+        "query": "найди отвод 90 печной печной 09Г2С",
+        "note": "AQ039 опечатка/повтор",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC023",
+        "query": "найди отвод 90 530x10 09Г2С ухл бесповной с соединением конц",
+        "note": "AQ040",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC024",
+        "query": "найди отвод 90 426 на 10",
+        "note": "простой отвод",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC025",
+        "query": "отвод 90 159х10 К48",
+        "note": "из скрипта",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC026",
+        "query": "отвод гнутый 90 530х8",
+        "note": "гнутый",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC027",
+        "query": "отвод 45 219х8",
+        "note": "45",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC028",
+        "query": "отвод 90 DN200 среда H2S температура -40°C",
+        "note": "полный кейс",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC029",
+        "query": "найди отвод 45 530х10 с H2S",
+        "note": "угол+среда",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC030",
+        "query": "Подбери трубу 108 на 6 сталь 20 для метанового участка",
+        "note": "AQ004",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC031",
+        "query": "труба 108х4 сталь 20",
+        "note": "труба х",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC032",
+        "query": "труба бесшовная 159х6",
+        "note": "бесшовная",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC033",
+        "query": "труба 325х8 09Г2С",
+        "note": "труба 09Г2С",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC034",
+        "query": "найди аналог для перехода 325х219 сталь 20",
+        "note": "AQ016",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC035",
+        "query": "Подбери аналог тройника 219 на 159 сталь 20",
+        "note": "AQ006 тройник",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC036",
+        "query": "найди аналог для тройника 219х159 сталь 20",
+        "note": "AQ017",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC037",
+        "query": "переход 219x159",
+        "note": "переход x",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC038",
+        "query": "переход концентрический 219х159",
+        "note": "концентрический",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC039",
+        "query": "переход эксцентрический 325х219",
+        "note": "эксцентрический",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC040",
+        "query": "тройник равнопроходный DN100",
+        "note": "равнопроходный",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC041",
+        "query": "тройник 159х89",
+        "note": "тройник 159x89",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC042",
+        "query": "тройник DN200 PN63",
+        "note": "тройник PN63",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC043",
+        "query": "Проверь аналог задвижки 30с41нж DN150 PN16",
+        "note": "AQ012 30с41нж",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC044",
+        "query": "найди задвижку DN200 PN160 равноточная сталь 09Г2С сталь 20 ",
+        "note": "AQ019",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC045",
+        "query": "найди задвижку с условным проходом DN 150, PN 40, сталь корп",
+        "note": "AQ022",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC046",
+        "query": "найди задвижку с условным проходом DN 150, PN 40, конец под ",
+        "note": "AQ023 сталь 45",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC047",
+        "query": "задвижка DN150 PN40",
+        "note": "простая задвижка",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC048",
+        "query": "задвижка клиновая DN200",
+        "note": "клиновая DN200",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC049",
+        "query": "задвижка ЗКЛ 150х16",
+        "note": "ЗКЛ",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC050",
+        "query": "задвижка стальная DN150 PN16",
+        "note": "стальная PN16",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC051",
+        "query": "найди заглушку 426x12 09ГСФ с плоской крышкой",
+        "note": "AQ029",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC052",
+        "query": "заглушка 426 на 12 09ГСФ",
+        "note": "заглушка на",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC053",
+        "query": "заглушка эллиптическая DN150",
+        "note": "эллиптическая",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC054",
+        "query": "заглушка плоская DN200",
+        "note": "плоская",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC055",
+        "query": "найди заглушку 426x12 09ГСФ с H2S и без",
+        "note": "AQ029b и без",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "PC056",
+        "query": "найди трубопроводную арматуру для DN150 PN40",
+        "note": "AQ028 арматура (item_type нет)",
+        "ok": true,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "parser": "query_parser (rule) / complex_intent_cases",
+    "cases_total": 16,
+    "cases_ok": 16,
+    "case_accuracy": 1.0,
+    "field_stats": {
+      "item_type": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "subtype": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "designation": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "dn": {
+        "accuracy": 1.0,
+        "checked": 4,
+        "ok": 4,
+        "fail_cases": []
+      },
+      "d1": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "d2": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "angle": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "wall_thickness": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "pn": {
+        "accuracy": 1.0,
+        "checked": 2,
+        "ok": 2,
+        "fail_cases": []
+      },
+      "steel_grade": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "strength_class": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "medium": {
+        "accuracy": 1.0,
+        "checked": 9,
+        "ok": 9,
+        "fail_cases": []
+      },
+      "h2s_confirmed": {
+        "accuracy": 1.0,
+        "checked": 7,
+        "ok": 7,
+        "fail_cases": []
+      },
+      "co2_confirmed": {
+        "accuracy": 1.0,
+        "checked": 2,
+        "ok": 2,
+        "fail_cases": []
+      },
+      "temperature_min_c": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "climate_version": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "operations": {
+        "accuracy": 1.0,
+        "checked": 16,
+        "ok": 16,
+        "fail_cases": []
+      },
+      "item_types": {
+        "accuracy": 1.0,
+        "checked": 6,
+        "ok": 6,
+        "fail_cases": []
+      },
+      "component_ids": {
+        "accuracy": 1.0,
+        "checked": 3,
+        "ok": 3,
+        "fail_cases": []
+      },
+      "unit_ids": {
+        "accuracy": 1.0,
+        "checked": 6,
+        "ok": 6,
+        "fail_cases": []
+      },
+      "stock_filters": {
+        "accuracy": 1.0,
+        "checked": 5,
+        "ok": 5,
+        "fail_cases": []
+      },
+      "proposed_changes": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "units_count": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "length_m": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "limit": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "timeframe": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "urgency": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "sort_by": {
+        "accuracy": 1.0,
+        "checked": 2,
+        "ok": 2,
+        "fail_cases": []
+      },
+      "on_stock": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "not_installed": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      }
+    },
+    "mean_latency_ms": 60.29087243757658,
+    "case_results": [
+      {
+        "case_id": "CI001",
+        "query": "Покажи все детали для H2S, которых сейчас нет на складе, и р",
+        "note": "закупка + нет на складе",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI002",
+        "query": "Сколько отводов 90 426 на 10 есть на складе и какие из них п",
+        "note": "отвод 90 426 на 10 → angle+dn+wall",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI003",
+        "query": "Посчитай запас деталей для ремонта трёх таких же участков, к",
+        "note": "сafety stock: один комплект → quantity_min 1",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI004",
+        "query": "Найди на складе одинаковые по параметрам детали с разными ко",
+        "note": "дубли → check",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI005",
+        "query": "Покажи позиции с остатком больше пятидесяти штук, которые не",
+        "note": "остаток больше 50",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI006",
+        "query": "Собери заявку на пополнение склада для участка с CO2, включи",
+        "note": "остаток меньше 3",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI007",
+        "query": "Составь план обслуживания участка UNIT-SYN-H2S-001 на следую",
+        "note": "",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI008",
+        "query": "На участке с H2S отказала задвижка COMP-SYN-010, распиши, чт",
+        "note": "H2S из 'на участке с H2S'",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI009",
+        "query": "Подготовь список деталей и документов для плановой замены за",
+        "note": "без среды — medium не парсить",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI010",
+        "query": "Выбери пять деталей с самым высоким риском для ремонта корро",
+        "note": "коррозионного → H2S",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI011",
+        "query": "Собери список деталей для нового участка DN150 PN40 с газом ",
+        "note": "",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI012",
+        "query": "Покажи, из каких деталей состоит участок UNIT-SYN-H2S-001 и ",
+        "note": "",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI013",
+        "query": "Проверь весь участок UNIT-SYN-CO2-001 и покажи, какие детали",
+        "note": "не подтверждены для CO2 → co2_confirmed false",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI014",
+        "query": "У меня сломался отвод COMP-SYN-008, составь полный комплект ",
+        "note": "",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI015",
+        "query": "Хотим поставить задвижку DN200 вместо DN150, покажи, какие с",
+        "note": "замена DN150→DN200",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI016",
+        "query": "Найди паспорта и ТУ для всех деталей участка UNIT-SYN-H2S-00",
+        "note": "паспорта и ТУ → document",
+        "ok": true,
+        "failures": []
+      }
+    ]
+  },
+  {
+    "parser": "hybrid_parser / complex_intent_cases",
+    "cases_total": 16,
+    "cases_ok": 16,
+    "case_accuracy": 1.0,
+    "field_stats": {
+      "item_type": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "subtype": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "designation": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "dn": {
+        "accuracy": 1.0,
+        "checked": 4,
+        "ok": 4,
+        "fail_cases": []
+      },
+      "d1": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "d2": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "angle": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "wall_thickness": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "pn": {
+        "accuracy": 1.0,
+        "checked": 2,
+        "ok": 2,
+        "fail_cases": []
+      },
+      "steel_grade": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "strength_class": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "medium": {
+        "accuracy": 1.0,
+        "checked": 9,
+        "ok": 9,
+        "fail_cases": []
+      },
+      "h2s_confirmed": {
+        "accuracy": 1.0,
+        "checked": 7,
+        "ok": 7,
+        "fail_cases": []
+      },
+      "co2_confirmed": {
+        "accuracy": 1.0,
+        "checked": 2,
+        "ok": 2,
+        "fail_cases": []
+      },
+      "temperature_min_c": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "climate_version": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "operations": {
+        "accuracy": 1.0,
+        "checked": 16,
+        "ok": 16,
+        "fail_cases": []
+      },
+      "item_types": {
+        "accuracy": 1.0,
+        "checked": 6,
+        "ok": 6,
+        "fail_cases": []
+      },
+      "component_ids": {
+        "accuracy": 1.0,
+        "checked": 3,
+        "ok": 3,
+        "fail_cases": []
+      },
+      "unit_ids": {
+        "accuracy": 1.0,
+        "checked": 6,
+        "ok": 6,
+        "fail_cases": []
+      },
+      "stock_filters": {
+        "accuracy": 1.0,
+        "checked": 5,
+        "ok": 5,
+        "fail_cases": []
+      },
+      "proposed_changes": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "units_count": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "length_m": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "limit": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "timeframe": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "urgency": {
+        "accuracy": null,
+        "checked": 0,
+        "ok": 0,
+        "fail_cases": []
+      },
+      "sort_by": {
+        "accuracy": 1.0,
+        "checked": 2,
+        "ok": 2,
+        "fail_cases": []
+      },
+      "on_stock": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      },
+      "not_installed": {
+        "accuracy": 1.0,
+        "checked": 1,
+        "ok": 1,
+        "fail_cases": []
+      }
+    },
+    "mean_latency_ms": 118.128182687542,
+    "case_results": [
+      {
+        "case_id": "CI001",
+        "query": "Покажи все детали для H2S, которых сейчас нет на складе, и р",
+        "note": "закупка + нет на складе",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI002",
+        "query": "Сколько отводов 90 426 на 10 есть на складе и какие из них п",
+        "note": "отвод 90 426 на 10 → angle+dn+wall",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI003",
+        "query": "Посчитай запас деталей для ремонта трёх таких же участков, к",
+        "note": "сafety stock: один комплект → quantity_min 1",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI004",
+        "query": "Найди на складе одинаковые по параметрам детали с разными ко",
+        "note": "дубли → check",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI005",
+        "query": "Покажи позиции с остатком больше пятидесяти штук, которые не",
+        "note": "остаток больше 50",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI006",
+        "query": "Собери заявку на пополнение склада для участка с CO2, включи",
+        "note": "остаток меньше 3",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI007",
+        "query": "Составь план обслуживания участка UNIT-SYN-H2S-001 на следую",
+        "note": "",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI008",
+        "query": "На участке с H2S отказала задвижка COMP-SYN-010, распиши, чт",
+        "note": "H2S из 'на участке с H2S'",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI009",
+        "query": "Подготовь список деталей и документов для плановой замены за",
+        "note": "без среды — medium не парсить",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI010",
+        "query": "Выбери пять деталей с самым высоким риском для ремонта корро",
+        "note": "коррозионного → H2S",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI011",
+        "query": "Собери список деталей для нового участка DN150 PN40 с газом ",
+        "note": "",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI012",
+        "query": "Покажи, из каких деталей состоит участок UNIT-SYN-H2S-001 и ",
+        "note": "",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI013",
+        "query": "Проверь весь участок UNIT-SYN-CO2-001 и покажи, какие детали",
+        "note": "не подтверждены для CO2 → co2_confirmed false",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI014",
+        "query": "У меня сломался отвод COMP-SYN-008, составь полный комплект ",
+        "note": "",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI015",
+        "query": "Хотим поставить задвижку DN200 вместо DN150, покажи, какие с",
+        "note": "замена DN150→DN200",
+        "ok": true,
+        "failures": []
+      },
+      {
+        "case_id": "CI016",
+        "query": "Найди паспорта и ТУ для всех деталей участка UNIT-SYN-H2S-00",
+        "note": "паспорта и ТУ → document",
+        "ok": true,
+        "failures": []
+      }
+    ]
+  }
+]

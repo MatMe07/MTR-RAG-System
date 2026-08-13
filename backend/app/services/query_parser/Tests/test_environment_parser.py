@@ -101,3 +101,21 @@ class TestEnvironmentParser:
         result = environment_parser.parse("для H2S температура -40°C")
         assert result["medium"] == "H2S"
         assert result["temperature_min_c"] == -40.0
+
+    def test_parse_co2_confirmed(self, environment_parser):
+        """«для CO2» → co2_confirmed True"""
+        result = environment_parser.parse("позиции с остатком меньше трёх штук для участка с CO2")
+        assert result["medium"] == "CO2"
+        assert result["co2_confirmed"] is True
+
+    def test_parse_co2_not_confirmed_negation(self, environment_parser):
+        """«ещё не подтверждены для CO2» → co2_confirmed False"""
+        result = environment_parser.parse("какие детали подходят по размерам, но ещё не подтверждены для CO2")
+        assert result["medium"] == "CO2"
+        assert result["co2_confirmed"] is False
+
+    def test_parse_h2s_not_confirmed_negation(self, environment_parser):
+        """«не подтверждены для H2S» → h2s_confirmed False"""
+        result = environment_parser.parse("детали, которые не подтверждены для H2S")
+        assert result["medium"] == "H2S"
+        assert result["h2s_confirmed"] is False

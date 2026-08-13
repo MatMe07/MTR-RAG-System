@@ -33,6 +33,7 @@ class ItemTypeParser:
     SUBTYPE_PATTERNS = [
         # Задвижки
         (r'клинов(?:ая|ой|ую|ые|ых)', "клиновая"),
+        (r'\bзкл\b', "клиновая"),  # задвижка клиновая литая
         (r'параллельн(?:ая|ой|ую|ые|ых)', "параллельная"),
         (r'шиберн(?:ая|ой|ую|ые|ых)', "шиберная"),
         # Краны
@@ -110,6 +111,14 @@ class ItemTypeParser:
         
         result = list(found)
         
+        # 5. ✅ Обозначение детали имеет приоритет над словесным типом:
+        #    "заглушка ОКШ90-219x10..." - это отвод (ОКШ = отвод крутоизогнутый сварной)
+        designation_type = self._detect_designation_type(text)
+        if designation_type:
+            if designation_type in result:
+                result.remove(designation_type)
+            result.insert(0, designation_type)
+        
         # Сохраняем в кеш
         self._cache[cache_key] = result.copy()
         return result
@@ -161,6 +170,22 @@ class ItemTypeParser:
     # =========================================================
     # ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     # =========================================================
+
+    # Префиксы обозначений деталей и соответствующие им типы
+    DESIGNATION_PREFIXES = [
+        (r'\b(?:ОКШ|ОГ)\d*[-\s]', "отвод"),   # ОКШ90-... / ОГ90 ...
+        (r'\bЗКЛ\d*[-\s]', "задвижка"),       # ЗКЛ 150х16
+        (r'\bКШ\d*[-\s]', "кран"),             # КШ DN50
+    ]
+
+    def _detect_designation_type(self, text: str) -> Optional[str]:
+        """Определение типа по префиксу обозначения (ОКШ/ОГ/ЗКЛ/КШ)"""
+        if not text:
+            return None
+        for pattern, item_type in self.DESIGNATION_PREFIXES:
+            if re.search(pattern, text, re.IGNORECASE):
+                return item_type
+        return None
 
     def _fuzzy_search(self, text: str) -> Set[str]:
         """
