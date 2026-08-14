@@ -15,6 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from backend.app.services.search_router import route_query_text
+from frontend.agent_view import render_agent_result
 
 
 DEMO_DATA_PATH = PROJECT_ROOT / "data" / "sample" / "ui_demo_case_q007.json"
@@ -325,6 +326,9 @@ def transform_agent_response(
             "parsed_confidence": data.get("parsed_confidence"),
             "review_verdict": data.get("review_verdict"),
             "review_issues": data.get("review_issues") or [],
+            # Backend пока не возвращает parsed_query, но UI уже поддерживает
+            # это поле и покажет карточку сразу после его добавления в API.
+            "parsed_query": data.get("parsed_query"),
         },
     }
 
@@ -1207,7 +1211,11 @@ def render_app() -> None:
         st.error(current["error"])
 
     if current.get("mode_code") == "agent":
-        render_agent_answer(current)
+        render_agent_result(
+            current,
+            reviewer=reviewer,
+            save_review=save_expert_review,
+        )
         return
 
     render_query_processing(

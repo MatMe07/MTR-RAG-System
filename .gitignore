@@ -5,3 +5,4 @@ venv/
 .env
 *.db
 data/generated/
+artifacts/

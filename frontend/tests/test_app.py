@@ -236,6 +236,12 @@ class FrontendAppTest(unittest.TestCase):
                 {"kind": "object_graph", "id": "UNIT-1", "fragment": None}
             ],
             "missing_parameters": [],
+            "parsed_query": {
+                "card": {
+                    "item_type": "труба",
+                    "geometry": {"dn": 159},
+                }
+            },
         }
 
         result = app.transform_agent_response(
@@ -249,6 +255,7 @@ class FrontendAppTest(unittest.TestCase):
         self.assertEqual(2, len(result["agent"]["tools_used"]))
         self.assertEqual("KSM-1", result["agent"]["components"][0]["ksm_code"])
         self.assertTrue(result["agent"]["human_review_required"])
+        self.assertEqual(159, result["agent"]["parsed_query"]["card"]["geometry"]["dn"])
 
     @patch("frontend.app.post_json")
     def test_agent_backend_posts_to_agent_endpoint(self, post_mock):
