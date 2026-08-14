@@ -326,8 +326,7 @@ def transform_agent_response(
             "parsed_confidence": data.get("parsed_confidence"),
             "review_verdict": data.get("review_verdict"),
             "review_issues": data.get("review_issues") or [],
-            # Backend пока не возвращает parsed_query, но UI уже поддерживает
-            # это поле и покажет карточку сразу после его добавления в API.
+            # Сохраняем разобранный запрос для показа карточки в агентном UI.
             "parsed_query": data.get("parsed_query"),
         },
     }

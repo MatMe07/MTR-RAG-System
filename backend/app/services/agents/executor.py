@@ -130,6 +130,7 @@ def run_agent(parsed: ParsedQuery, context: AgentContext | None = None,
         missing_parameters=_dedupe(missing),
         human_review_required=review,
         parsed_confidence=parsed.confidence,
+        parsed_query=parsed,
     )
     answer = apply_review(answer, expected=expected)
 
