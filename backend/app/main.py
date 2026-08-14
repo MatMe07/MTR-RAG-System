@@ -142,7 +142,11 @@ async def agent_query(request: AgentRequest):
 async def route_query(request: RouteRequest):
     """Маршрутизация (L4): детерминированная + LLM-уточнение, если оно неоднозначно."""
     try:
+        from app.services.entity_extractor import get_entity_extractor
+
+        parsed = get_entity_extractor().extract(request.query)
         decision = LlmRouter().route(request.query)
+        decision["parsed_query"] = parsed
         return RouteResponse(**{
             key: decision.get(key)
             for key in RouteResponse.model_fields

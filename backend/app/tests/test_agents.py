@@ -20,12 +20,16 @@ class AgentExecutorTest(unittest.TestCase):
         self.assertEqual(ans.tools_used[0], "graph_search")
         self.assertIn("stock_query", ans.tools_used)
         self.assertGreaterEqual(len(ans.components), 6)
+        self.assertIsNotNone(ans.parsed_query)
+        self.assertEqual(["UNIT-SYN-GAS-001"], ans.parsed_query.unit_ids)
 
     def test_catalog_stock_query_with_filters(self):
         ans = _answer("Какие отводы DN150 есть на складе для газа с H2S")
         self.assertIn("catalog_search", ans.tools_used)
         self.assertIn("stock_query", ans.tools_used)
         self.assertLessEqual(len(ans.components), 20)
+        self.assertEqual("отвод", ans.parsed_query.card.item_type)
+        self.assertEqual(150, ans.parsed_query.card.geometry.dn)
 
     def test_object_builder_assembles_new_unit(self):
         ans = _answer("Составь перечень деталей нового участка DN200 PN25 природный газ")

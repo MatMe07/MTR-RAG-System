@@ -11,7 +11,7 @@ class AgentViewModelTest(unittest.TestCase):
                     "item_type": "отвод",
                     "geometry": {"dn": 426, "angle": 90, "wall_thickness": 10},
                     "environment": {"medium": "H2S", "h2s_confirmed": None},
-                    "coating": {"inner": False},
+                    "coating": {"inner_coating": False},
                 }
             }
         )

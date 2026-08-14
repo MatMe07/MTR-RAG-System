@@ -335,6 +335,10 @@ class RouteResponse(BaseModel):
     missing_parameters: List[str] = Field(default_factory=list, description="Чего не хватает")
     llm_refined: bool = Field(False, description="Уточнял ли решение LLM")
     router_confidence: Optional[float] = Field(None, description="Уверенность LLM-маршрутизатора")
+    parsed_query: Optional[ParsedQuery] = Field(
+        None,
+        description="Структурированный запрос, сформированный парсером",
+    )
 
 
 class AgentSource(BaseModel):
@@ -371,6 +375,10 @@ class AgentAnswer(BaseModel):
     missing_parameters: List[str] = Field(default_factory=list, description="Чего не хватает для полного ответа")
     human_review_required: bool = Field(False, description="Требуется ли проверка экспертом")
     parsed_confidence: Optional[float] = Field(None, description="Уверенность парсера")
+    parsed_query: Optional[ParsedQuery] = Field(
+        None,
+        description="Структурированный запрос, использованный агентом",
+    )
     review_verdict: Optional[str] = Field(None, description="Вердикт ревьюера: pass | needs_review")
     review_issues: List[str] = Field(default_factory=list, description="Замечания ревьюера")
 

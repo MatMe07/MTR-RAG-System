@@ -64,6 +64,8 @@ FIELD_LABELS = {
     "co2_confirmed": "CO2 подтверждён",
     "inner": "Внутреннее покрытие",
     "outer": "Наружное покрытие",
+    "inner_coating": "Внутреннее покрытие",
+    "outer_coating": "Наружное покрытие",
 }
 
 

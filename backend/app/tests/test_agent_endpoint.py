@@ -82,6 +82,11 @@ class AgentEndpointTest(unittest.TestCase):
         self.assertEqual(data["tools_used"][0], "graph_search")
         self.assertIn("stock_query", data["tools_used"])
         self.assertGreaterEqual(len(data["components"]), 6)
+        self.assertEqual(
+            ["UNIT-SYN-GAS-001"],
+            data["parsed_query"]["unit_ids"],
+        )
+        self.assertGreater(data["parsed_query"]["confidence"], 0)
 
     def test_agent_endpoint_handles_unknown_query(self):
         resp = self.client.post("/agent", json={"query": "замени задвижку"})
@@ -100,6 +105,11 @@ class AgentEndpointTest(unittest.TestCase):
         self.assertIn("stock_query", data["required_tools"])
         self.assertIn("reasons", data)
         self.assertFalse(data["llm_refined"])
+        self.assertEqual(
+            ["UNIT-SYN-GAS-001"],
+            data["parsed_query"]["unit_ids"],
+        )
+        self.assertIn("inventory", data["parsed_query"]["operations"])
 
     def test_route_endpoint_exact_code_goes_ordinary(self):
         resp = self.client.post(
@@ -109,6 +119,10 @@ class AgentEndpointTest(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["route"], "ordinary")
         self.assertEqual(resp.json()["mode"], "exact")
+        self.assertEqual(
+            "найди MTR-PIP-000123 в каталоге",
+            resp.json()["parsed_query"]["original_query"],
+        )
 
 
 if __name__ == "__main__":
