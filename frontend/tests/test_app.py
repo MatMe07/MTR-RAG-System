@@ -7,6 +7,7 @@ from frontend import app
 
 class FrontendAppTest(unittest.TestCase):
     def test_search_mode_labels_map_to_backend_codes(self):
+        self.assertEqual("auto", app.mode_code("Автоматически"))
         self.assertEqual("hybrid", app.mode_code("Гибридный поиск"))
         self.assertEqual("exact", app.mode_code("Точный поиск"))
         self.assertEqual("vector", app.mode_code("Семантический поиск"))
@@ -283,6 +284,73 @@ class FrontendAppTest(unittest.TestCase):
         path = post_mock.call_args.args[0]
         self.assertEqual("/agent", path)
         self.assertEqual("agent", result["mode_code"])
+
+    @patch("frontend.app.post_json")
+    def test_automatic_mode_asks_for_clarification(self, post_mock):
+        post_mock.return_value = {
+            "route": "clarification",
+            "mode": "missing_parameters",
+            "missing_parameters": ["geometry.dn", "pressure.pn"],
+            "parsed_query": {"card": {"item_type": "задвижка"}},
+        }
+
+        result = app.search_backend("Найди задвижку", "Автоматически")
+
+        post_mock.assert_called_once_with(
+            "/route", {"query": "Найди задвижку"}, timeout=30
+        )
+        self.assertEqual("clarification", result["mode_code"])
+        self.assertEqual("задвижка", result["query_card"]["item_type"])
+        self.assertEqual(["geometry.dn", "pressure.pn"], result["missing_parameters"])
+
+    @patch("frontend.app.post_json")
+    def test_automatic_mode_dispatches_agent(self, post_mock):
+        post_mock.side_effect = [
+            {
+                "route": "agent",
+                "mode": "inventory",
+                "parsed_query": {"card": {"item_type": "отвод"}},
+            },
+            {"intent": "inventory", "answer": "Остаток найден"},
+        ]
+
+        result = app.search_backend(
+            "Сколько отводов осталось на складе", "Автоматически"
+        )
+
+        self.assertEqual(["/route", "/agent"], [call.args[0] for call in post_mock.call_args_list])
+        self.assertEqual("agent", result["mode_code"])
+        self.assertEqual("auto", result["selected_mode_code"])
+        self.assertEqual(
+            "отвод", result["agent"]["parsed_query"]["card"]["item_type"]
+        )
+
+    @patch("frontend.app.post_json")
+    def test_automatic_mode_dispatches_ordinary_search(self, post_mock):
+        post_mock.side_effect = [
+            {"route": "ordinary", "mode": "hybrid"},
+            {
+                "search_id": "auto-search",
+                "requested_card": {},
+                "candidates": [],
+                "total_found": 0,
+                "search_time_ms": 4,
+            },
+        ]
+
+        result = app.search_backend("Отвод DN159 90", "Автоматически")
+
+        search_payload = post_mock.call_args_list[1].args[1]
+        self.assertEqual("hybrid", search_payload["mode"])
+        self.assertEqual("Автоматически", result["mode"])
+        self.assertEqual("auto", result["selected_mode_code"])
+
+    @patch("frontend.app.post_json")
+    def test_automatic_mode_rejects_unknown_route(self, post_mock):
+        post_mock.return_value = {"route": "unknown"}
+
+        with self.assertRaises(app.BackendAPIError):
+            app.search_backend("Найди отвод DN159", "Автоматически")
 
 
 if __name__ == "__main__":

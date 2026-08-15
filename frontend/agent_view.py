@@ -6,6 +6,8 @@ from typing import Any, Callable
 
 import streamlit as st
 
+from frontend.export_utils import agent_component_export_rows, result_to_json, rows_to_csv
+
 
 INTENT_LABELS = {
     "catalog_search": "Поиск по каталогу",
@@ -238,6 +240,23 @@ def render_agent_result(
             st.markdown(f"**{number}. {label}:** {location}")
             if fragment:
                 st.caption(str(fragment))
+
+    export_columns = st.columns(2)
+    export_columns[0].download_button(
+        "Скачать ответ JSON",
+        data=result_to_json(current),
+        file_name="mtr_agent_answer.json",
+        mime="application/json",
+        width="stretch",
+    )
+    export_columns[1].download_button(
+        "Скачать позиции CSV",
+        data=rows_to_csv(agent_component_export_rows(current)),
+        file_name="mtr_agent_components.csv",
+        mime="text/csv",
+        width="stretch",
+        disabled=not bool(components),
+    )
 
     reviewable = [
         component for component in components if component.get("ksm_code")
