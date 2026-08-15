@@ -16,15 +16,24 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from backend.app.services.search_router import route_query_text
 from frontend.agent_view import render_agent_result
+from frontend.clarification_view import render_clarification
+from frontend.demo_scenarios import DEMO_SCENARIOS
+from frontend.expert_history_view import render_expert_history
+from frontend.export_utils import candidate_export_rows, result_to_json, rows_to_csv
+from frontend.quality_view import render_quality_view
 
 
 DEMO_DATA_PATH = PROJECT_ROOT / "data" / "sample" / "ui_demo_case_q007.json"
 QUESTIONS_PATH = (
     PROJECT_ROOT / "data" / "evaluation" / "complex_questions_40.jsonl"
 )
+STRESS_CASES_PATH = (
+    PROJECT_ROOT / "data" / "evaluation" / "agent_stress_cases_50.jsonl"
+)
 BACKEND_URL = os.getenv("MTR_BACKEND_URL", "http://localhost:8000").rstrip("/")
 
 SEARCH_MODES = {
+    "Автоматически": "auto",
     "Гибридный поиск": "hybrid",
     "Точный поиск": "exact",
     "Семантический поиск": "vector",
@@ -34,6 +43,7 @@ SEARCH_MODES = {
 }
 
 LEGACY_MODE_LABELS = {
+    "автоматически": "Автоматически",
     "гибридный поиск": "Гибридный поиск",
     "точный поиск": "Точный поиск",
     "семантический поиск": "Семантический поиск",
@@ -201,6 +211,36 @@ def post_json(
         raise BackendAPIError("Backend вернул не JSON-ответ.") from exc
 
 
+def get_json(
+    path: str,
+    params: dict[str, Any] | None = None,
+    timeout: int = 30,
+) -> Any:
+    try:
+        response = requests.get(
+            f"{BACKEND_URL}{path}",
+            params=params,
+            timeout=timeout,
+        )
+    except requests.exceptions.ConnectionError as exc:
+        raise BackendAPIError(
+            f"Backend недоступен по адресу {BACKEND_URL}."
+        ) from exc
+    except requests.exceptions.Timeout as exc:
+        raise BackendAPIError("Backend не ответил вовремя.") from exc
+    except requests.RequestException as exc:
+        raise BackendAPIError(f"Ошибка соединения с backend: {exc}") from exc
+
+    if not response.ok:
+        raise BackendAPIError(
+            f"Backend вернул ошибку {response.status_code}: {_response_error(response)}"
+        )
+    try:
+        return response.json()
+    except ValueError as exc:
+        raise BackendAPIError("Backend вернул не JSON-ответ.") from exc
+
+
 def upload_passport(uploaded_file: Any) -> dict[str, Any]:
     file_bytes = uploaded_file.getvalue()
     files = {
@@ -247,6 +287,9 @@ def search_backend(
 ) -> dict[str, Any]:
     selected_mode = mode_code(mode_label)
 
+    if selected_mode == "auto":
+        return auto_search_backend(query, top_k=top_k)
+
     if selected_mode == "agent":
         return agent_backend(query, mode_label)
 
@@ -283,7 +326,8 @@ def transform_agent_response(
         "search_id": str(uuid.uuid4()),
         "query": query,
         "mode": "Агентный запрос",
-        "mode_code": mode_code(mode_label),
+        "mode_code": "agent",
+        "selected_mode_code": mode_code(mode_label),
         "query_card": {},
         "total_found": 0,
         "search_time_ms": None,
@@ -340,6 +384,66 @@ def agent_backend(
         raise BackendAPIError("Введите запрос для агентного слоя.")
     data = post_json("/agent", {"query": query.strip()}, timeout=200)
     return transform_agent_response(data, query, mode_label)
+
+
+def auto_search_backend(query: str, top_k: int = 20) -> dict[str, Any]:
+    """Let /route choose ordinary search, clarification, or the agent."""
+    clean_query = query.strip()
+    if not clean_query:
+        raise BackendAPIError("Введите запрос.")
+
+    route = post_json("/route", {"query": clean_query}, timeout=30)
+    route_name = route.get("route")
+    if route_name not in {"ordinary", "agent", "clarification"}:
+        raise BackendAPIError("Маршрутизатор не вернул допустимый способ обработки.")
+
+    if route_name == "clarification":
+        parsed = route.get("parsed_query") or {}
+        query_card = parsed.get("card") if isinstance(parsed, dict) else {}
+        return {
+            "search_id": str(uuid.uuid4()),
+            "query": clean_query,
+            "mode": "Автоматически",
+            "mode_code": "clarification",
+            "selected_mode_code": "auto",
+            "query_card": query_card or {},
+            "route_decision": route,
+            "missing_parameters": route.get("missing_parameters") or [],
+            "total_found": 0,
+            "search_time_ms": None,
+            "backend_connected": True,
+            "error": None,
+            "candidates": [],
+        }
+
+    if route_name == "agent":
+        result = agent_backend(clean_query, "Автоматически")
+        result["mode"] = "Автоматически"
+        result["route_decision"] = route
+        if not result["agent"].get("parsed_query"):
+            result["agent"]["parsed_query"] = route.get("parsed_query")
+        return result
+
+    execution_mode = "exact" if route.get("mode") == "exact" else "hybrid"
+    data = post_json(
+        "/search",
+        {
+            "query": clean_query,
+            "mode": execution_mode,
+            "top_k": top_k,
+            "document_id": None,
+        },
+    )
+    result = transform_backend_response(
+        data,
+        clean_query,
+        normalize_mode_label(execution_mode),
+    )
+    result["mode"] = "Автоматически"
+    result["selected_mode_code"] = "auto"
+    result["execution_mode"] = execution_mode
+    result["route_decision"] = route
+    return result
 
 
 def save_expert_review(
@@ -1145,6 +1249,10 @@ def render_app() -> None:
         unsafe_allow_html=True,
     )
 
+    section = st.sidebar.radio(
+        "Раздел",
+        ["Поиск", "Проверка качества", "Решения экспертов"],
+    )
     reviewer = st.sidebar.text_input(
         "Эксперт",
         value=st.session_state.get("reviewer", ""),
@@ -1153,24 +1261,49 @@ def render_app() -> None:
     st.session_state["reviewer"] = reviewer
     st.sidebar.caption(f"Backend: {BACKEND_URL}")
 
+    if section == "Проверка качества":
+        render_quality_view(post_json, STRESS_CASES_PATH)
+        return
+    if section == "Решения экспертов":
+        render_expert_history(get_json)
+        return
+
     if "results" not in st.session_state:
         st.session_state["results"] = load_demo_data()
 
     current = st.session_state["results"]
-    current_mode = normalize_mode_label(current.get("mode"))
+
+    st.sidebar.markdown("#### Готовый сценарий")
+    demo_titles = {item["title"]: item for item in DEMO_SCENARIOS}
+    selected_demo_title = st.sidebar.selectbox(
+        "Сценарий",
+        list(demo_titles),
+        label_visibility="collapsed",
+    )
+    selected_demo = demo_titles[selected_demo_title]
+    st.sidebar.caption(selected_demo["expected"])
+    if st.sidebar.button("Подставить запрос", width="stretch"):
+        st.session_state["query_input"] = selected_demo["query"]
+        st.session_state["mode_input"] = "Автоматически"
+        st.rerun()
+
+    if "mode_input" not in st.session_state:
+        st.session_state["mode_input"] = "Автоматически"
+    if "query_input" not in st.session_state:
+        st.session_state["query_input"] = current.get("query", "")
 
     with st.form("search_form"):
         controls = st.columns([1.1, 2.8, 1.3])
         mode = controls[0].selectbox(
             "Режим поиска",
             list(SEARCH_MODES),
-            index=list(SEARCH_MODES).index(current_mode),
+            key="mode_input",
         )
         query = controls[1].text_area(
             "Запрос",
-            value=current.get("query", ""),
             height=105,
             help="Опишите изделие и важные условия эксплуатации.",
+            key="query_input",
         )
         uploaded_file = controls[2].file_uploader(
             "Паспорт изделия",
@@ -1208,6 +1341,39 @@ def render_app() -> None:
 
     if current.get("error"):
         st.error(current["error"])
+
+    route_decision = current.get("route_decision") or {}
+    if route_decision and current.get("mode_code") != "clarification":
+        route_label = ROUTE_LABELS.get(
+            route_decision.get("route"), route_decision.get("route") or "Не определён"
+        )
+        with st.expander("Как выбран способ обработки", expanded=False):
+            st.markdown(f"**Маршрут:** {route_label}")
+            if route_decision.get("mode"):
+                st.markdown(
+                    "**Режим выполнения:** "
+                    + MODE_LABELS.get(
+                        route_decision["mode"], route_decision["mode"]
+                    )
+                )
+            for reason in route_decision.get("reasons") or []:
+                st.markdown(f"- {reason}")
+
+    if current.get("mode_code") == "clarification":
+        clarified_query = render_clarification(current)
+        if clarified_query:
+            st.session_state["query_input"] = clarified_query
+            with st.spinner("Проверяем уточнённый запрос..."):
+                try:
+                    st.session_state["results"] = search_backend(
+                        query=clarified_query,
+                        mode_label="Автоматически",
+                    )
+                except BackendAPIError as exc:
+                    st.error(str(exc))
+                else:
+                    st.rerun()
+        return
 
     if current.get("mode_code") == "agent":
         render_agent_result(
@@ -1290,6 +1456,22 @@ def render_app() -> None:
             ),
             "Предупреждения": st.column_config.NumberColumn(width="small"),
         },
+    )
+
+    export_columns = st.columns(2)
+    export_columns[0].download_button(
+        "Скачать результат JSON",
+        data=result_to_json(current),
+        file_name="mtr_search_result.json",
+        mime="application/json",
+        width="stretch",
+    )
+    export_columns[1].download_button(
+        "Скачать кандидатов CSV",
+        data=rows_to_csv(candidate_export_rows(current)),
+        file_name="mtr_candidates.csv",
+        mime="text/csv",
+        width="stretch",
     )
 
     candidate_options = [
