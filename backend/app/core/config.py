@@ -22,7 +22,6 @@ class Settings:
     QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
     QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "")
     COLLECTION_NAME = "tplink_DOCS"
-    USE_LOCAL_LLM = _env_bool("USE_LOCAL_LLM", False)
 
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
     EMBEDDING_DEVICE = "cpu"
@@ -37,12 +36,18 @@ class Settings:
 
     # Локальный фолбэк (Ollama) используется, когда OpenRouter недоступен
     # или USE_LOCAL_LLM=true.
+    USE_LOCAL_LLM = _env_bool("USE_LOCAL_LLM", False)
     OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
 
     # Режим LLM-усиления агентного конвейера: auto | on | off.
     # auto — всегда пытаться с офлайн-фолбэком, off — только офлайн.
-    AGENT_LLM_MODE = os.getenv("AGENT_LLM_MODE", "off")
+    AGENT_LLM_MODE = os.getenv("AGENT_LLM_MODE", "on")
+
+    # Источник данных агентского слоя: json | db | auto.
+    # json — демо-JSON, db — PostgreSQL + Qdrant, auto — пробуем db, при
+    # недоступности БД падаем на json (см. app/services/agents/repository.py).
+    AGENT_STORAGE = os.getenv("AGENT_STORAGE", "db")
 
 
 settings = Settings()

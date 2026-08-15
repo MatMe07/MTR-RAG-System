@@ -10,6 +10,11 @@ from app.core.config import settings
 if os.environ.get("AGENT_LLM_MODE") not in ("auto", "on"):
     settings.AGENT_LLM_MODE = "off"
 
+# Агентские тесты по умолчанию идут на демо-JSON-каталоге (без PostgreSQL/Qdrant).
+# Чтобы прогнать их против реальной БД, задайте явно: AGENT_STORAGE=db.
+if os.environ.get("AGENT_STORAGE") not in ("json", "db"):
+    settings.AGENT_STORAGE = "json"
+
 # test_e2e_search требует тяжёлого embedding-стека (langchain_huggingface/qdrant),
 # которого нет в этом окружении. В продакшн-среде тест запускается штатно.
 collect_ignore = ["app/tests/test_e2e_search.py"]

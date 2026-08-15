@@ -160,15 +160,18 @@ class EmbeddingService:
         documents = []
         for item in items:
             text = self._mtr_to_text(item)
-            doc = Document(
-                page_content=text,
-                metadata={
-                    "mtr_code": item.mtr_code,
-                    "ksm_code": item.ksm_code,
-                    "item_type": item.item_type,
-                    "db_id": item.id
-                }
-            )
+            props = item.properties or {}
+            metadata = {
+                "mtr_code": item.mtr_code,
+                "ksm_code": item.ksm_code,
+                "item_type": item.item_type,
+                "db_id": item.id,
+                "designation": item.designation or item.short_text or "",
+                "medium": get_property_value(props, 'medium') or "",
+                "standard": get_property_value(props, 'standard')
+                            or get_property_value(props, 'gost_tu') or "",
+            }
+            doc = Document(page_content=text, metadata=metadata)
             documents.append(doc)
 
         self.vectorstore.add_documents(documents, batch_size=16)
@@ -186,6 +189,44 @@ class EmbeddingService:
             }
             for doc, score in results
         ]
+
+    def search_similar_filtered(
+        self,
+        query: str,
+        k: int = 50,
+        must: Optional[List[Dict[str, Any]]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Семантический поиск по коллекции через raw qdrant-client.
+
+        must — список условий (FieldCondition/FieldCondition) для фильтрации
+        payload (item_type, medium и т.п.). Возвращает записи с db_id и
+        расширенным payload (designation, medium, standard).
+        """
+        from qdrant_client.http.models import Filter
+
+        query_vector = self.embed_query(query)
+        query_filter = Filter(must=must) if must else None
+        res = self.client.search(
+            collection_name=self.collection_name,
+            query_vector=query_vector,
+            limit=k,
+            query_filter=query_filter,
+            with_payload=True,
+        )
+        out = []
+        for hit in res:
+            p = hit.payload or {}
+            out.append({
+                "db_id": p.get("db_id"),
+                "mtr_code": p.get("mtr_code"),
+                "ksm_code": p.get("ksm_code"),
+                "item_type": p.get("item_type"),
+                "designation": p.get("designation"),
+                "medium": p.get("medium"),
+                "standard": p.get("standard"),
+                "score": float(hit.score),
+            })
+        return out
 
     def _card_to_text(self, card: ItemCard) -> str:
         parts = []

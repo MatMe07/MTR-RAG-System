@@ -123,6 +123,7 @@ async def search(
     request: SearchRequest,
     search_service: SearchService = Depends(get_search_service)
 ):
+    print(f"[search] mode={request.mode} top_k={request.top_k} | '{request.query[:80]}'", flush=True)
     try:
         return search_service.search(request)
     except Exception as e:
@@ -132,8 +133,13 @@ async def search(
 @app.post("/agent", response_model=AgentAnswer)
 async def agent_query(request: AgentRequest):
     """Агентский слой: парсит запрос (rule-based + LLM-коррекция) и запускает план тулов."""
+    print(f"[agent] старт: '{request.query[:80]}'", flush=True)
     try:
-        return execute_agent_query(request.query)
+        ag = execute_agent_query(request.query)
+        print("-"*30)
+        print("ag = ", ag)
+        print("-"*30)
+        return ag
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -146,6 +152,9 @@ async def route_query(request: RouteRequest):
 
         parsed = get_entity_extractor().extract(request.query)
         decision = LlmRouter().route(request.query)
+        print(f"[route] '{request.query[:60]}' -> {decision.get('route')} "
+              f"(mode={decision.get('mode')}, llm_refined={decision.get('llm_refined')})", flush=True)
+        print("decision: ", decision)
         decision["parsed_query"] = parsed
         return RouteResponse(**{
             key: decision.get(key)

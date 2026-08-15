@@ -118,6 +118,31 @@ def _card_component(card: Dict[str, Any], score: float, reason: str) -> Dict[str
 # =========================================================
 # CATALOG_SEARCH
 # =========================================================
+def _catalog_matches(ctx, parsed: ParsedQuery) -> List[Dict[str, Any]]:
+    """Кандидаты каталога: гибридный поиск репозитория или перебор по фильтрам.
+
+    db-режим (AgentRepository) даёт гибрид PG-фильтры + Qdrant-семантика;
+    json-режим и AgentContext семантики не имеют — классический перебор.
+    """
+    search = getattr(ctx, "search_candidates", None)
+    if callable(search):
+        try:
+            found = search(parsed, limit=40)
+        except Exception:  # noqa: BLE001 — Qdrant/БД недоступны — перебор
+            found = None
+        if found:
+            print(f"[catalog_search] источник=репозиторий(гибрид) кандидатов={len(found)}", flush=True)
+            return found
+        print("[catalog_search] источник=перебор (репозиторий вернул пусто)", flush=True)
+    else:
+        print("[catalog_search] источник=перебор (нет search_candidates)", flush=True)
+    matched: List[Dict[str, Any]] = []
+    for card in ctx.catalog:
+        if _matches_filters(card, parsed):
+            matched.append({"card": card, "score": _match_score(card, parsed)})
+    return matched
+
+
 def catalog_search(ctx, parsed: ParsedQuery, workspace: Dict[str, Any]) -> Dict[str, Any]:
     """Поиск кандидатов в каталоге по карточке/фильтрам запроса."""
     result = _empty()
@@ -130,20 +155,15 @@ def catalog_search(ctx, parsed: ParsedQuery, workspace: Dict[str, Any]) -> Dict[
         result["text"] = "Каталог: не заданы параметры поиска."
         return result
 
-    matched: List[Dict[str, Any]] = []
-    for card in ctx.catalog:
-        if _matches_filters(card, parsed):
-            score = _match_score(card, parsed)
-            matched.append({"card": card, "score": score})
-
+    matched = _catalog_matches(ctx, parsed)
     matched.sort(key=lambda x: x["score"], reverse=True)
     candidates = []
     for m in matched[:40]:
         card = m["card"]
-        candidates.append({"card": card, "score": m["score"],
-                           "reason": "совпадает по параметрам запроса"})
+        reason = m.get("reason") or "совпадает по параметрам запроса"
+        candidates.append({"card": card, "score": m["score"], "reason": reason})
         result["components"].append(
-            _card_component(card, m["score"], "совпадает по параметрам запроса")
+            _card_component(card, m["score"], reason)
         )
         result["sources"].append(_source("catalog", card["card_id"], card.get("designation")))
 
@@ -519,7 +539,7 @@ def document_search(ctx, parsed: ParsedQuery, workspace: Dict[str, Any]) -> Dict
             continue
         ksm = ctx.card_ksm(card)
         required = ctx.evidence_for_unit(target.get("unit_id") or "")
-        doc = (card.get("dcd") or {}).get("document") or {}
+        doc = ctx.card_document(card) or {}
         doc_title = doc.get("title") or doc.get("document_type")
         found = [doc_title] if doc_title else []
 

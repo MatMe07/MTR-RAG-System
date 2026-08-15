@@ -181,7 +181,7 @@ def _response_error(response: requests.Response) -> str:
 def post_json(
     path: str,
     payload: dict[str, Any],
-    timeout: int = 150,
+    timeout: int = 1000,
 ) -> dict[str, Any]:
     try:
         response = requests.post(
@@ -206,6 +206,7 @@ def post_json(
             f"{_response_error(response)}"
         )
     try:
+        print(response.json())
         return response.json()
     except ValueError as exc:
         raise BackendAPIError("Backend вернул не JSON-ответ.") from exc
@@ -394,10 +395,12 @@ def auto_search_backend(query: str, top_k: int = 20) -> dict[str, Any]:
 
     route = post_json("/route", {"query": clean_query}, timeout=30)
     route_name = route.get("route")
+    print(f"[auto] /route -> {route_name} (mode={route.get('mode')})", flush=True)
     if route_name not in {"ordinary", "agent", "clarification"}:
         raise BackendAPIError("Маршрутизатор не вернул допустимый способ обработки.")
 
     if route_name == "clarification":
+        print("[auto] путь=clarification -> показываем форму недостающих параметров", flush=True)
         parsed = route.get("parsed_query") or {}
         query_card = parsed.get("card") if isinstance(parsed, dict) else {}
         return {
@@ -417,6 +420,7 @@ def auto_search_backend(query: str, top_k: int = 20) -> dict[str, Any]:
         }
 
     if route_name == "agent":
+        print("[auto] путь=agent -> POST /agent", flush=True)
         result = agent_backend(clean_query, "Автоматически")
         result["mode"] = "Автоматически"
         result["route_decision"] = route
@@ -425,6 +429,7 @@ def auto_search_backend(query: str, top_k: int = 20) -> dict[str, Any]:
         return result
 
     execution_mode = "exact" if route.get("mode") == "exact" else "hybrid"
+    print(f"[auto] путь=ordinary -> POST /search (mode={execution_mode})", flush=True)
     data = post_json(
         "/search",
         {

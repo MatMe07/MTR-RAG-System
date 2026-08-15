@@ -127,6 +127,10 @@ class AgentContext:
     def card_mtr(self, card: Dict[str, Any]) -> Optional[str]:
         return (card.get("codes") or {}).get("mtr_code")
 
+    def card_document(self, card: Dict[str, Any]) -> Dict[str, Any]:
+        """Документ карточки (dcd-режим): паспорт/ТУ по умолчанию из JSON."""
+        return (card.get("dcd") or {}).get("document") or {}
+
     def unit_medium_code(self, unit_id: str) -> Optional[str]:
         unit = self.units_by_id.get(unit_id)
         return (unit or {}).get("medium_code")

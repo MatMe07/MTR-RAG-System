@@ -41,6 +41,7 @@ class SearchService:
 
     def search(self, request: SearchRequest) -> SearchResponse:
         start_time = time.time()
+        print(f"[search_service] режим={request.mode} | '{request.query[:80]}'", flush=True)
         if not request.query.strip():
             return SearchResponse(
                 search_id=str(uuid.uuid4()),
@@ -223,6 +224,9 @@ class SearchService:
             reverse=True
         )
 
+        print(f"[search_service] hybrid: exact={len(exact_results)} "
+              f"filter={len(filter_results)} vector={len(vector_results)} -> "
+              f"объединено={len(combined)}", flush=True)
         return [r["item"] for r in sorted_results[:100]]
 
     def _passport_to_card(self, document_id: Optional[int]) -> ItemCard:

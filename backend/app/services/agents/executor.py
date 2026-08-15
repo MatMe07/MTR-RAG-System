@@ -5,8 +5,9 @@ from typing import Any, Dict, List, Optional
 from app.core.config import settings
 from app.schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
 
-from .context import AgentContext, get_agent_context
+from .context import AgentContext
 from .registry import build_workspace, plan_for_operations, resolve_tool
+from .repository import get_agent_repository
 from .reviewer import apply_review
 
 
@@ -48,17 +49,22 @@ def run_agent(parsed: ParsedQuery, context: AgentContext | None = None,
     expected — критерии правильного ответа из complex_questions_40.jsonl
     (используется автопроверкой 40 вопросов), передаются в ревьюер.
     """
-    ctx = context or get_agent_context()
+    # По умолчанию — репозиторий по AGENT_STORAGE (json|db|auto): агент работает
+    # либо с демо-JSON, либо с PostgreSQL+Qdrant. Явный context (AgentContext)
+    # используется тестами/вызовом извне и приоритетнее.
+    ctx = context or get_agent_repository()
     workspace = build_workspace()
     workspace["unit_ids"] = list(parsed.unit_ids or [])
     workspace["component_ids"] = list(parsed.component_ids or [])
 
     if settings.AGENT_LLM_MODE != "off":
-        from llm_explainer import LlmExplainer
+        from ..llm_explainer import LlmExplainer
         ctx.llm_explainer = LlmExplainer()
 
     plan = plan_for_operations(parsed.operations, parsed.required_agents,
                                parsed.ambiguities, parsed=parsed)
+    print(f"[agent] ctx={type(ctx).__name__} (storage={getattr(ctx, 'kind', '?')})", flush=True)
+    print(f"[agent] план тулов: {plan}", flush=True)
 
     # Если запрос явно про участки/компоненты — сначала загружаем состав объекта,
     # чтобы stock_query/document_search работали по установленным позициям.
@@ -109,6 +115,8 @@ def run_agent(parsed: ParsedQuery, context: AgentContext | None = None,
     if not answers:
         answers.append("Не удалось собрать ответ: недостаточно данных по запросу.")
 
+    print(f"[agent] готово: tools_used={tools_used} ответов={len(answers)} "
+          f"компонентов={len(all_components)}", flush=True)
     answer_text = "\n".join(answers)
 
     intent = _guess_intent(parsed)

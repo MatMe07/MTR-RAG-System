@@ -67,6 +67,8 @@ class LlmRouter:
               deterministic: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         decision = dict(deterministic or route_query_text(query))
         decision["llm_refined"] = False
+        print(f"[llm_router] baseline: route={decision.get('route')} "
+              f"mode={decision.get('mode')} (AGENT_LLM_MODE={settings.AGENT_LLM_MODE})", flush=True)
 
         if settings.AGENT_LLM_MODE == "off":
             return decision
