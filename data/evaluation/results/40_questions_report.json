@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-15T17:53:05.565644+00:00",
+  "generated_at": "2026-08-17T16:51:57.356167+00:00",
   "mode": "off",
   "strict": false,
   "min_tools_coverage": 20,
@@ -73,14 +73,15 @@
       "question": "У меня сломался отвод 90 426 на 10 на участке с H2S, предложи план замены и список деталей для ремонта",
       "intent": "object_configuration",
       "tools": [
-        "graph_search",
+        "object_builder",
         "catalog_search",
         "stock_query",
         "rules_engine",
-        "impact_analyzer",
-        "regulation_lookup",
+        "graph_search",
         "maintenance_planner",
-        "document_search"
+        "document_search",
+        "regulation_lookup",
+        "impact_analyzer"
       ],
       "tools_ok": true,
       "missing_tools": [],
@@ -129,7 +130,7 @@
       "case_id": "AQ005",
       "category": "replacement",
       "question": "На складе нет задвижки DN200 PN63, найди подходящую замену и проверь, подойдет ли она к соседним деталям",
-      "intent": "replacement",
+      "intent": "impact_analysis",
       "tools": [
         "graph_search",
         "impact_analyzer",
@@ -217,7 +218,7 @@
       "case_id": "AQ008",
       "category": "inventory",
       "question": "Покажи все детали для H2S, которых сейчас нет на складе, и расставь их по срочности закупки",
-      "intent": "object_configuration",
+      "intent": "inventory",
       "tools": [
         "catalog_search",
         "stock_query",
@@ -235,11 +236,10 @@
       "missing_sources": [
         "maintenance_policy"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": "needs_review",
       "review_issues": [
-        "Потеряно обязательное предупреждение: Окончательный приоритет зависит от корпоративных норм запаса и планов ремонта.",
         "Не хватает источников: maintenance_policy",
         "Ответ не содержит обязательных частей: КСМ, название, нулевой остаток, где установлено, критичность, причина приоритета"
       ],
@@ -366,14 +366,14 @@
       "case_id": "AQ013",
       "category": "inventory",
       "question": "Найди на складе одинаковые по параметрам детали с разными кодами КСМ и покажи возможные дубли",
-      "intent": "search",
+      "intent": "duplicates",
       "tools": [
         "catalog_search",
+        "duplicate_detector",
+        "regulation_lookup",
         "stock_query",
         "rules_engine",
-        "regulation_lookup",
-        "document_search",
-        "duplicate_detector"
+        "document_search"
       ],
       "tools_ok": true,
       "missing_tools": [],
@@ -427,7 +427,7 @@
       "case_id": "AQ015",
       "category": "inventory",
       "question": "Собери заявку на пополнение склада для участка с CO2, включи только позиции с остатком меньше трех штук",
-      "intent": "inventory",
+      "intent": "object_configuration",
       "tools": [
         "object_builder",
         "catalog_search",
@@ -445,10 +445,11 @@
       "missing_sources": [
         "maintenance_policy"
       ],
-      "warning_ok": true,
+      "warning_ok": false,
       "review_pass": false,
       "review_verdict": "needs_review",
       "review_issues": [
+        "Потеряно обязательное предупреждение: Заявка остается черновиком до утверждения норм запаса и технической пригодности.",
         "Не хватает источников: maintenance_policy",
         "Ответ не содержит обязательных частей: КСМ, текущий остаток, рекомендуемое количество, связанный компонент, подтверждение CO2, итоговый список"
       ],
@@ -872,7 +873,7 @@
       "case_id": "AQ030",
       "category": "composite_replacement",
       "question": "У меня сломался отвод COMP-SYN-008, составь полный комплект замены и план работ",
-      "intent": "object_configuration",
+      "intent": "replacement",
       "tools": [
         "graph_search",
         "catalog_search",
@@ -905,7 +906,7 @@
       "case_id": "AQ031",
       "category": "composite_replacement",
       "question": "Задвижка COMP-SYN-010 сломалась, собери комплект для ее замены вместе с соединительными деталями",
-      "intent": "object_configuration",
+      "intent": "replacement",
       "tools": [
         "graph_search",
         "catalog_search",
@@ -938,7 +939,7 @@
       "case_id": "AQ032",
       "category": "composite_replacement",
       "question": "Поврежден переход COMP-SYN-009 и часть соседней трубы, предложи единый комплект для ремонта",
-      "intent": "object_configuration",
+      "intent": "impact_analysis",
       "tools": [
         "graph_search",
         "impact_analyzer",
@@ -967,7 +968,7 @@
       "case_id": "AQ033",
       "category": "composite_replacement",
       "question": "Заглушка COMP-SYN-011 повреждена, подготовь список деталей и проверок для безопасной замены",
-      "intent": "object_configuration",
+      "intent": "replacement",
       "tools": [
         "graph_search",
         "catalog_search",
@@ -1000,17 +1001,17 @@
       "question": "Нужно заменить шесть метров трубы 108 на 6 на участке H2S, собери комплект ремонта со склада",
       "intent": "object_configuration",
       "tools": [
-        "graph_search",
+        "object_builder",
         "catalog_search",
         "stock_query",
         "rules_engine",
-        "impact_analyzer",
-        "regulation_lookup",
+        "graph_search",
         "maintenance_planner",
         "document_search",
+        "regulation_lookup",
+        "impact_analyzer",
         "inventory_calculator",
-        "priority_ranker",
-        "object_builder"
+        "priority_ranker"
       ],
       "tools_ok": true,
       "missing_tools": [],
@@ -1030,7 +1031,7 @@
       "case_id": "AQ035",
       "category": "composite_replacement",
       "question": "На участке с H2S одновременно сломались отвод и задвижка, предложи общий план замены и проверь склад",
-      "intent": "object_configuration",
+      "intent": "replacement",
       "tools": [
         "graph_search",
         "catalog_search",
@@ -1063,7 +1064,7 @@
       "case_id": "AQ036",
       "category": "impact_analysis",
       "question": "Хотим поставить задвижку DN200 вместо DN150, покажи какие соседние детали придется заменить или проверить",
-      "intent": "replacement",
+      "intent": "impact_analysis",
       "tools": [
         "graph_search",
         "impact_analyzer",
@@ -1125,7 +1126,7 @@
       "case_id": "AQ038",
       "category": "impact_analysis",
       "question": "Нужно заменить трубу из стали 20 на 09Г2С, покажи что изменится для сварки и соседних деталей",
-      "intent": "replacement",
+      "intent": "impact_analysis",
       "tools": [
         "graph_search",
         "impact_analyzer",

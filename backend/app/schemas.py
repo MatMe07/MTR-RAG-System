@@ -421,3 +421,74 @@ class ErrorResponse(BaseModel):
     success: bool = False
     error: str
     detail: Optional[str] = None
+
+
+class CatalogProperty(BaseModel):
+    """Одно свойство карточки каталога (элемент properties.*)."""
+
+    value: Any = Field(None, description="Значение свойства (число/строка/список/булево)")
+    value_type: Optional[str] = Field(None, description="Тип значения: number/string/boolean/list")
+    unit: Optional[str] = Field(None, description="Единица измерения (mm, MPa и т.п.)")
+    status: Optional[str] = Field(None, description="Статус: normalized/inferred/confirmed")
+    confidence: Optional[float] = Field(None, description="Уверенность 0..1")
+    source_fragment_ids: List[str] = Field(default_factory=list, description="Источники фрагментов")
+
+
+class CatalogCodes(BaseModel):
+    """Коды карточки каталога."""
+
+    mtr_code: Optional[str] = Field(None, description="Код МТР")
+    ksm_code: Optional[str] = Field(None, description="Код КСМ")
+
+
+class CatalogDcd(BaseModel):
+    """DCD-контейнер карточки каталога."""
+
+    domain: Dict[str, Any] = Field(default_factory=dict, description="Домен")
+    collection: Dict[str, Any] = Field(default_factory=dict, description="Коллекция")
+    document: Dict[str, Any] = Field(default_factory=dict, description="Документ")
+
+
+class CatalogCard(BaseModel):
+    """Карточка каталога МТР/КСМ (из regulated_mtr_catalog_1000.jsonl).
+
+    Схема мягкая (extra="ignore", поля опциональны), чтобы валидировать
+    реальные карточки репозитория без их нормализации.
+    """
+
+    schema_version: Optional[str] = Field(None, description="Версия схемы, например 2.0")
+    card_id: str = Field(..., description="Идентификатор карточки")
+    card_version: Optional[int] = Field(None, description="Версия карточки")
+    lifecycle_status: Optional[str] = Field(None, description="Статус жизненного цикла")
+    item_type: Optional[str] = Field(None, description="Тип изделия: отвод, труба и т.п.")
+    subtype: Optional[str] = Field(None, description="Подтип изделия")
+    name: Optional[str] = Field(None, description="Наименование")
+    designation: Optional[str] = Field(None, description="Условное обозначение")
+    codes: Optional[CatalogCodes] = Field(None, description="Коды МТР/КСМ")
+    properties: Dict[str, CatalogProperty] = Field(
+        default_factory=dict,
+        description="Свойства карточки (ключ -> параметр со value/value_type и т.п.)",
+    )
+    dcd: Optional[CatalogDcd] = Field(None, description="DCD-контейнер")
+
+
+class RouterDecision(BaseModel):
+    """Решение детерминированного роутера (result route_query_text).
+
+    Ключи совпадают с возвращаемым словарём. Дополнительные ключи
+    (например, parsed_query) при валидации через extra="ignore" сохраняются.
+    """
+
+    route: str = Field(..., description="ordinary | agent | clarification")
+    mode: str = Field(..., description="Режим исполнения")
+    intent: str = Field(..., description="Интент запроса")
+    intent_label: str = Field(..., description="Человекочитаемое имя интента")
+    reasons: List[str] = Field(default_factory=list, description="Причины решения")
+    required_tools: List[str] = Field(default_factory=list, description="Тулы для пути")
+    missing_parameters: List[str] = Field(default_factory=list, description="Чего не хватает")
+    exact_codes: List[str] = Field(default_factory=list, description="Точные коды из запроса")
+    collections: List[str] = Field(default_factory=list, description="Затронутые DCD-коллекции")
+    normalized_query: str = Field(default="", description="Нормализованный запрос")
+    detected_aliases: List[Dict[str, Any]] = Field(default_factory=list, description="Распознанные алиасы")
+
+    model_config = {"extra": "ignore"}

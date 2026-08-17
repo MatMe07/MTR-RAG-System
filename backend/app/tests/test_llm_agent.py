@@ -6,7 +6,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource
-from app.services.agents.llm_agent import AnswerSynthesizer, apply_llm_synthesis
+from app.services.agent.llm_agent import AnswerSynthesizer, apply_llm_synthesis
 
 
 def _answer(**kw):

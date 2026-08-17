@@ -1,8 +1,17 @@
-"""AgentContext: единый доступ к демонстрационным данным (каталог, граф, регуляторика)."""
+"""AgentContext: внутренний JSON-загрузчик демонстрационных данных.
+
+Фаза 4 рефакторинга: AgentContext — только ленивая загрузка и индексация
+демо-JSON (каталог, граф, регуляторика). Хелперы карточек/склада/графа живут
+в интерфейсе AgentRepository (repository.py) — тулы работают только через него.
+Константы путей и доменные константы также переехали в repository.py.
+"""
 
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from app.core.logging import get_logger
+from app.schemas import CatalogCard
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 
@@ -10,22 +19,38 @@ CATALOG_PATH = REPO_ROOT / "data" / "catalog" / "regulated_mtr_catalog_1000.json
 GRAPH_PATH = REPO_ROOT / "data" / "graph" / "gas_pipeline_object.json"
 REGULATION_PATH = REPO_ROOT / "data" / "regulation" / "regulation_matrix.json"
 
-ITEM_TYPE_COLLECTION = {
-    "труба": "pipes",
-    "отвод": "elbows",
-    "переход": "reducers",
-    "задвижка": "valves",
-    "заглушка": "plugs",
-    "тройник": "tees",
-}
+log = get_logger("agent_context")
 
-COLLECTION_ITEM_TYPE = {v: k for k, v in ITEM_TYPE_COLLECTION.items()}
 
-DEFAULT_TARGET_STOCK = 5.0
+def _load_catalog() -> List[Dict[str, Any]]:
+    """Читает каталог из JSONL с Pydantic-валидацией каждой карточки.
+
+    Невалидные карточки логируются и пропускаются, загрузка не падает.
+    """
+    cards: List[Dict[str, Any]] = []
+    skipped = 0
+    for line in CATALOG_PATH.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            card = json.loads(line)
+            CatalogCard.model_validate(card)
+            cards.append(card)
+        except Exception as exc:
+            skipped += 1
+            cid = None
+            try:
+                cid = json.loads(line).get("card_id")
+            except Exception:
+                pass
+            log.warning("Каталог: карточка %s пропущена (невалидна): %s", cid, exc)
+    if skipped:
+        log.warning("Каталог: загружено %d карточек, пропущено невалидных: %d", len(cards), skipped)
+    return cards
 
 
 class AgentContext:
-    """Ленивая загрузка и хелперы поверх демонстрационных наборов."""
+    """Ленивая загрузка и индексация демонстрационных наборов."""
 
     def __init__(self):
         self._catalog: Optional[List[Dict[str, Any]]] = None
@@ -42,11 +67,7 @@ class AgentContext:
     @property
     def catalog(self) -> List[Dict[str, Any]]:
         if self._catalog is None:
-            self._catalog = [
-                json.loads(line)
-                for line in CATALOG_PATH.read_text(encoding="utf-8").splitlines()
-                if line.strip()
-            ]
+            self._catalog = _load_catalog()
         return self._catalog
 
     @property
@@ -108,49 +129,6 @@ class AgentContext:
                 for m in self.regulation.get("medium_profiles", [])
             }
         return self._medium_profiles_by_code
-
-    # ===== Хелперы =====
-    @staticmethod
-    def prop(card: Dict[str, Any], key: str, default=None) -> Any:
-        """Значение свойства карточки: properties[key].value."""
-        p = (card.get("properties") or {}).get(key)
-        if p is None:
-            return default
-        return p.get("value", default)
-
-    def card_for_component(self, component: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        return self.by_card_id.get(component.get("installed_card_id"))
-
-    def card_ksm(self, card: Dict[str, Any]) -> Optional[str]:
-        return (card.get("codes") or {}).get("ksm_code")
-
-    def card_mtr(self, card: Dict[str, Any]) -> Optional[str]:
-        return (card.get("codes") or {}).get("mtr_code")
-
-    def card_document(self, card: Dict[str, Any]) -> Dict[str, Any]:
-        """Документ карточки (dcd-режим): паспорт/ТУ по умолчанию из JSON."""
-        return (card.get("dcd") or {}).get("document") or {}
-
-    def unit_medium_code(self, unit_id: str) -> Optional[str]:
-        unit = self.units_by_id.get(unit_id)
-        return (unit or {}).get("medium_code")
-
-    def medium_profile(self, unit_id: str) -> Optional[Dict[str, Any]]:
-        return self.medium_profiles_by_code.get(self.unit_medium_code(unit_id) or "")
-
-    def components_of_unit(self, unit_id: str) -> List[Dict[str, Any]]:
-        return list(self.components_by_unit.get(unit_id, []))
-
-    def installed_ksms(self) -> set:
-        """Все КСМ, установленные на участках (для фильтра 'не установлены')."""
-        return {comp.get("ksm_code") for comp in self.graph.get("components", [])}
-
-    def stock_qty(self, card: Dict[str, Any]) -> Optional[float]:
-        return self.prop(card, "stock_qty")
-
-    def evidence_for_unit(self, unit_id: str) -> List[str]:
-        profile = self.medium_profile(unit_id)
-        return list((profile or {}).get("required_evidence", []))
 
 
 def get_agent_context() -> AgentContext:

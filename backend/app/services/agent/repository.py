@@ -20,6 +20,19 @@ CATALOG_PATH = REPO_ROOT / "data" / "catalog" / "regulated_mtr_catalog_1000.json
 GRAPH_PATH = REPO_ROOT / "data" / "graph" / "gas_pipeline_object.json"
 REGULATION_PATH = REPO_ROOT / "data" / "regulation" / "regulation_matrix.json"
 
+ITEM_TYPE_COLLECTION = {
+    "труба": "pipes",
+    "отвод": "elbows",
+    "переход": "reducers",
+    "задвижка": "valves",
+    "заглушка": "plugs",
+    "тройник": "tees",
+}
+
+COLLECTION_ITEM_TYPE = {v: k for k, v in ITEM_TYPE_COLLECTION.items()}
+
+DEFAULT_TARGET_STOCK = 5.0
+
 
 class AgentRepository:
     """Интерфейс данных агента: карточки, склад, граф, регуляторика, документы."""
@@ -84,19 +97,22 @@ class AgentRepository:
         return _json_lite().components_by_id
 
     def components_of_unit(self, unit_id: str) -> List[Dict[str, Any]]:
-        return _json_lite().components_of_unit(unit_id)
+        return list(self.components_by_unit.get(unit_id, []))
 
     def installed_ksms(self) -> set:
-        return _json_lite().installed_ksms()
+        """Все КСМ, установленные на участках (для фильтра 'не установлены')."""
+        return {comp.get("ksm_code") for comp in self.graph.get("components", [])}
 
     def unit_medium_code(self, unit_id: str) -> Optional[str]:
-        return _json_lite().unit_medium_code(unit_id)
+        unit = self.units_by_id.get(unit_id)
+        return (unit or {}).get("medium_code")
 
     def medium_profile(self, unit_id: str) -> Optional[Dict[str, Any]]:
-        return _json_lite().medium_profile(unit_id)
+        return self.medium_profiles_by_code.get(self.unit_medium_code(unit_id) or "")
 
     def evidence_for_unit(self, unit_id: str) -> List[str]:
-        return _json_lite().evidence_for_unit(unit_id)
+        profile = self.medium_profile(unit_id)
+        return list((profile or {}).get("required_evidence", []))
 
     @property
     def regulation(self) -> Dict[str, Any]:
@@ -156,13 +172,10 @@ class JsonAgentRepository(AgentRepository):
         return self._context().by_card_id
 
     def card_for_component(self, component):
-        return self._context().card_for_component(component)
-
-    def card_document(self, card):
-        return (card.get("dcd") or {}).get("document") or {}
+        return self.by_card_id().get(component.get("installed_card_id"))
 
     def stock_qty(self, card):
-        return self._context().stock_qty(card)
+        return self.prop(card, "stock_qty")
 
 
 class DbAgentRepository(AgentRepository):
@@ -392,21 +405,6 @@ class DbAgentRepository(AgentRepository):
     @property
     def components_by_id(self):
         return self._json.components_by_id
-
-    def components_of_unit(self, unit_id):
-        return self._json.components_of_unit(unit_id)
-
-    def installed_ksms(self):
-        return self._json.installed_ksms()
-
-    def unit_medium_code(self, unit_id):
-        return self._json.unit_medium_code(unit_id)
-
-    def medium_profile(self, unit_id):
-        return self._json.medium_profile(unit_id)
-
-    def evidence_for_unit(self, unit_id):
-        return self._json.evidence_for_unit(unit_id)
 
     @property
     def regulation(self):

@@ -16,6 +16,9 @@ from sqlalchemy import cast, Float, String, func
 from app.services.rules_engine import RulesEngine
 from app.services.llm_service import LLMService
 from app.services.embedding_service import EmbeddingService
+from app.core.logging import get_logger
+
+log = get_logger("search_service")
 
 
 def _jsonb_property_text(column, canonical_key: str, *legacy_keys: str):
@@ -41,7 +44,7 @@ class SearchService:
 
     def search(self, request: SearchRequest) -> SearchResponse:
         start_time = time.time()
-        print(f"[search_service] режим={request.mode} | '{request.query[:80]}'", flush=True)
+        log.info("[search_service] режим=%s | '%s'", request.mode, request.query[:80])
         if not request.query.strip():
             return SearchResponse(
                 search_id=str(uuid.uuid4()),
@@ -224,9 +227,8 @@ class SearchService:
             reverse=True
         )
 
-        print(f"[search_service] hybrid: exact={len(exact_results)} "
-              f"filter={len(filter_results)} vector={len(vector_results)} -> "
-              f"объединено={len(combined)}", flush=True)
+        log.info("[search_service] hybrid: exact=%d filter=%d vector=%d -> объединено=%d",
+                 len(exact_results), len(filter_results), len(vector_results), len(combined))
         return [r["item"] for r in sorted_results[:100]]
 
     def _passport_to_card(self, document_id: Optional[int]) -> ItemCard:

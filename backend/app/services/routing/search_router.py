@@ -3,7 +3,12 @@
 import re
 from typing import Any, Mapping, Sequence
 
-from .query_normalizer import normalize_query
+from app.schemas import RouterDecision
+from ..query_normalizer import normalize_query
+from ..agent.intent_resolver import INTENT_LABELS, intent_from_operation
+
+# Re-export для обратной совместимости (importer'ы: llm_router, main).
+# noqa: F401
 
 
 EXACT_CODE_PATTERN = re.compile(
@@ -18,17 +23,6 @@ ITEM_COLLECTIONS = {
     "задвижка": "valves",
     "заглушка": "plugs",
     "тройник": "tees",
-}
-
-INTENT_LABELS = {
-    "replacement": "поиск замены",
-    "inventory": "работа со складскими остатками",
-    "maintenance": "планирование ТОиР",
-    "equipment_guidance": "объяснение оборудования",
-    "document_search": "поиск подтверждающих документов",
-    "object_configuration": "анализ состава объекта",
-    "impact_analysis": "анализ последствий изменения",
-    "catalog_search": "поиск по каталогу",
 }
 
 
@@ -161,23 +155,18 @@ def route_query_text(
         item_types.add(str(extracted_card["item_type"]).casefold())
 
     exact_codes = EXACT_CODE_PATTERN.findall(query)
-    if "maintenance" in actions:
-        intent = "maintenance"
-    elif "impact_analysis" in actions:
-        intent = "impact_analysis"
-    elif "object_configuration" in actions:
+    # Приоритет действий такой же, как в детерминированном baseline:
+    # проверяется от более специфичного к общему. Каждое действие нормализуется
+    # через INTENT_MAP (например, explanation -> equipment_guidance).
+    intent = None
+    for action in ("maintenance", "impact_analysis", "object_configuration",
+                   "document_search", "explanation", "replacement", "inventory"):
+        if action in actions:
+            intent = intent_from_operation(action)
+            break
+    if intent is None and "graph" in relations:
         intent = "object_configuration"
-    elif "document_search" in actions:
-        intent = "document_search"
-    elif "explanation" in actions:
-        intent = "equipment_guidance"
-    elif "replacement" in actions:
-        intent = "replacement"
-    elif "inventory" in actions:
-        intent = "inventory"
-    elif "graph" in relations:
-        intent = "object_configuration"
-    else:
+    if intent is None:
         intent = "catalog_search"
 
     tools = ["catalog_search"]
@@ -278,7 +267,7 @@ def route_query_text(
             "Условия среды требуют отдельного нормативного предупреждения."
         )
 
-    return {
+    return validate_route_decision({
         "intent": intent,
         "intent_label": INTENT_LABELS[intent],
         "route": route,
@@ -294,4 +283,13 @@ def route_query_text(
         ],
         "normalized_query": text,
         "detected_aliases": aliases,
-    }
+    })
+
+
+def validate_route_decision(decision: dict[str, Any]) -> dict[str, Any]:
+    """Валидирует решение роутера через схему RouterDecision.
+
+    Дополнительные ключи (например, parsed_query) сохраняются за счёт
+    extra="ignore"; возвращается обычный dict, совместимый с потребителями.
+    """
+    return RouterDecision.model_validate(decision).model_dump()

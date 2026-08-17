@@ -6,8 +6,8 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from app.core.config import settings
-from app.services.llm_router import LlmRouter, RoutingDecision
-from app.services.search_router import route_query_text
+from backend.app.services.routing.llm_router import LlmRouter, RoutingDecision
+from backend.app.services.routing.search_router import route_query_text
 
 
 class FakeLLM:

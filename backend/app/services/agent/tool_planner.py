@@ -1,24 +1,13 @@
-"""Реестр агентских тулов и планов исполнения для интентов."""
+"""Планирование тулов по интентам: планы исполнения и plan_for_operations.
 
-from typing import Any, Callable, Dict, List
+Выделено из registry.py (фаза 2 рефакторинга). Интенты и их карта живут
+в intent_resolver.py — здесь только соответствие интент -> план тулов
+и детерминированные дополнения плана под контент запроса.
+"""
 
-from . import analytic_tools, core_tools
+from typing import Any, Dict, List
 
-TOOLS: Dict[str, Callable] = {
-    "catalog_search": core_tools.catalog_search,
-    "stock_query": core_tools.stock_query,
-    "graph_search": core_tools.graph_search,
-    "regulation_lookup": core_tools.regulation_lookup,
-    "rules_engine": core_tools.rules_engine,
-    "document_search": core_tools.document_search,
-    "duplicate_detector": analytic_tools.duplicate_detector,
-    "inventory_calculator": analytic_tools.inventory_calculator,
-    "maintenance_planner": analytic_tools.maintenance_planner,
-    "priority_ranker": analytic_tools.priority_ranker,
-    "object_builder": analytic_tools.object_builder,
-    "impact_analyzer": analytic_tools.impact_analyzer,
-    "explanation_generator": analytic_tools.explanation_generator,
-}
+from .intent_resolver import INTENT_MAP, resolve_intent
 
 # intent (operations) -> план тулов. catalog_search идёт до stock_query,
 # чтобы складские фильтры применялись к кандидатам каталога.
@@ -51,68 +40,22 @@ AGENT_TO_TOOLS: Dict[str, List[str]] = {
     "plan": ["maintenance_planner", "document_search"],
 }
 
-TOOL_ALIASES = {
-    "stock": "stock_query",
-    "rules": "rules_engine",
-    "graph": "graph_search",
-    "regulation": "regulation_lookup",
-    "documents": "document_search",
-    "duplicates": "duplicate_detector",
-}
-
-
-def resolve_tool(name: str) -> Callable | None:
-    name = (name or "").strip().lower()
-    if name in TOOLS:
-        return TOOLS[name]
-    resolved = TOOL_ALIASES.get(name)
-    return TOOLS.get(resolved) if resolved else None
-
 
 def plan_for_operations(operations: List[str], required_agents: List[str],
                         ambiguities: List[str], parsed: Any = None) -> List[str]:
     """Детерминированный план тулов: один основной интент + дополнения агентов."""
-    op_to_intent = {
-        "search": "search", "replace": "replacement",
-        "inventory": "inventory", "calculate": "inventory",
-        "plan": "maintenance", "repair": "maintenance",
-        "assemble": "object_configuration",
-        "document": "document_search", "impact": "impact_analysis",
-        "explain": "equipment_guidance", "check": "search",
-    }
-    # Приоритет интентов: более специфичный побеждает, если операций несколько
-    # (например, check+impact -> impact_analysis, а не search).
-    intent_priority = [
-        "impact_analysis", "replacement", "object_configuration",
-        "document_search", "inventory", "maintenance",
-        "equipment_guidance", "search",
-    ]
-    ops = operations or ["search"]
+    ops = list(operations or ["search"])
 
-    primary_intent = None
-    for intent in intent_priority:
-        for op in ops:
-            if op in op_to_intent and op_to_intent[op] == intent:
-                primary_intent = intent
-                break
-        if primary_intent is not None:
-            break
-    if primary_intent is None:
-        primary_intent = "search"
-
-    # «Составь перечень деталей нового участка» парсится как plan, но без unit_id
-    # с DN/PN/средой это скорее сборка объекта.
-    if primary_intent == "maintenance" and parsed is not None:
-        has_geometry = parsed.card and (parsed.card.geometry or parsed.card.pressure)
-        if not parsed.unit_ids and has_geometry:
-            primary_intent = "object_configuration"
+    # Единое разрешение интента (intent_resolver учитывает сборку участка
+    # по геометрии, proposed_changes и «дубли»).
+    primary_intent = resolve_intent(ops, parsed=parsed)
 
     plan = list(INTENT_PLANS.get(primary_intent, INTENT_PLANS["search"]))
 
     # Комбинированные запросы (например, «состав участка и складские остатки» =
     # inventory+plan): добавляем тулы остальных интентов.
     for op in ops:
-        other_intent = op_to_intent.get(op)
+        other_intent = INTENT_MAP.get((op or "").strip().lower())
         if not other_intent or other_intent == primary_intent:
             continue
         for tool in INTENT_PLANS.get(other_intent, []):
@@ -154,13 +97,32 @@ def plan_for_operations(operations: List[str], required_agents: List[str],
     return plan
 
 
-def build_workspace() -> Dict[str, Any]:
-    return {
-        "ksm_targets": [],
-        "candidates": [],
-        "stock_rows": [],
-        "unit_ids": [],
-        "component_ids": [],
-        "duplicate_groups": [],
-        "graph_components": [],
-    }
+def build_agent_plan(parsed: Any) -> List[str]:
+    """Полный план агентского запроса: базовый план + контекстные подключения.
+
+    Объединяет plan_for_operations и правки, которые раньше делались прямо
+    в run_agent: граф вперёд при unit/component_ids, keyword «дубли»,
+    proposed_changes -> обязательные аналитические тулы.
+    """
+    plan = plan_for_operations(parsed.operations, parsed.required_agents,
+                               parsed.ambiguities, parsed=parsed)
+
+    # Если запрос явно про участки/компоненты — сначала загружаем состав объекта,
+    # чтобы stock_query/document_search работали по установленным позициям.
+    if parsed.unit_ids or parsed.component_ids:
+        plan = [t for t in plan if t != "graph_search"]
+        plan.insert(0, "graph_search")
+
+    # Ключевое слово «дубли» не выделяется парсером как операция — подключаем тул.
+    if "дубл" in (parsed.original_query or "").lower():
+        for t in ("duplicate_detector", "catalog_search"):
+            if t not in plan:
+                plan.append(t)
+
+    # Если парсер вычленил изменение (DN150->DN200, среда H2S) — обязательно
+    # нужен анализ влияния даже без явной операции impact.
+    if parsed.proposed_changes:
+        for t in ("impact_analyzer", "graph_search", "regulation_lookup"):
+            if t not in plan:
+                plan.append(t)
+    return plan

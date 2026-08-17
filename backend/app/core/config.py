@@ -40,6 +40,12 @@ class Settings:
     OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
 
+    # Таймаут запроса и число ретраев основного LLM-запроса.
+    LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", "120"))
+    LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", "2"))
+    # Режим JSON для Ollama-клиентов: возвращать строгий JSON-объект.
+    LLM_JSON_MODE = _env_bool("LLM_JSON_MODE", True)
+
     # Режим LLM-усиления агентного конвейера: auto | on | off.
     # auto — всегда пытаться с офлайн-фолбэком, off — только офлайн.
     AGENT_LLM_MODE = os.getenv("AGENT_LLM_MODE", "on")
@@ -48,6 +54,9 @@ class Settings:
     # json — демо-JSON, db — PostgreSQL + Qdrant, auto — пробуем db, при
     # недоступности БД падаем на json (см. app/services/agents/repository.py).
     AGENT_STORAGE = os.getenv("AGENT_STORAGE", "db")
+
+    # Уровень логирования (DEBUG | INFO | WARNING | ERROR).
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 
 settings = Settings()

@@ -2,7 +2,10 @@
 
 from typing import Any, Dict, List
 
+from app.core.logging import get_logger
 from app.schemas import ParsedQuery
+
+log = get_logger("agent.tools")
 
 
 def _source(kind: str, id_: str, fragment: str = None) -> Dict[str, Any]:
@@ -131,11 +134,11 @@ def _catalog_matches(ctx, parsed: ParsedQuery) -> List[Dict[str, Any]]:
         except Exception:  # noqa: BLE001 — Qdrant/БД недоступны — перебор
             found = None
         if found:
-            print(f"[catalog_search] источник=репозиторий(гибрид) кандидатов={len(found)}", flush=True)
+            log.info("[catalog_search] источник=репозиторий(гибрид) кандидатов=%d", len(found))
             return found
-        print("[catalog_search] источник=перебор (репозиторий вернул пусто)", flush=True)
+        log.info("[catalog_search] источник=перебор (репозиторий вернул пусто)")
     else:
-        print("[catalog_search] источник=перебор (нет search_candidates)", flush=True)
+        log.info("[catalog_search] источник=перебор (нет search_candidates)")
     matched: List[Dict[str, Any]] = []
     for card in ctx.catalog:
         if _matches_filters(card, parsed):

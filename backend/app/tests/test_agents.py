@@ -4,8 +4,8 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from app.services.agents.executor import run_agent
-from app.services.agents.registry import plan_for_operations
+from app.services.agent.executor import run_agent
+from app.services.agent.registry import plan_for_operations
 from app.services.query_parser.hybrid_parser import HybridParser
 
 

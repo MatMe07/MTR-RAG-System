@@ -22,7 +22,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from app.services.agents.executor import execute_agent_query
+from app.services.agent.executor import execute_agent_query
 
 # test_40_questions.py -> tests -> app -> backend -> корень репозитория (parents[3])
 _REPO_ROOT = Path(__file__).resolve().parents[3]

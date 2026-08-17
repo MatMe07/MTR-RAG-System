@@ -6,8 +6,8 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource
-from app.services.agents.llm_reviewer import LLMReviewer, ReviewVerdict, apply_llm_review
-from app.services.agents.reviewer import review_answer
+from app.services.agent.llm_reviewer import LLMReviewer, ReviewVerdict, apply_llm_review
+from app.services.agent.reviewer import review_answer
 
 
 def _answer(**kw):

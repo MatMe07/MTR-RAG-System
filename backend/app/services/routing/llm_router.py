@@ -15,8 +15,11 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
+from app.core.logging import get_logger
 from app.services.llm_service import LLMService
 from .search_router import INTENT_LABELS, route_query_text
+
+log = get_logger("llm_router")
 
 
 ALLOWED_ROUTES = {"ordinary", "agent", "clarification"}
@@ -67,8 +70,8 @@ class LlmRouter:
               deterministic: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         decision = dict(deterministic or route_query_text(query))
         decision["llm_refined"] = False
-        print(f"[llm_router] baseline: route={decision.get('route')} "
-              f"mode={decision.get('mode')} (AGENT_LLM_MODE={settings.AGENT_LLM_MODE})", flush=True)
+        log.info("[llm_router] baseline: route=%s mode=%s (AGENT_LLM_MODE=%s)",
+                 decision.get('route'), decision.get('mode'), settings.AGENT_LLM_MODE)
 
         if settings.AGENT_LLM_MODE == "off":
             return decision

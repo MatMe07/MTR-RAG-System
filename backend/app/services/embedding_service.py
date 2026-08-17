@@ -13,7 +13,11 @@ from app.models import MTRItem
 from app.schemas import ItemCard
 from app.database import SessionLocal
 from app.core.config import settings
+from app.core.logging import get_logger
 from app.utils.jsonb_utils import get_property_value
+
+log = get_logger("embedding_service")
+
 
 class EmbeddingService:
     def __init__(
@@ -46,11 +50,11 @@ class EmbeddingService:
                     check_compatibility=False
                 )
                 self._client.get_collections()
-                print(f"Подключено к Qdrant: {self.qdrant_url}")
-                print("мы подключаемся к Qdrant")
+                log.info("Подключено к Qdrant: %s", self.qdrant_url)
+                log.info("мы подключаемся к Qdrant")
             except UnexpectedResponse as e:
-                print(f"Ошибка подключения к Qdrant: {e}")
-                print(f"Проверьте, что Qdrant запущен на {self.qdrant_url}")
+                log.warning("Ошибка подключения к Qdrant: %s", e)
+                log.warning("Проверьте, что Qdrant запущен на %s", self.qdrant_url)
                 raise
         return self._client
 
@@ -62,7 +66,7 @@ class EmbeddingService:
                 model_kwargs={"device": self.device},
                 encode_kwargs={"normalize_embeddings": True}
             )
-            print(f"Модель эмбеддингов загружена: {self.model_name}")
+            log.info("Модель эмбеддингов загружена: %s", self.model_name)
         return self._embeddings
 
     @property
@@ -75,15 +79,15 @@ class EmbeddingService:
                 url=self.qdrant_url,
                 api_key=self.qdrant_api_key
             )
-            print(f"Подключено к коллекции: {self.collection_name}")
+            log.info("Подключено к коллекции: %s", self.collection_name)
         return self._vectorstore
 
     def _ensure_collection(self) -> None:
         try:
             collections = {c.name for c in self.client.get_collections().collections}
         except UnexpectedResponse as e:
-            print(f"Ошибка при проверке коллекций: {e}")
-            print("Проверьте, что Qdrant запущен и доступен")
+            log.warning("Ошибка при проверке коллекций: %s", e)
+            log.warning("Проверьте, что Qdrant запущен и доступен")
             raise
 
         if self.collection_name not in collections:
@@ -94,7 +98,7 @@ class EmbeddingService:
                     distance=Distance.COSINE
                 )
             )
-            print(f"Коллекция '{self.collection_name}' создана в Qdrant")
+            log.info("Коллекция '%s' создана в Qdrant", self.collection_name)
 
     def collection_exists(self) -> bool:
         try:
@@ -113,10 +117,10 @@ class EmbeddingService:
     def delete_collection(self) -> None:
         try:
             self.client.delete_collection(self.collection_name)
-            print(f"Коллекция '{self.collection_name}' удалена")
+            log.info("Коллекция '%s' удалена", self.collection_name)
             self._vectorstore = None
         except UnexpectedResponse as e:
-            print(f"Ошибка при удалении коллекции: {e}")
+            log.warning("Ошибка при удалении коллекции: %s", e)
             raise
 
     def recreate_collection(self) -> None:
@@ -135,26 +139,26 @@ class EmbeddingService:
         if self.collection_exists():
             count = self.get_collection_count()
             if count > 0:
-                print(f"Коллекция '{self.collection_name}' уже существует и содержит {count} точек.")
+                log.info("Коллекция '%s' уже существует и содержит %d точек.", self.collection_name, count)
                 if not force_recreate:
-                    print("Используйте force_recreate=True или аргумент --force для пересоздания.")
+                    log.info("Используйте force_recreate=True или аргумент --force для пересоздания.")
                     return count
-                print("Пересоздание коллекции...")
+                log.info("Пересоздание коллекции...")
                 self.recreate_collection()
             else:
-                print(f"Коллекция '{self.collection_name}' существует, но пуста. Заполняем...")
+                log.info("Коллекция '%s' существует, но пуста. Заполняем...", self.collection_name)
         else:
-            print(f"Коллекция '{self.collection_name}' не существует. Создаем...")
+            log.info("Коллекция '%s' не существует. Создаем...", self.collection_name)
             self._ensure_collection()
 
         db = SessionLocal()
         items = db.query(MTRItem).all()
         db.close()
 
-        print(f"Найдено МТР в БД: {len(items)}")
+        log.info("Найдено МТР в БД: %d", len(items))
 
         if not items:
-            print("Нет данных для индексации")
+            log.info("Нет данных для индексации")
             return 0
 
         documents = []
@@ -175,7 +179,7 @@ class EmbeddingService:
             documents.append(doc)
 
         self.vectorstore.add_documents(documents, batch_size=16)
-        print(f"Индексировано {len(documents)} документов в Qdrant")
+        log.info("Индексировано %d документов в Qdrant", len(documents))
         return len(documents)
 
     def search_similar(self, query: str, k: int = 50) -> List[Dict[str, Any]]:

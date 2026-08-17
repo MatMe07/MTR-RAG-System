@@ -14,7 +14,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from backend.app.services.search_router import route_query_text
+from backend.app.services.routing.search_router import route_query_text
+
 from frontend.agent_view import render_agent_result
 from frontend.clarification_view import render_clarification
 from frontend.demo_scenarios import DEMO_SCENARIOS

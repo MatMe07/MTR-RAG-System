@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from app.core.config import settings
 from app.services.llm_service import LLMService
 from app.services.entity_extractor import EntityExtractor
-from app.services.agents.executor import execute_agent_query
+from app.services.agent.executor import execute_agent_query
 from app.schemas import ParsedQuery
 
 

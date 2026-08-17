@@ -4,12 +4,17 @@ import os
 import shutil
 import uuid
 from typing import List, Optional
-print("start1")
+
+from app.core.logging import get_logger, setup_logging
+
+setup_logging()
+log = get_logger("main")
+log.debug("start1")
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-print("start2")
+log.debug("start2")
 
 
 from app.database import get_db
@@ -18,29 +23,29 @@ from app.schemas import (
     ExpertReviewRequest, ItemCard, AgentRequest, AgentAnswer,
     RouteRequest, RouteResponse
 )
-print("start3")
+log.debug("start3")
 
 from app.services.search_service import SearchService
-print("start4")
+log.debug("start4")
 
 from app.services.rules_engine import RulesEngine
-print("start5")
+log.debug("start5")
 
 from app.services.llm_service import LLMService
-print("start6")
+log.debug("start6")
 
 from app.services.embedding_service import EmbeddingService
 from app.services.expert_service import ExpertService
-print("start7")
+log.debug("start7")
 # from app.services.ocr_service import get_ocr_service
-print("start8")
+log.debug("start8")
 
-from app.services.agents.executor import execute_agent_query
-print("start9")
+from app.services.agent.executor import execute_agent_query
+log.debug("start9")
 
-from app.services.llm_router import LlmRouter
-from app.services.search_router import route_query_text
-print("start10")
+from app.services.routing.llm_router import LlmRouter
+# from app.services.routing.search_router import route_query_text
+log.debug("start10")
 
 
 app = FastAPI(
@@ -64,27 +69,27 @@ _ocr = None
 def get_llm():
     global _llm
     if _llm is None:
-        print("🔴 Инициализация LLMService...", flush=True)
+        log.info("Инициализация LLMService...")
         _llm = LLMService()
-        print("✅ LLMService инициализирован", flush=True)
+        log.info("LLMService инициализирован")
     return _llm
 
 
 def get_embeddings():
     global _embeddings
     if _embeddings is None:
-        print("🔴 Инициализация EmbeddingService...", flush=True)
+        log.info("Инициализация EmbeddingService...")
         _embeddings = EmbeddingService()
-        print("✅ EmbeddingService инициализирован", flush=True)
+        log.info("EmbeddingService инициализирован")
     return _embeddings
 
 
 def get_ocr():
     global _ocr
     if _ocr is None:
-        print("🔴 Инициализация OCR...", flush=True)
+        log.info("Инициализация OCR...")
         # _ocr = get_ocr_service()
-        print("✅ OCR инициализирован", flush=True)
+        log.info("OCR инициализирован")
     return _ocr
 
 
@@ -101,7 +106,7 @@ def get_expert_service(db: Session = Depends(get_db)):
 # 🔥 ПРОВЕРКА ЗАГРУЗКИ (для отладки)
 # ============================================================
 
-print("🔴 main.py загружается...", flush=True)
+log.info("main.py загружается")
 
 # ============================================================
 # ЭНДПОИНТЫ
@@ -110,7 +115,7 @@ print("🔴 main.py загружается...", flush=True)
 @app.on_event("startup")
 async def startup_event():
     """Выполняется при старте (но уже после загрузки main.py)"""
-    print("✅ FastAPI стартовал!", flush=True)
+    log.info("FastAPI стартовал!")
 
 
 @app.get("/health")
@@ -123,7 +128,7 @@ async def search(
     request: SearchRequest,
     search_service: SearchService = Depends(get_search_service)
 ):
-    print(f"[search] mode={request.mode} top_k={request.top_k} | '{request.query[:80]}'", flush=True)
+    log.info("[search] mode=%s top_k=%s | '%s'", request.mode, request.top_k, request.query[:80])
     try:
         return search_service.search(request)
     except Exception as e:
@@ -133,12 +138,10 @@ async def search(
 @app.post("/agent", response_model=AgentAnswer)
 async def agent_query(request: AgentRequest):
     """Агентский слой: парсит запрос (rule-based + LLM-коррекция) и запускает план тулов."""
-    print(f"[agent] старт: '{request.query[:80]}'", flush=True)
+    log.info("[agent] старт: '%s'", request.query[:80])
     try:
         ag = execute_agent_query(request.query)
-        print("-"*30)
-        print("ag = ", ag)
-        print("-"*30)
+        log.info("[agent] ответ: %s", ag)
         return ag
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -152,9 +155,10 @@ async def route_query(request: RouteRequest):
 
         parsed = get_entity_extractor().extract(request.query)
         decision = LlmRouter().route(request.query)
-        print(f"[route] '{request.query[:60]}' -> {decision.get('route')} "
-              f"(mode={decision.get('mode')}, llm_refined={decision.get('llm_refined')})", flush=True)
-        print("decision: ", decision)
+        log.info("[route] '%s' -> %s (mode=%s, llm_refined=%s)",
+                 request.query[:60], decision.get('route'),
+                 decision.get('mode'), decision.get('llm_refined'))
+        log.info("decision: %s", decision)
         decision["parsed_query"] = parsed
         return RouteResponse(**{
             key: decision.get(key)
@@ -226,7 +230,7 @@ async def upload_passport(
                         )
                         db.add(char)
             except Exception as llm_err:
-                print(f"LLM извлечение не удалось: {llm_err}")
+                log.warning("LLM извлечение не удалось: %s", llm_err)
                 # Продолжаем, даже если LLM не сработала
 
         db.commit()
