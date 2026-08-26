@@ -6,7 +6,7 @@ from pathlib import Path
 # sys.path.insert(0, str(Path(__file__).parent.parent))
 # print(str(Path(__file__).parent.parent))
 from typing import List, Optional, Dict, Any
-from ...schemas import ItemCard
+from ....schemas import ItemCard
 import re
 
 class ConfidenceCalculator:

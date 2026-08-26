@@ -1,5 +1,4 @@
-SELECT *  FROM mtr_items
-where mtr_code = 'MTR-SYN-REG-000006';
+SELECT *  FROM units;
 -- TRUNCATE TABLE mtr_items CASCADE;
 -- TRUNCATE TABLE ksm_items CASCADE;
 -- TRUNCATE TABLE documents CASCADE;

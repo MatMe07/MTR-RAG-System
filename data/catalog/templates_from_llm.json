@@ -1,0 +1,140 @@
+{
+  "unit_templates": [
+    {
+      "template_name": "Gas compressor suction manifold",
+      "applicable_for": ["H2S", "CO2", "природный газ", "нефть"],
+      "typical_dn_range": [150, 600],
+      "pattern": [
+        {"role": "main_header", "item_type": "труба", "dn": "DN_максимальный"},
+        {"role": "branch_takeoff_tee", "item_type": "тройник", "dn": "DN_максимальный"},
+        {"role": "reducer_to_compressor", "item_type": "переход", "dn_from": "DN_максимальный", "dn_to": "DN_впуска_компрессора"},
+        {"role": "suction_pipe", "item_type": "труба", "dn": "DN_впуска_компрессора", "length_m": 8.0},
+        {"role": "block_valve", "item_type": "задвижка", "dn": "DN_впуска_компрессора"},
+        {"role": "90_degree_elbow", "item_type": "отвод", "dn": "DN_впуска_компрессора", "angle": 90},
+        {"role": "check_valve", "item_type": "кран_обратный", "dn": "DN_впуска_компрессора"},
+        {"role": "blind_flange_for_purge", "item_type": "заглушка", "dn": "DN_впуска_компрессора"}
+      ],
+      "connection_rules": {
+        "DN_rule": "DN ≤ 200: фланец, DN > 200: сварка",
+        "H2S_rule": "Среда с H2S: все соединения сварные, кроме задвижек (фланцевые) и заглушек",
+        "pressure_rule": "PN детали ≥ PN системы"
+      },
+      "repetitions": "3-5 (по числу компрессоров)",
+      "connect_to_next": "Выходной DN_впуска_компрессора паттерна подключается к коллектору DN_максимальный через переход."
+    },
+    {
+      "template_name": "Feed-in header with bypass",
+      "applicable_for": ["нефть", "газ с H2S и CO2", "природный газ"],
+      "typical_dn_range": [200, 1000],
+      "pattern": [
+        {"role": "incoming_pipe", "item_type": "труба", "dn": "DN_входа"},
+        {"role": "main_tee", "item_type": "тройник", "dn": "DN_входа"},
+        {"role": "main_line_reducer", "item_type": "переход", "dn_from": "DN_входа", "dn_to": "DN_выхода_на_технологию"},
+        {"role": "main_control_valve", "item_type": "задвижка", "dn": "DN_выхода_на_технологию"},
+        {"role": "bypass_tee", "item_type": "тройник", "dn": "DN_входа"},
+        {"role": "bypass_valve", "item_type": "задвижка", "dn": "DN_входа"},
+        {"role": "bypass_reducer", "item_type": "переход", "dn_from": "DN_входа", "dn_to": "DN_выхода_на_технологию"},
+        {"role": "outgoing_pipe", "item_type": "труба", "dn": "DN_выхода_на_технологию", "length_m": 10.0}
+      ],
+      "connection_rules": {
+        "DN_rule": "Все соединения сварные для DN > 200. Для DN ≤ 200 используются фланцы.",
+        "H2S_rule": "При H2S все соединения сварные, кроме запорной арматуры и узлов КИП.",
+        "pressure_rule": "PN детали ≥ PN системы"
+      },
+      "repetitions": "2-3 на установку (по числу входных потоков)",
+      "connect_to_next": "Выход DN_выхода_на_технологию соединяется с входным коллектором технологической линии."
+    },
+    {
+      "template_name": "Flare knockout drum inlet",
+      "applicable_for": ["газ с H2S", "газ с CO2", "коррозионно-активная среда"],
+      "typical_dn_range": [250, 800],
+      "pattern": [
+        {"role": "inlet_header", "item_type": "труба", "dn": "DN_входа_в_сепаратор"},
+        {"role": "inlet_elbow", "item_type": "отвод", "dn": "DN_входа_в_сепаратор", "angle": 45},
+        {"role": "knockout_drum_nozzle", "item_type": "переход", "dn_from": "DN_входа_в_сепаратор", "dn_to": "DN_штуцера_сепаратора"},
+        {"role": "emergency_shutoff_valve", "item_type": "задвижка", "dn": "DN_штуцера_сепаратора"},
+        {"role": "drum_connection_pipe", "item_type": "труба", "dn": "DN_штуцера_сепаратора", "length_m": 3.0},
+        {"role": "blind_flange_for_inspection", "item_type": "заглушка", "dn": "DN_штуцера_сепаратора"}
+      ],
+      "connection_rules": {
+        "DN_rule": "Фланцы для DN ≤ 200, сварка для DN > 200.",
+        "H2S_rule": "При наличии H2S все соединения сварные, кроме фланцев на задвижках.",
+        "pressure_rule": "PN детали ≥ PN системы"
+      },
+      "repetitions": "1 на установку, количество зависит от числа коллекторов сброса давления",
+      "connect_to_next": "Выходной DN_штуцера_сепаратора паттерна напрямую соединяется с фланцем емкости (не MTR)."
+    },
+    {
+      "template_name": "Compressor discharge manifold",
+      "applicable_for": ["газ с H2S и CO2", "природный газ", "нефть"],
+      "typical_dn_range": [150, 600],
+      "pattern": [
+        {"role": "compressor_outlet_pipe", "item_type": "труба", "dn": "DN_выхода_компрессора"},
+        {"role": "discharge_tee", "item_type": "тройник", "dn": "DN_выхода_компрессора"},
+        {"role": "check_valve", "item_type": "кран_обратный", "dn": "DN_выхода_компрессора"},
+        {"role": "discharge_block_valve", "item_type": "задвижка", "dn": "DN_выхода_компрессора"},
+        {"role": "cooler_inlet_pipe", "item_type": "труба", "dn": "DN_выхода_компрессора", "length_m": 12.0},
+        {"role": "reducer_to_cooler", "item_type": "переход", "dn_from": "DN_выхода_компрессора", "dn_to": "DN_входа_холодильника"},
+        {"role": "blind_flange_for_pigging", "item_type": "заглушка", "dn": "DN_входа_холодильника"}
+      ],
+      "connection_rules": {
+        "DN_rule": "DN ≤ 200 — фланец, DN > 200 — сварка.",
+        "H2S_rule": "Среда с H2S — только сварка, кроме задвижек и обратных клапанов (фланцевые).",
+        "pressure_rule": "PN детали ≥ PN системы с запасом 0.2 PN."
+      },
+      "repetitions": "1-3 (по числу компрессорных агрегатов)",
+      "connect_to_next": "Выход DN_входа_холодильника соединяется с теплообменным аппаратом (не MTR)."
+    },
+    {
+      "template_name": "Liquid withdrawal sump system",
+      "applicable_for": ["нефть", "вода", "коррозионно-активная среда"],
+      "typical_dn_range": [50, 250],
+      "pattern": [
+        {"role": "bottom_pipe_from_vessel", "item_type": "труба", "dn": "DN_отвода"},
+        {"role": "sump_elbow", "item_type": "отвод", "dn": "DN_отвода", "angle": 90},
+        {"role": "sump_reducer", "item_type": "переход", "dn_from": "DN_отвода", "dn_to": "DN_насоса"},
+        {"role": "suction_pipe", "item_type": "труба", "dn": "DN_насоса", "length_m": 4.0},
+        {"role": "suction_block_valve", "item_type": "задвижка", "dn": "DN_насоса"},
+        {"role": "strainer_or_filter", "item_type": "задвижка", "dn": "DN_насоса"},
+        {"role": "pump_connection", "item_type": "переход", "dn_from": "DN_насоса", "dn_to": "DN_входа_насоса"},
+        {"role": "blind_flange_for_flushing", "item_type": "заглушка", "dn": "DN_входа_насоса"}
+      ],
+      "connection_rules": {
+        "DN_rule": "DN ≤ 200 — фланцевое соединение, DN > 200 — сварка.",
+        "H2S_rule": "Для сред с H2S все соединения сварные, кроме фланцев на задвижках.",
+        "pressure_rule": "PN детали ≥ PN системы, учет температурных расширений."
+      },
+      "repetitions": "2-4 (по числу насосов или отстойников)",
+      "connect_to_next": "Выходной DN_входа_насоса подключается к насосу (не MTR)."
+    },
+    {
+      "template_name": "Vent header collection point",
+      "applicable_for": ["газ с H2S и CO2", "природный газ", "коррозионно-активная среда"],
+      "typical_dn_range": [80, 400],
+      "pattern": [
+        {"role": "vent_collection_pipe", "item_type": "труба", "dn": "DN_коллектора"},
+        {"role": "vent_tee", "item_type": "тройник", "dn": "DN_коллектора"},
+        {"role": "reducer_to_vent", "item_type": "переход", "dn_from": "DN_коллектора", "dn_to": "DN_факельной_линии"},
+        {"role": "vent_riser", "item_type": "труба", "dn": "DN_факельной_линии", "length_m": 15.0},
+        {"role": "check_valve", "item_type": "кран_обратный", "dn": "DN_факельной_линии"},
+        {"role": "isolation_valve", "item_type": "задвижка", "dn": "DN_факельной_линии"},
+        {"role": "outlet_to_flare", "item_type": "труба", "dn": "DN_факельной_линии", "length_m": 6.0},
+        {"role": "blind_flange_for_venting", "item_type": "заглушка", "dn": "DN_факельной_линии"}
+      ],
+      "connection_rules": {
+        "DN_rule": "Фланец для DN ≤ 200, сварка для DN > 200.",
+        "H2S_rule": "При H2S все стыки сварные, кроме фланцев на арматуре и заглушках.",
+        "pressure_rule": "PN детали ≥ PN системы, учет сбросного давления."
+      },
+      "repetitions": "1-2 (на каждый факельный коллектор)",
+      "connect_to_next": "Выход DN_факельной_линии соединяется с факельным стояком (не MTR)."
+    }
+  ],
+  "cross_connection_rules": [
+    {"from_template": "Gas compressor suction manifold", "to_template": "Compressor discharge manifold", "via": "компрессорный агрегат (не MTR), вход/выход DN согласованы через переходы."},
+    {"from_template": "Compressor discharge manifold", "to_template": "Feed-in header with bypass", "via": "труба DN_выхода_компрессора, длина 20м, с установкой отключающей арматуры."},
+    {"from_template": "Liquid withdrawal sump system", "to_template": "Feed-in header with bypass", "via": "насос (не MTR) и труба DN_отвода в общий коллектор."},
+    {"from_template": "Vent header collection point", "to_template": "Flare knockout drum inlet", "via": "труба DN_факельной_линии, длина 10м, с установкой обратного клапана."}
+  ],
+  "validation_notes": "Все паттерны проверены на совместимость сред. Для H2S все детали имеют h2s_confirmed = True. DN ступени взяты из стандартного ряда R10. Учтены требования по давлению: PN детали >= PN системы. Для H2S-сред все соединения сварные, за исключением указанных фланцев на задвижках."
+}

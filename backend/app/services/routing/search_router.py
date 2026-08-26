@@ -3,7 +3,7 @@
 import re
 from typing import Any, Mapping, Sequence
 
-from app.schemas import RouterDecision
+from ...schemas import RouterDecision
 from ..query_normalizer import normalize_query
 from ..agent.intent_resolver import INTENT_LABELS, intent_from_operation
 

@@ -6,6 +6,7 @@ import uuid
 from typing import List, Optional
 
 from app.core.logging import get_logger, setup_logging
+from app.services.agent.executor import get_agent_executor
 
 setup_logging()
 log = get_logger("main")
@@ -137,13 +138,21 @@ async def search(
 
 @app.post("/agent", response_model=AgentAnswer)
 async def agent_query(request: AgentRequest):
-    """Агентский слой: парсит запрос (rule-based + LLM-коррекция) и запускает план тулов."""
     log.info("[agent] старт: '%s'", request.query[:80])
     try:
-        ag = execute_agent_query(request.query)
-        log.info("[agent] ответ: %s", ag)
-        return ag
+        from app.services.entity_extractor import get_entity_extractor
+        
+        # 1. Парсим запрос
+        parsed = get_entity_extractor().extract(request.query)
+        
+        # 2. Запускаем агента
+        executor = get_agent_executor()
+        result = executor.execute(request.query, parsed)
+        
+        log.info("[agent] ответ: intent=%s, components=%d", result.intent, len(result.components))
+        return result
     except Exception as e:
+        log.error("[agent] ошибка: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 

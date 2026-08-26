@@ -8,7 +8,7 @@ settings.LOG_LEVEL (env LOG_LEVEL), по умолчанию INFO.
 import logging
 import sys
 
-from app.core.config import settings
+from ..core.config import settings
 
 _LOGGER_NAME = "mtr"
 

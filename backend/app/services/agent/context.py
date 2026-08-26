@@ -10,8 +10,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from app.core.logging import get_logger
-from app.schemas import CatalogCard
+from ...core.logging import get_logger
+from ...schemas import CatalogCard
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 

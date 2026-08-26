@@ -14,7 +14,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from backend.app.services.routing.search_router import route_query_text
 
 from frontend.agent_view import render_agent_result
 from frontend.clarification_view import render_clarification
@@ -587,6 +586,8 @@ def build_query_review_context(
     query: str,
     card: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    from backend.app.services.routing.search_router import route_query_text
+    
     decision = route_query_text(query, card or {})
     scenario = find_approved_question(query)
     if scenario:
