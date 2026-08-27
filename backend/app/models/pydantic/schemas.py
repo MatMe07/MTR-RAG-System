@@ -261,81 +261,12 @@ class SearchResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     request_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    status: str = "ok"
-    results: list = Field(default_factory=list)
+    query: str = Field("", description="Исходный запрос (ТЗ 11.2)")
+    mode: str = Field("deterministic", description="Режим исполнения (ТЗ 11.2)")
+    status: str = Field("", description="ТЗ-статус ответа: соответствует | потенциальный аналог | не соответствует | нет данных | требует проверки | требует экспертной проверки")
+    results: list = Field(default_factory=list, description="Список результатов (ТЗ 11.2)")
     warnings: list = Field(default_factory=list)
     recommendations: list = Field(default_factory=list)
     requires_expert: bool = False
+    expert_review_id: Optional[str] = Field(None, description="Идентификатор запроса на экспертную проверку")
     execution_time_ms: float = 0.0
-
-
-class AgentRequest(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    query: str
-    mode: str = "deterministic"
-
-
-class AgentAnswer(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    request_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    intent: str = ""
-    components: list = Field(default_factory=list)
-    answer: str = ""
-    confidence: float = 0.0
-
-
-class ExpertReviewRequest(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    search_id: str
-    candidate_ksm_code: str
-    expert_decision: str
-    expert_reason: Optional[str] = None
-    reviewed_by: Optional[str] = None
-
-
-class ItemCard(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    mtr_code: Optional[str] = None
-    ksm_code: Optional[str] = None
-    name: Optional[str] = None
-    designation: Optional[str] = None
-    item_type: Optional[str] = None
-    dn: Optional[int] = None
-    pn: Optional[float] = None
-    material: Optional[str] = None
-
-
-class MatchResult(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    rank: int = 0
-    mtr_code: str = ""
-    ksm_code: str = ""
-    candidate_name: str = ""
-    status: str = ""
-    match_percent: float = 0.0
-    matched_params: list = Field(default_factory=list)
-    mismatched_params: list = Field(default_factory=list)
-    missing_params: list = Field(default_factory=list)
-    warnings: list = Field(default_factory=list)
-    expert_comment: Optional[str] = None
-    rule_trace: list = Field(default_factory=list)
-    sources: list = Field(default_factory=list)
-
-
-class RouteRequest(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    query: str
-
-
-class RouteResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    route: str = ""
-    confidence: float = 0.0
-    parsed_query: Optional[dict] = None

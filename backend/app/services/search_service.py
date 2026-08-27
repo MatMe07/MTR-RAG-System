@@ -45,13 +45,22 @@ class SearchService:
 
             request_id = str(uuid.uuid4())
 
+            from app.services.agent.answer.tz_result import build_tz_result_items
+            from app.services.agent.answer.status import STATUS_NOT_FOUND, STATUS_UNCLEAR
+
+            answer_status = (
+                getattr(answer, "status", "") or STATUS_UNCLEAR
+            )
             response = SearchResponse(
                 request_id=request_id,
-                status="ok",
-                results=answer.components or [],
+                query=request.query,
+                mode=getattr(answer, "mode", None) or "deterministic",
+                status=answer_status if answer_status else STATUS_NOT_FOUND,
+                results=build_tz_result_items(answer),
                 warnings=answer.warnings or [],
-                recommendations=[],
+                recommendations=getattr(answer, "recommendations", None) or [],
                 requires_expert=answer.human_review_required,
+                expert_review_id=getattr(answer, "expert_review_id", None),
                 execution_time_ms=elapsed,
             )
         except Exception as e:

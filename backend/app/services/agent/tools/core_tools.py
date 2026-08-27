@@ -6,6 +6,7 @@ import time
 
 from .registry import register_tool
 from ..core.state import AgentState
+from ..answer.status import evaluate_candidate, candidate_tz_status
 
 log = logging.getLogger("mtr.agent.tools")
 
@@ -41,6 +42,19 @@ def _card_component(card: Dict, score: float = 0.0, reason: str = "") -> Dict[st
     }
 
 
+def _enrich_component(comp: Dict[str, Any], card: Dict, score: float, parsed: Any) -> Dict[str, Any]:
+    """Добавляет ТЗ-метаданные кандидата (ЭТАП 5)."""
+    matched, mismatched, missing = evaluate_candidate(card, parsed)
+    percent = round(score * 100)
+    comp["match_score"] = score
+    comp["match_percent"] = percent
+    comp["matched_params"] = matched
+    comp["mismatched_params"] = mismatched
+    comp["missing_params"] = missing
+    comp["tz_status"] = candidate_tz_status(percent)
+    return comp
+
+
 def catalog_search(state: AgentState, ctx) -> Dict[str, Any]:
     """Поиск в каталоге"""
     start = time.time()
@@ -68,7 +82,11 @@ def catalog_search(state: AgentState, ctx) -> Dict[str, Any]:
 
     for m in candidates:
         card = m["card"]
-        result["components"].append(_card_component(card, m["score"], "совпадает по параметрам"))
+        comp = _enrich_component(
+            _card_component(card, m["score"], "совпадает по параметрам"),
+            card, m["score"], parsed,
+        )
+        result["components"].append(comp)
         result["sources"].append(_source("catalog", card.get("card_id"), card.get("designation")))
 
     state["candidates"] = candidates
@@ -137,7 +155,12 @@ def rules_engine(state: AgentState) -> Dict[str, Any]:
 
         score = _match_score(card, state["parsed"])
         item["score"] = score
-        result["components"].append(_card_component(card, score, "оценка правил"))
+        result["components"].append(
+            _enrich_component(
+                _card_component(card, score, "оценка правил"),
+                card, score, state["parsed"],
+            )
+        )
 
     result["sources"].append(_source("matching_rules", "matching_rules.csv"))
     result["text"] = f"Оценено {len(candidates)} кандидатов"
@@ -262,12 +285,12 @@ def _match_score(card: Dict, parsed: Any) -> float:
     hits = 0.0
     checks = 0.0
 
-    for key in ["dn", "angle", "wall_thickness"]:
+    for key in ["dn", "angle", "wall_thickness", "pn"]:
         want = tf.get(key)
         if want is not None:
             checks += 1
             got = num(key)
-            if got is not None and abs(got - want) <= want * 0.1:
+            if got is not None and abs(got - want) <= max(abs(want), 1e-9) * 0.1:
                 hits += 1
 
     item_types = getattr(parsed, "item_types", [])

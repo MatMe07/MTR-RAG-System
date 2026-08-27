@@ -109,14 +109,6 @@ class QueryIntent(BaseModel):
     normative_required: bool = False
 
 
-class SearchRequest(BaseModel):
-    query: str = Field(..., description="Текстовый запрос пользователя")
-    mode: str = Field("hybrid", description="Режим поиска: exact, filter, vector, hybrid, passport")
-    filters: Optional[Dict[str, Any]] = Field(None, description="Фильтры: dn, angle, pressure, material")
-    top_k: int = Field(20, description="Количество результатов", ge=1, le=100)
-    document_id: Optional[int] = Field(None, description="ID документа для режима passport")
-
-
 class RuleTrace(BaseModel):
     rule_id: str = Field(..., description="Идентификатор правила")
     reaction: str = Field(..., description="Тип реакции: hard_filter, warning, expert_comment, score_penalty")
@@ -148,15 +140,6 @@ class MatchResult(BaseModel):
         if v not in allowed:
             raise ValueError(f"status должен быть одним из: {allowed}")
         return v
-
-
-class SearchResponse(BaseModel):
-    search_id: str = Field(..., description="Идентификатор поиска для экспертного решения")
-    query: str = Field(..., description="Исходный запрос")
-    requested_card: Any = Field(..., description="Карточка, извлечённая из запроса или паспорта")
-    candidates: List[MatchResult] = Field(..., description="Список кандидатов")
-    total_found: int = Field(..., description="Всего найдено")
-    search_time_ms: float = Field(..., description="Время выполнения поиска, мс")
 
 
 class UploadResponse(BaseModel):
@@ -358,6 +341,12 @@ class AgentComponent(BaseModel):
     status: Optional[str] = Field(None, description="Статус/причина включения в ответ")
     detail: Optional[str] = Field(None, description="Дополнительное объяснение")
     source_id: Optional[str] = Field(None, description="card_id или component_id источника")
+    match_score: Optional[float] = Field(None, description="Оценка совпадения 0..1")
+    match_percent: Optional[int] = Field(None, description="Оценка совпадения в процентах 0..100")
+    tz_status: Optional[str] = Field(None, description="ТЗ-статус кандидата: соответствует | потенциальный аналог | не соответствует")
+    matched_params: List[str] = Field(default_factory=list, description="Совпавшие параметры (ТЗ 11.2)")
+    mismatched_params: List[str] = Field(default_factory=list, description="Расходящиеся параметры (ТЗ 11.2)")
+    missing_params: List[str] = Field(default_factory=list, description="Параметры без данных в карточке (ТЗ 11.2)")
 
 
 class AgentAnswer(BaseModel):
@@ -374,6 +363,9 @@ class AgentAnswer(BaseModel):
     sources: List[AgentSource] = Field(default_factory=list, description="Источники")
     missing_parameters: List[str] = Field(default_factory=list, description="Чего не хватает для полного ответа")
     human_review_required: bool = Field(False, description="Требуется ли проверка экспертом")
+    status: str = Field("", description="ТЗ-статус ответа (ЭТАП 5): соответствует | потенциальный аналог | не соответствует | нет данных | требует проверки | требует экспертной проверки")
+    recommendations: List[str] = Field(default_factory=list, description="Рекомендации по ответу (ТЗ 11.2)")
+    expert_review_id: Optional[str] = Field(None, description="Идентификатор запроса на экспертную проверку")
     parsed_confidence: Optional[float] = Field(None, description="Уверенность парсера")
     parsed_query: Optional[ParsedQuery] = Field(
         None,

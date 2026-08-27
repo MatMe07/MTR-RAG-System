@@ -4,11 +4,18 @@ from typing import Any, Dict, List
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
 from .warnings import build_scenario_warnings
+from .status import (
+    determine_status,
+    build_recommendations,
+    expert_review_id,
+    _request_present,
+    STATUS_EXPERT,
+)
 
 
 class AnswerBuilder:
     """Сборщик структурированного ответа"""
-    
+
     def build(
         self,
         parsed: ParsedQuery,
@@ -18,17 +25,26 @@ class AnswerBuilder:
         answers = result.get("answers", [])
         if not answers:
             answers.append("Не удалось собрать ответ: недостаточно данных.")
-        
+
         scenario_warnings = build_scenario_warnings(parsed, intent)
-        
+
         components = self._to_components(result.get("components", []))
         sources = self._to_sources(result.get("sources", []))
-        
+
         warnings = list(dict.fromkeys(
             list(result.get("warnings", [])) + scenario_warnings
         ))
         missing = list(dict.fromkeys(result.get("missing", [])))
-        
+
+        status = determine_status(
+            components,
+            warnings,
+            errors=result.get("errors"),
+            has_request=_request_present(parsed),
+        )
+        review = bool(result.get("review")) or status == STATUS_EXPERT
+        recommendations = build_recommendations(status, warnings, missing)
+
         return AgentAnswer(
             query=parsed.original_query,
             intent=intent,
@@ -41,11 +57,14 @@ class AnswerBuilder:
             warnings=warnings,
             sources=sources,
             missing_parameters=missing,
-            human_review_required=bool(result.get("review")),
+            human_review_required=review,
+            status=status,
+            recommendations=recommendations,
+            expert_review_id=expert_review_id() if status == STATUS_EXPERT else None,
             parsed_confidence=parsed.confidence,
             parsed_query=parsed,
         )
-    
+
     def _to_components(self, rows: List[Dict]) -> List[AgentComponent]:
         return [
             AgentComponent(
@@ -57,6 +76,12 @@ class AnswerBuilder:
                 status=r.get("status"),
                 detail=r.get("detail"),
                 source_id=r.get("source_id"),
+                match_score=r.get("match_score"),
+                match_percent=r.get("match_percent"),
+                tz_status=r.get("tz_status"),
+                matched_params=list(r.get("matched_params") or []),
+                mismatched_params=list(r.get("mismatched_params") or []),
+                missing_params=list(r.get("missing_params") or []),
             )
             for r in rows
             if isinstance(r, dict)
