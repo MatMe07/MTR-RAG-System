@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from ....schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
+from app.schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
 from .warnings import build_scenario_warnings
 
 

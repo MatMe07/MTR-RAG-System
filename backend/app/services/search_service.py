@@ -1,377 +1,78 @@
-# backend/app/services/search_service.py
-
+import json
+import logging
 import time
 import uuid
-from typing import List, Optional, Dict, Any
+from typing import Any
+
 from sqlalchemy.orm import Session
 
-from app.models import MTRItem, KSMItem, Document, DocumentPage
-from app.schemas import (
-    SearchRequest, SearchResponse, MatchResult, ItemCard,
-    Geometry, Pressure, Material, Environment, Coating, Normative, Source
-)
-from app.utils.jsonb_utils import get_property_value, properties_to_card_dict
-from sqlalchemy import cast, Float, String, func
+from app.models.pydantic.schemas import SearchRequest, SearchResponse
 
-from app.services.rules_engine import RulesEngine
-from app.services.llm_service import LLMService
-from app.services.embedding_service import EmbeddingService
-from app.core.logging import get_logger
-
-log = get_logger("search_service")
+log = logging.getLogger("mtr.search.service")
 
 
-def _jsonb_property_text(column, canonical_key: str, *legacy_keys: str):
-    paths = [
-        func.jsonb_extract_path_text(column, key, 'value')
-        for key in (canonical_key, *legacy_keys)
-    ]
-    return func.coalesce(*paths) if len(paths) > 1 else paths[0]
+def _to_json_safe(obj: Any) -> Any:
+    """Рекурсивно приводит объект к JSON-безопасному виду."""
+    return json.loads(json.dumps(obj, ensure_ascii=False, default=str))
 
 
 class SearchService:
-    def __init__(
-        self,
-        db: Session,
-        rules_engine: RulesEngine,
-        llm_service: LLMService,
-        embedding_service: EmbeddingService
-    ):
+    def __init__(self, db: Session):
         self.db = db
-        self.rules_engine = rules_engine
-        self.llm = llm_service
-        self.embeddings = embedding_service
 
-    def search(self, request: SearchRequest) -> SearchResponse:
-        start_time = time.time()
-        log.info("[search_service] режим=%s | '%s'", request.mode, request.query[:80])
-        if not request.query.strip():
-            return SearchResponse(
-                search_id=str(uuid.uuid4()),
-                query=request.query,
-                requested_card=ItemCard(item_type="", sources=[]),
-                candidates=[],
-                total_found=0,
-                search_time_ms=0
-            )
-        if request.mode == "passport":
-            requested_card = self._passport_to_card(request.document_id)
-            candidates = self._hybrid_search(requested_card)
-        else:
-            requested_card = self._parse_query(request.query)
-            if request.mode == "exact":
-                candidates = self._exact_search(requested_card)
-            elif request.mode == "filter":
-                candidates = self._filter_search(requested_card)
-            elif request.mode == "vector":
-                candidates = self._vector_search(request.query)
-            elif request.mode == "hybrid":
-                candidates = self._hybrid_search(requested_card)
-            else:
-                raise ValueError(f"Неизвестный режим поиска: {request.mode}")
+    def execute_search(self, request: SearchRequest, user_id: str | None = None) -> SearchResponse:
+        from app.services.agent.executor import AgentExecutor
+        from app.services.audit_service import AuditService
 
-        scored = self._evaluate_candidates(requested_card, candidates)
-        # print(scored)
-        scored.sort(key=lambda x: x.match_percent, reverse=True)
+        start = time.time()
+        log.info("[SearchService] Starting search: query=%r mode=%s", request.query, request.mode)
 
-        search_time_ms = (time.time() - start_time) * 1000
+        try:
+            executor = AgentExecutor()
+            log.info("[SearchService] AgentExecutor created")
 
-        searchresponse = SearchResponse(
-            search_id=str(uuid.uuid4()),
-            query=request.query,
-            requested_card=requested_card,
-            candidates=scored[:request.top_k],
-            total_found=len(scored),
-            search_time_ms=search_time_ms
-        )
-        # print(searchresponse.candidates)
-        return searchresponse
+            answer = executor.execute(request.query)
+            elapsed = (time.time() - start) * 1000
 
-    def _parse_query(self, query: str) -> ItemCard:
-        # print(self.llm)
-        return self.llm.parse_query(query)
-
-    def _exact_search(self, card: ItemCard) -> List[MTRItem]:
-        results = []
-
-        if card.mtr_code:
-            results = self.db.query(MTRItem).filter(
-                MTRItem.mtr_code == card.mtr_code
-            ).all()
-            
-            if results:
-                return results
-
-        if card.ksm_code:
-            results = self.db.query(MTRItem).filter(
-                MTRItem.ksm_code == card.ksm_code
-            ).all()
-            if results:
-                return results
-
-        if card.designation:
-            results = self.db.query(MTRItem).filter(
-                MTRItem.designation.ilike(f"%{card.designation}%")
-            ).limit(10).all()
-            if results:
-                return results
-
-        return results
-
-    def _filter_search(self, card: ItemCard) -> List[MTRItem]:
-        query = self.db.query(MTRItem)
-
-        if card.item_type:
-            query = query.filter(MTRItem.item_type == card.item_type)
-
-        if card.geometry:
-            if card.geometry.dn:
-                tolerance = card.geometry.dn * 0.1
-                query = query.filter(
-                    cast(
-                        func.jsonb_extract_path_text(MTRItem.properties, 'dn', 'value'),
-                        Float
-                    ).between(
-                        card.geometry.dn - tolerance,
-                        card.geometry.dn + tolerance
-                    )
-                )
-            if card.geometry.angle:
-                query = query.filter(
-                    cast(
-                        func.jsonb_extract_path_text(MTRItem.properties, 'angle', 'value'),
-                        Float
-                    ).between(
-                        card.geometry.angle - 5,
-                        card.geometry.angle + 5
-                    )
-                )
-            if card.geometry.wall_thickness:
-                tolerance = card.geometry.wall_thickness * 0.15
-                query = query.filter(
-                    cast(
-                        func.jsonb_extract_path_text(MTRItem.properties, 'wall_thickness', 'value'),
-                        Float
-                    ).between(
-                        card.geometry.wall_thickness - tolerance,
-                        card.geometry.wall_thickness + tolerance
-                    )
-                )
-
-        if card.pressure and card.pressure.pn:
-            tolerance = card.pressure.pn * 0.1
-            query = query.filter(
-                cast(
-                    _jsonb_property_text(
-                        MTRItem.properties,
-                        'pn',
-                        'pressure',
-                    ),
-                    Float
-                ).between(
-                    card.pressure.pn - tolerance,
-                    card.pressure.pn + tolerance
-                )
+            log.info(
+                "[SearchService] Agent finished: intent=%s mode=%s tools=%s components=%d warnings=%d",
+                getattr(answer, "intent", "?"),
+                getattr(answer, "mode", "?"),
+                getattr(answer, "tools_used", []),
+                len(getattr(answer, "components", []) or []),
+                len(getattr(answer, "warnings", []) or []),
             )
 
-        if card.material:
-            if card.material.strength_class:
-                query = query.filter(
-                    func.jsonb_extract_path_text(MTRItem.properties, 'strength_class', 'value') == card.material.strength_class
-                )
-            if card.material.steel_grade:
-                query = query.filter(
-                    func.jsonb_extract_path_text(MTRItem.properties, 'steel_grade', 'value') == card.material.steel_grade
-                )
+            request_id = str(uuid.uuid4())
 
-        if card.environment:
-            if card.environment.medium:
-                query = query.filter(
-                    func.jsonb_extract_path_text(MTRItem.properties, 'medium', 'value') == card.environment.medium
-                )
-
-        return query.limit(100).all()
-
-    def _vector_search(self, query: str) -> List[MTRItem]:
-        results = self.embeddings.search_similar(query, k=50)
-        if not results:
-            return []
-        ids = [r["db_id"] for r in results]
-        return self.db.query(MTRItem).filter(MTRItem.id.in_(ids)).all()
-
-    def _hybrid_search(self, card: ItemCard) -> List[MTRItem]:
-        exact_results = self._exact_search(card)
-        filter_results = self._filter_search(card)
-        vector_results = self._vector_search(card.designation or card.name or "")
-
-        combined = {}
-
-        for item in exact_results:
-            combined[item.id] = {"item": item, "score": 1.0}
-
-        for item in filter_results:
-            if item.id in combined:
-                combined[item.id]["score"] = max(combined[item.id]["score"], 0.8)
-            else:
-                combined[item.id] = {"item": item, "score": 0.8}
-
-        for item in vector_results:
-            if item.id in combined:
-                combined[item.id]["score"] = max(combined[item.id]["score"], 0.6)
-            else:
-                combined[item.id] = {"item": item, "score": 0.6}
-
-        sorted_results = sorted(
-            combined.values(),
-            key=lambda x: x["score"],
-            reverse=True
-        )
-
-        log.info("[search_service] hybrid: exact=%d filter=%d vector=%d -> объединено=%d",
-                 len(exact_results), len(filter_results), len(vector_results), len(combined))
-        return [r["item"] for r in sorted_results[:100]]
-
-    def _passport_to_card(self, document_id: Optional[int]) -> ItemCard:
-        if document_id is None:
-            raise ValueError("Для поиска по паспорту требуется document_id")
-
-        doc = self.db.query(Document).filter(Document.id == document_id).first()
-        if not doc:
-            raise ValueError(f"Документ {document_id} не найден")
-        
-        pages = self.db.query(DocumentPage).filter(
-            DocumentPage.document_id == document_id
-        ).all()
-
-        full_text = "\n".join([p.ocr_text or "" for p in pages])
-        if not full_text.strip():
-            raise ValueError(
-                "В паспорте пока нет OCR-текста. Дождитесь обработки документа."
+            response = SearchResponse(
+                request_id=request_id,
+                status="ok",
+                results=answer.components or [],
+                warnings=answer.warnings or [],
+                recommendations=[],
+                requires_expert=answer.human_review_required,
+                execution_time_ms=elapsed,
             )
+        except Exception as e:
+            elapsed = (time.time() - start) * 1000
+            log.exception("[SearchService] Agent FAILED after %.0fms: %s", elapsed, e)
+            raise
 
-        return self.llm.extract_card_from_text(
-            full_text,
-            {"document_id": document_id, "file_name": doc.file_name}
-        )
-
-    def _evaluate_candidates(
-        self,
-        requested_card: ItemCard,
-        candidates: List[MTRItem]
-    ) -> List[MatchResult]:
-        results = []
-        # print(requested_card)
-        
-        for idx, mtr_item in enumerate(candidates):
-            if requested_card.mtr_code and requested_card.mtr_code == mtr_item.mtr_code:
-                results.append(
-                    MatchResult(
-                        rank=idx + 1,
-                        mtr_code=mtr_item.mtr_code,
-                        ksm_code=mtr_item.ksm_code,
-                        candidate_name=mtr_item.short_text or mtr_item.designation or "",
-                        sources=self._get_sources(mtr_item),
-                        stock_quantity=self._get_stock_quantity(mtr_item.ksm_code),
-                        stock_cost=self._get_stock_cost(mtr_item.ksm_code),
-                        status="соответствует",
-                        match_percent=100.0,
-                        matched_params=["mtr_code"],
-                        mismatched_params=[],
-                        missing_params=[],
-                        warnings=[],
-                        expert_comment="Точное совпадение по коду МТР",
-                        rule_trace=[]
-                    )
-                )
-                continue
-            candidate_card = self._mtr_to_card(mtr_item)
-            
-            evaluation = self.rules_engine.evaluate(requested_card, candidate_card)
-
-            results.append(
-                MatchResult(
-                    rank=idx + 1,
-                    mtr_code=mtr_item.mtr_code,
-                    ksm_code=mtr_item.ksm_code,
-                    candidate_name=mtr_item.short_text or mtr_item.designation or "",
-                    sources=self._get_sources(mtr_item),
-                    stock_quantity=self._get_stock_quantity(mtr_item.ksm_code),
-                    stock_cost=self._get_stock_cost(mtr_item.ksm_code),
-                    status=evaluation["status"],
-                    match_percent=evaluation["match_percent"],
-                    matched_params=evaluation["matched_params"],
-                    mismatched_params=evaluation["mismatched_params"],
-                    missing_params=evaluation["missing_params"],
-                    warnings=evaluation["warnings"],
-                    expert_comment=evaluation["expert_comment"],
-                    rule_trace=evaluation["rule_trace"]
-                )
+        try:
+            audit = AuditService(db=self.db)
+            audit.log(
+                request_id=response.request_id,
+                user_id=user_id,
+                action="search",
+                data={
+                    "query": request.query,
+                    "mode": getattr(request, "mode", "default"),
+                    "results": _to_json_safe(response.results or []),
+                    "warnings": _to_json_safe(response.warnings or []),
+                },
             )
+        except Exception:
+            pass
 
-        results.sort(key=lambda x: x.match_percent, reverse=True)
-
-        for i, result in enumerate(results):
-            result.rank = i + 1
-
-        return results
-
-    def _mtr_to_card(self, mtr: MTRItem) -> ItemCard:
-        props = mtr.properties or {}
-        card_dict = properties_to_card_dict(props, mtr.mtr_code, mtr.ksm_code)
-        
-        sources = self._get_sources(mtr)
-        
-        return ItemCard(
-            card_id=str(mtr.id),
-            mtr_code=mtr.mtr_code,
-            ksm_code=mtr.ksm_code,
-            item_type=mtr.item_type or "",
-            subtype=mtr.subtype,
-            designation=mtr.designation,
-            name=mtr.short_text,
-            geometry=Geometry(**card_dict["geometry"]),
-            pressure=Pressure(**card_dict["pressure"]),
-            material=Material(**card_dict["material"]),
-            environment=Environment(**card_dict["environment"]),
-            coating=Coating(**card_dict["coating"]),
-            normative=Normative(**card_dict["normative"]),
-            sources=sources
-        )
-
-    def _get_sources(self, mtr: MTRItem) -> List[Source]:
-        sources = []
-
-        if mtr.source_excel_row:
-            sources.append(
-                Source(
-                    type="excel",
-                    row=mtr.source_excel_row
-                )
-            )
-
-        if mtr.source_document_id:
-            doc = self.db.query(Document).filter(
-                Document.id == mtr.source_document_id
-            ).first()
-            if doc:
-                sources.append(
-                    Source(
-                        type="passport",
-                        file=doc.file_name
-                    )
-                )
-        if not sources:
-            sources.append(Source(type="catalog", file="regulated_mtr_catalog_1000.jsonl"))
-        return sources
-
-    def _get_stock_quantity(self, ksm_code: Optional[str]) -> Optional[float]:
-        if not ksm_code:
-            return None
-        ksm = self.db.query(KSMItem).filter(KSMItem.ksm_code == ksm_code).first()
-        return ksm.quantity if ksm else None
-
-    def _get_stock_cost(self, ksm_code: Optional[str]) -> Optional[float]:
-        if not ksm_code:
-            return None
-        ksm = self.db.query(KSMItem).filter(KSMItem.ksm_code == ksm_code).first()
-        return ksm.cost if ksm else None
+        return response

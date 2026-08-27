@@ -18,7 +18,7 @@ from .confidence_calculator import ConfidenceCalculator
 from .utils.data_utils import clean_technical_filters
 
 
-from ....schemas import (
+from app.schemas import (
     ParsedQuery,
     ItemCard,
     Geometry,

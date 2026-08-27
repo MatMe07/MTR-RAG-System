@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ....schemas import ParsedQuery
+from app.schemas import ParsedQuery
 
 
 _SCENARIOS_PATH = Path(__file__).parent / "scenario_warnings.json"

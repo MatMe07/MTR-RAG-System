@@ -1,7 +1,7 @@
 # query_parser/hybrid_parser.py
 
 from typing import Dict, Any, Optional, List
-from ....schemas import (
+from app.schemas import (
     ParsedQuery,
     ItemCard,
     Geometry,
@@ -15,7 +15,7 @@ from ....schemas import (
 from .parser import QueryParser
 from .parsers.operation_parser import OperationParser
 from .enhanced.natasha_parser import NatashaParser
-from .normalizers.morph_normalizer import MorphNormalizer
+# from .normalizers.morph_normalizer import MorphNormalizer
 from .dictionaries import get_operations
 from .confidence_calculator import ConfidenceCalculator
 
@@ -36,7 +36,7 @@ class HybridParser:
     def __init__(self):
         self.rule_parser = QueryParser()
         self.natasha_parser = NatashaParser()
-        self.morph_normalizer = MorphNormalizer()
+        # self.morph_normalizer = MorphNormalizer()
         self.operation_parser = OperationParser()
         self.confidence_calculator = ConfidenceCalculator()
 
