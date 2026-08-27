@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-08-17T16:51:57.356167+00:00",
+  "generated_at": "2026-08-27T21:18:33.834353+00:00",
   "mode": "off",
   "strict": false,
   "min_tools_coverage": 20,
   "summary": {
     "total": 40,
-    "tools_ok": 37,
-    "sources_ok": 19,
-    "warnings_ok": 26,
+    "tools_ok": 32,
+    "sources_ok": 1,
+    "warnings_ok": 27,
     "review_pass": 0
   },
   "cases": [
@@ -20,23 +20,23 @@
         "graph_search",
         "catalog_search",
         "stock_query",
-        "rules_engine",
         "impact_analyzer",
-        "regulation_lookup",
-        "inventory_calculator",
-        "priority_ranker"
+        "maintenance_planner",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "passport_or_tu",
+        "standard"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: кандидаты со склада, DN и PN, тип присоединения, материал корпуса, подтверждение H2S, что проверить эксперту"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -48,55 +48,51 @@
         "graph_search",
         "catalog_search",
         "stock_query",
-        "rules_engine",
         "impact_analyzer",
-        "regulation_lookup",
-        "inventory_calculator",
-        "priority_ranker"
+        "maintenance_planner",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "passport_or_tu",
+        "standard"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: отвод 90 426 на 10, остаток, марка стали, PN, покрытие, подтверждение H2S"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ003",
       "category": "replacement",
       "question": "У меня сломался отвод 90 426 на 10 на участке с H2S, предложи план замены и список деталей для ремонта",
-      "intent": "object_configuration",
+      "intent": "maintenance",
       "tools": [
-        "object_builder",
+        "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
         "rules_engine",
-        "graph_search",
-        "maintenance_planner",
-        "document_search",
-        "regulation_lookup",
-        "impact_analyzer"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "maintenance_policy"
+        "maintenance_policy",
+        "object_graph",
+        "passport_or_tu"
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: maintenance_policy",
-        "Ответ не содержит обязательных частей: подходящий отвод, соседние элементы, сварочные материалы, восстановление покрытия, контроль после монтажа, недостающие данные"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -108,53 +104,51 @@
         "graph_search",
         "catalog_search",
         "stock_query",
-        "rules_engine",
         "impact_analyzer",
-        "regulation_lookup",
-        "explanation_generator"
+        "maintenance_planner",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "passport_or_tu",
+        "standard"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: размер 108 на 6, технология изготовления, марка стали, PN, подтверждение H2S, что проверить эксперту"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ005",
       "category": "replacement",
       "question": "На складе нет задвижки DN200 PN63, найди подходящую замену и проверь, подойдет ли она к соседним деталям",
-      "intent": "impact_analysis",
+      "intent": "replacement",
       "tools": [
         "graph_search",
-        "impact_analyzer",
-        "rules_engine",
-        "regulation_lookup",
         "catalog_search",
         "stock_query",
-        "inventory_calculator",
-        "priority_ranker"
+        "impact_analyzer",
+        "maintenance_planner",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
+        "object_graph",
         "standard"
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: standard",
-        "Ответ не содержит обязательных частей: кандидаты, DN и PN, фланцевое присоединение, строительная длина, соседние детали, остаток"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -166,24 +160,23 @@
         "graph_search",
         "catalog_search",
         "stock_query",
-        "rules_engine",
         "impact_analyzer",
-        "regulation_lookup",
-        "inventory_calculator",
-        "priority_ranker",
-        "explanation_generator"
+        "maintenance_planner",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "passport_or_tu",
+        "standard"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: направление перехода, оба диаметра, обе толщины, материал, остаток, подтверждение CO2"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -195,23 +188,23 @@
         "graph_search",
         "catalog_search",
         "stock_query",
-        "rules_engine",
         "impact_analyzer",
-        "regulation_lookup",
-        "inventory_calculator",
-        "priority_ranker"
+        "maintenance_planner",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "passport_or_tu",
+        "standard"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: размер 426 на 12, тип заглушки, материал, покрытие, остаток, необходимые документы"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -223,56 +216,51 @@
         "catalog_search",
         "stock_query",
         "inventory_calculator",
-        "priority_ranker",
-        "regulation_lookup",
-        "graph_search",
-        "maintenance_planner",
-        "document_search",
-        "rules_engine"
+        "rules_engine",
+        "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "graph_search"
+      ],
       "sources_ok": false,
       "missing_sources": [
-        "maintenance_policy"
+        "maintenance_policy",
+        "object_graph"
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: maintenance_policy",
-        "Ответ не содержит обязательных частей: КСМ, название, нулевой остаток, где установлено, критичность, причина приоритета"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ009",
       "category": "inventory",
       "question": "На следующей неделе ремонт участка с H2S, проверь хватает ли труб, отводов, переходов, задвижек, заглушек и тройников по две штуки",
-      "intent": "inventory",
+      "intent": "maintenance",
       "tools": [
-        "catalog_search",
-        "stock_query",
-        "inventory_calculator",
-        "priority_ranker",
-        "regulation_lookup",
         "graph_search",
         "maintenance_planner",
-        "document_search",
-        "rules_engine"
+        "catalog_search",
+        "stock_query",
+        "rules_engine",
+        "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "inventory_calculator"
+      ],
+      "sources_ok": false,
+      "missing_sources": [
+        "object_graph"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: остаток каждого типа, потребность по две штуки, дефицит, КСМ для закупки, подтверждение H2S"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -284,82 +272,75 @@
         "catalog_search",
         "stock_query",
         "inventory_calculator",
-        "priority_ranker",
-        "regulation_lookup",
         "rules_engine",
-        "graph_search"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "passport_or_tu"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: все найденные КСМ, остаток по каждому, материал, PN, статус H2S, итоговое количество"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ011",
       "category": "inventory",
       "question": "Выбери десять самых важных позиций для пополнения склада перед ремонтом газопровода с H2S",
-      "intent": "inventory",
+      "intent": "maintenance",
       "tools": [
-        "catalog_search",
-        "stock_query",
-        "inventory_calculator",
-        "priority_ranker",
-        "regulation_lookup",
         "graph_search",
         "maintenance_planner",
-        "document_search",
-        "rules_engine"
+        "catalog_search",
+        "stock_query",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "maintenance_policy"
+        "maintenance_policy",
+        "object_graph"
       ],
-      "warning_ok": true,
+      "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: maintenance_policy",
-        "Ответ не содержит обязательных частей: десять позиций, остаток, где используется, наличие аналога, рекомендуемое количество, обоснование"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ012",
       "category": "inventory",
       "question": "Посчитай запас деталей для ремонта трех таких же участков как UNIT-SYN-GAS-001, один полный комплект должен всегда оставаться на складе",
-      "intent": "inventory",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
-        "inventory_calculator",
-        "priority_ranker",
-        "regulation_lookup",
-        "maintenance_planner",
-        "document_search"
+        "rules_engine",
+        "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "inventory_calculator"
+      ],
+      "sources_ok": false,
+      "missing_sources": [
+        "maintenance_policy"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: состав одного комплекта, потребность на три участка, страховой комплект, текущий остаток, дефицит"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -370,25 +351,21 @@
       "tools": [
         "catalog_search",
         "duplicate_detector",
-        "regulation_lookup",
         "stock_query",
         "rules_engine",
-        "document_search"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "stock"
+        "expert_decisions"
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: stock",
-        "Ответ не содержит обязательных частей: группы похожих позиций, разные КСМ, совпавшие параметры, различия, остатки, проверка эксперта"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -400,60 +377,50 @@
         "catalog_search",
         "stock_query",
         "inventory_calculator",
-        "priority_ranker",
-        "regulation_lookup",
         "rules_engine",
-        "graph_search",
-        "document_search"
+        "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "graph_search"
+      ],
       "sources_ok": false,
       "missing_sources": [
-        "catalog",
-        "stock"
+        "object_graph"
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: catalog, stock",
-        "Ответ не содержит обязательных частей: КСМ, название, остаток, связь с объектами, возможные аналоги, ограничения вывода"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ015",
       "category": "inventory",
       "question": "Собери заявку на пополнение склада для участка с CO2, включи только позиции с остатком меньше трех штук",
-      "intent": "object_configuration",
+      "intent": "inventory",
       "tools": [
-        "object_builder",
         "catalog_search",
         "stock_query",
-        "rules_engine",
         "inventory_calculator",
-        "priority_ranker",
-        "regulation_lookup",
-        "graph_search",
-        "document_search"
+        "rules_engine",
+        "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "graph_search"
+      ],
       "sources_ok": false,
       "missing_sources": [
-        "maintenance_policy"
+        "maintenance_policy",
+        "object_graph"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Заявка остается черновиком до утверждения норм запаса и технической пригодности.",
-        "Не хватает источников: maintenance_policy",
-        "Ответ не содержит обязательных частей: КСМ, текущий остаток, рекомендуемое количество, связанный компонент, подтверждение CO2, итоговый список"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -466,90 +433,79 @@
         "catalog_search",
         "stock_query",
         "inventory_calculator",
-        "priority_ranker",
-        "regulation_lookup",
-        "maintenance_planner",
-        "document_search",
-        "rules_engine"
+        "rules_engine",
+        "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "maintenance_planner"
+      ],
       "sources_ok": false,
       "missing_sources": [
+        "maintenance_history",
+        "maintenance_policy",
         "passport"
       ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Без истории отказов и утвержденного регламента план остается предварительным.",
-        "Не хватает источников: passport",
-        "Ответ не содержит обязательных частей: узлы участка, порядок работ, запчасти, остатки, недостающие данные"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ017",
       "category": "toir",
       "question": "На участке с H2S отказала задвижка COMP-SYN-010, распиши что проверить до снятия и что подготовить для замены",
-      "intent": "replacement",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
         "rules_engine",
-        "impact_analyzer",
-        "regulation_lookup",
-        "maintenance_planner",
-        "document_search"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "maintenance_policy"
+        "maintenance_policy",
+        "passport_or_tu"
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: maintenance_policy",
-        "Ответ не содержит обязательных частей: соседние элементы, изоляция участка, параметры задвижки, комплект замены, контроль среды, решение эксперта"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ018",
       "category": "toir",
       "question": "На трубе 108 на 6 участка с H2S нашли утечку, предложи порядок ремонта и проверь наличие материалов",
-      "intent": "inventory",
+      "intent": "maintenance",
       "tools": [
-        "catalog_search",
-        "stock_query",
-        "inventory_calculator",
-        "priority_ranker",
-        "regulation_lookup",
         "graph_search",
         "maintenance_planner",
-        "document_search",
-        "rules_engine"
+        "catalog_search",
+        "stock_query",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "maintenance_policy"
+        "maintenance_policy",
+        "object_graph",
+        "passport_or_tu"
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: maintenance_policy",
-        "Ответ не содержит обязательных частей: границы повреждения, заменяемый участок трубы, сварочные материалы, остатки, контроль H2S, проверки после ремонта"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -561,59 +517,50 @@
         "graph_search",
         "catalog_search",
         "stock_query",
-        "rules_engine",
         "impact_analyzer",
-        "regulation_lookup",
         "maintenance_planner",
-        "document_search"
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "maintenance_policy",
+        "passport_or_tu"
+      ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Каталог MVP может не содержать фланцы, прокладки и крепеж, это нужно явно показать.",
-        "Ответ не содержит обязательных частей: задвижка, фланцевые элементы, уплотнения и крепеж, остатки, паспорт, порядок приемки"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ020",
       "category": "toir",
       "question": "Выбери пять деталей с самым высоким риском для ремонта коррозионного участка и объясни почему они важны",
-      "intent": "impact_analysis",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
-        "impact_analyzer",
-        "rules_engine",
-        "regulation_lookup",
         "maintenance_planner",
-        "document_search",
         "catalog_search",
-        "explanation_generator",
-        "stock_query"
+        "stock_query",
+        "rules_engine",
+        "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "priority_ranker"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "maintenance_history"
+        "maintenance_history",
+        "object_graph"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Без фактической статистики отказов риск оценивается только по доступным признакам.",
-        "Не хватает источников: maintenance_history",
-        "Ответ не содержит обязательных частей: пять деталей, остаток, материал, покрытие, роль на участке, причина риска"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -623,21 +570,21 @@
       "intent": "equipment_guidance",
       "tools": [
         "catalog_search",
+        "stock_query",
         "rules_engine",
-        "explanation_generator",
         "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: назначение задвижки, DN200, PN63, тип задвижки, привод, материал, что неизвестно"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -646,24 +593,22 @@
       "question": "Объясни что означает отвод 90 426 на 10 и где такую деталь используют",
       "intent": "equipment_guidance",
       "tools": [
-        "graph_search",
         "catalog_search",
+        "stock_query",
         "rules_engine",
-        "explanation_generator",
         "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Размеры и назначение не подтверждают применимость к конкретному проекту.",
-        "Ответ не содержит обязательных частей: угол 90, наружный диаметр 426, толщина 10, DN, назначение отвода, материал и среда"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -673,10 +618,8 @@
       "intent": "search",
       "tools": [
         "catalog_search",
-        "stock_query",
         "rules_engine",
-        "regulation_lookup",
-        "explanation_generator"
+        "regulation_lookup"
       ],
       "tools_ok": false,
       "missing_tools": [
@@ -685,17 +628,14 @@
       "sources_ok": false,
       "missing_sources": [
         "object_graph",
-        "project_documentation"
+        "project_documentation",
+        "standard"
       ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Точный состав узла определяется проектной схемой, которой может не быть в MVP.",
-        "Не хватает источников: object_graph, project_documentation",
-        "Ответ не содержит обязательных частей: соседняя труба, соединительные элементы, фланцы, прокладки и крепеж, совпадение DN и PN, чего нет в каталоге"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -707,22 +647,22 @@
         "graph_search",
         "catalog_search",
         "stock_query",
-        "rules_engine",
         "impact_analyzer",
-        "regulation_lookup",
-        "explanation_generator"
+        "maintenance_planner",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: назначение отвода, назначение перехода, ключевые размеры, пример КСМ отвода, пример КСМ перехода"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -734,50 +674,49 @@
         "graph_search",
         "catalog_search",
         "stock_query",
-        "rules_engine",
         "impact_analyzer",
-        "regulation_lookup",
-        "explanation_generator"
+        "maintenance_planner",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: наружный диаметр 108, толщина 6, DN100, марка стали 20, PN, H2S, приоритет параметров"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ026",
       "category": "object_configuration",
       "question": "Собери список деталей для нового участка DN150 PN40 с газом H2S длиной сто метров",
-      "intent": "object_configuration",
+      "intent": "maintenance",
       "tools": [
-        "object_builder",
+        "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
         "rules_engine",
-        "graph_search",
-        "maintenance_planner",
-        "document_search",
         "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "project_documentation",
+        "standard"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: трубы, отводы, переходы, задвижка, заглушка, тройник, недостающие проектные данные"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -790,10 +729,8 @@
         "catalog_search",
         "stock_query",
         "inventory_calculator",
-        "priority_ranker",
-        "regulation_lookup",
         "rules_engine",
-        "explanation_generator"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
@@ -801,12 +738,9 @@
       "missing_sources": [],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Граф демонстрационного объекта не является монтажной схемой реального газопровода.",
-        "Ответ не содержит обязательных частей: все компоненты участка, задвижка, предыдущий компонент, следующий компонент, КСМ, неполные связи"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -818,28 +752,22 @@
         "graph_search",
         "catalog_search",
         "stock_query",
-        "rules_engine",
         "impact_analyzer",
+        "maintenance_planner",
+        "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "object_builder"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "object_graph",
-        "project_documentation"
+        "object_graph"
       ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Место и параметры арматуры нельзя окончательно определить без проектной схемы.",
-        "Не хватает источников: object_graph, project_documentation",
-        "Ответ не содержит обязательных частей: задвижка, DN, PN, тип соединения, среда, место установки, уточняющие данные"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -848,75 +776,64 @@
       "question": "Проверь весь участок UNIT-SYN-CO2-001 и покажи какие детали подходят по размерам, но еще не подтверждены для CO2",
       "intent": "search",
       "tools": [
-        "graph_search",
-        "catalog_search",
-        "stock_query",
-        "rules_engine",
-        "regulation_lookup",
-        "document_search"
+        "graph_search"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "catalog_search",
+        "rules_engine"
+      ],
+      "sources_ok": false,
+      "missing_sources": [
+        "catalog",
+        "passport_or_tu"
+      ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Указанная среда не является доказательством стойкости каждого установленного компонента.",
-        "Ответ не содержит обязательных частей: компоненты участка, геометрическое совпадение, материал, статус CO2, недостающие документы, очередность проверки"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ030",
       "category": "composite_replacement",
       "question": "У меня сломался отвод COMP-SYN-008, составь полный комплект замены и план работ",
-      "intent": "replacement",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
         "rules_engine",
-        "impact_analyzer",
-        "regulation_lookup",
-        "maintenance_planner",
-        "document_search",
-        "object_builder"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "maintenance_policy"
+        "maintenance_policy",
+        "passport_or_tu"
       ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Комплект и порядок работ должен подтвердить специалист по ремонту участка H2S.",
-        "Не хватает источников: maintenance_policy",
-        "Ответ не содержит обязательных частей: новый отвод, соседние трубы, сварочные материалы, покрытие, контрольные операции, остатки"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ031",
       "category": "composite_replacement",
       "question": "Задвижка COMP-SYN-010 сломалась, собери комплект для ее замены вместе с соединительными деталями",
-      "intent": "replacement",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
         "rules_engine",
-        "impact_analyzer",
-        "regulation_lookup",
-        "maintenance_planner",
-        "document_search",
-        "object_builder"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
@@ -926,58 +843,49 @@
       ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: В MVP нет полного каталога соединительных изделий, недостающие позиции нельзя придумывать.",
-        "Не хватает источников: project_documentation",
-        "Ответ не содержит обязательных частей: задвижка, ответные фланцы, прокладки, крепеж, переходы при необходимости, чего нет в каталоге"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ032",
       "category": "composite_replacement",
       "question": "Поврежден переход COMP-SYN-009 и часть соседней трубы, предложи единый комплект для ремонта",
-      "intent": "impact_analysis",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
-        "impact_analyzer",
-        "rules_engine",
-        "regulation_lookup",
         "maintenance_planner",
-        "document_search",
-        "object_builder",
         "catalog_search",
-        "stock_query"
+        "stock_query",
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "passport_or_tu"
+      ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Ответ не содержит обязательных частей: переход, отрезок трубы, оба диаметра, обе толщины, сварочные материалы, проверка H2S"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ033",
       "category": "composite_replacement",
       "question": "Заглушка COMP-SYN-011 повреждена, подготовь список деталей и проверок для безопасной замены",
-      "intent": "replacement",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
         "rules_engine",
-        "impact_analyzer",
-        "regulation_lookup",
-        "maintenance_planner",
-        "document_search"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
@@ -987,77 +895,64 @@
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: maintenance_policy",
-        "Ответ не содержит обязательных частей: новая заглушка, тип соединения, соседний элемент, материалы монтажа, изоляция линии, проверка герметичности"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ034",
       "category": "composite_replacement",
       "question": "Нужно заменить шесть метров трубы 108 на 6 на участке H2S, собери комплект ремонта со склада",
-      "intent": "object_configuration",
+      "intent": "maintenance",
       "tools": [
-        "object_builder",
+        "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
         "rules_engine",
-        "graph_search",
-        "maintenance_planner",
-        "document_search",
-        "regulation_lookup",
-        "impact_analyzer",
-        "inventory_calculator",
-        "priority_ranker"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "object_graph",
+        "passport_or_tu"
+      ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Длина заготовки и число стыков уточняются по месту и проектной документации.",
-        "Ответ не содержит обязательных частей: длина трубы, подходящая позиция, количество, стыки, сварочные материалы, восстановление покрытия"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ035",
       "category": "composite_replacement",
       "question": "На участке с H2S одновременно сломались отвод и задвижка, предложи общий план замены и проверь склад",
-      "intent": "replacement",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
         "rules_engine",
-        "impact_analyzer",
-        "regulation_lookup",
-        "maintenance_planner",
-        "document_search",
-        "inventory_calculator",
-        "priority_ranker"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "maintenance_policy"
+        "maintenance_policy",
+        "object_graph",
+        "passport_or_tu"
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: maintenance_policy",
-        "Ответ не содержит обязательных частей: отвод, задвижка, соединительные материалы, последовательность работ, остатки, единая проверка H2S"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -1067,59 +962,48 @@
       "intent": "impact_analysis",
       "tools": [
         "graph_search",
+        "catalog_search",
         "impact_analyzer",
         "rules_engine",
-        "regulation_lookup",
-        "catalog_search",
-        "stock_query",
-        "document_search"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "matching_rules"
+        "object_graph"
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: matching_rules",
-        "Ответ не содержит обязательных частей: соседние трубы, переходы, фланцы, прокладки, изменение прохода, затронутые связи"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ037",
       "category": "impact_analysis",
       "question": "Участок UNIT-SYN-GAS-001 переводят с природного газа на H2S, перечисли что нужно перепроверить",
-      "intent": "maintenance",
+      "intent": "impact_analysis",
       "tools": [
         "graph_search",
-        "maintenance_planner",
-        "document_search",
-        "regulation_lookup",
         "catalog_search",
-        "stock_query",
+        "impact_analyzer",
         "rules_engine",
-        "impact_analyzer"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "internal_lnd"
+        "internal_lnd",
+        "passport_or_tu"
       ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Смена рабочей среды требует инженерного решения по всему участку.",
-        "Не хватает источников: internal_lnd",
-        "Ответ не содержит обязательных частей: все компоненты, материалы, покрытия, сварные соединения, подтверждение H2S, приоритет проверки"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -1129,11 +1013,10 @@
       "intent": "impact_analysis",
       "tools": [
         "graph_search",
+        "catalog_search",
         "impact_analyzer",
         "rules_engine",
-        "regulation_lookup",
-        "catalog_search",
-        "stock_query"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
@@ -1145,12 +1028,9 @@
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: object_graph, passport_or_tu, standard",
-        "Ответ не содержит обязательных частей: марки стали, свариваемость, сварочные материалы, соседние отводы и тройники, прочностные проверки, документы"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -1160,26 +1040,23 @@
       "intent": "document_search",
       "tools": [
         "graph_search",
-        "document_search",
-        "regulation_lookup",
         "catalog_search",
-        "stock_query",
-        "rules_engine"
+        "rules_engine",
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
+        "TU",
+        "internal_lnd",
         "passport"
       ],
       "warning_ok": true,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Не хватает источников: passport",
-        "Ответ не содержит обязательных частей: компоненты, найденные документы, отсутствующие документы, страницы или фрагменты, статус H2S, следующее действие"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     },
     {
@@ -1189,23 +1066,20 @@
       "intent": "search",
       "tools": [
         "catalog_search",
-        "stock_query",
         "rules_engine",
-        "regulation_lookup",
-        "explanation_generator"
+        "regulation_lookup"
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": false,
       "review_pass": false,
-      "review_verdict": "needs_review",
-      "review_issues": [
-        "Потеряно обязательное предупреждение: Область действия ГОСТа не подтверждает конкретную синтетическую карточку без паспорта или ТУ.",
-        "Ответ не содержит обязательных частей: список ГОСТов, официальные ссылки, область каждого стандарта, какие параметры подтверждены, какие параметры не подтверждены"
-      ],
-      "human_review_required": true,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": false,
       "answer_non_empty": true
     }
   ]

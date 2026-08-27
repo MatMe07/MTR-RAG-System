@@ -39,7 +39,7 @@ def _load_cases():
 
 
 def _run_case(case):
-    answer = execute_agent_query(case["question"], expected=case)
+    answer = execute_agent_query(case["question"])
     req_tools = set(case.get("required_tools") or [])
     have_tools = set(answer.tools_used)
     req_sources = set(case.get("required_sources") or [])

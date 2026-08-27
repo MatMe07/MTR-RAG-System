@@ -12,6 +12,9 @@ from .nodes import (
     graph_node,
     impact_node,
     regulation_node,
+    inventory_node,
+    maintenance_node,
+    duplicates_node,
     answer_node,
 )
 from .router import (
@@ -20,6 +23,7 @@ from .router import (
     catalog_router,
     stock_router,
     impact_router,
+    maintenance_router,
     rules_router,
 )
 from ..core.state import AgentState
@@ -42,6 +46,9 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
     builder.add_node("graph", graph_node)
     builder.add_node("impact", impact_node)
     builder.add_node("regulation", regulation_node)
+    builder.add_node("inventory", inventory_node)
+    builder.add_node("maintenance", maintenance_node)
+    builder.add_node("duplicates", duplicates_node)
     builder.add_node("answer", answer_node)
     
     # ============================================================
@@ -62,6 +69,9 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
             "impact": "impact",
             "rules": "rules",
             "regulation": "regulation",
+            "duplicates": "duplicates",
+            "inventory": "inventory",
+            "maintenance": "maintenance",
             "answer": "answer",
         }
     )
@@ -75,6 +85,20 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
         {
             "impact": "impact",
             "catalog": "catalog",
+            "maintenance": "maintenance",
+            "answer": "answer",
+        }
+    )
+    
+    # ============================================================
+    # РОУТИНГ ПОСЛЕ ПЛАНИРОВЩИКА ТОИР
+    # ============================================================
+    builder.add_conditional_edges(
+        "maintenance",
+        maintenance_router,
+        {
+            "catalog": "catalog",
+            "rules": "rules",
             "answer": "answer",
         }
     )
@@ -89,6 +113,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
             "stock": "stock",
             "rules": "rules",
             "impact": "impact",
+            "duplicates": "duplicates",
             "answer": "answer",
         }
     )
@@ -102,6 +127,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
         {
             "rules": "rules",
             "impact": "impact",
+            "inventory": "inventory",
             "answer": "answer",
         }
     )
@@ -115,6 +141,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
         {
             "stock": "stock",
             "rules": "rules",
+            "maintenance": "maintenance",
             "answer": "answer",
         }
     )
@@ -134,6 +161,10 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
     # ============================================================
     # ПРЯМЫЕ РЁБРА
     # ============================================================
+    # Детектор дублей → склад
+    builder.add_edge("duplicates", "stock")
+    # Расчёт запаса → правила
+    builder.add_edge("inventory", "rules")
     # После нормативов → ответ
     builder.add_edge("regulation", "answer")
     

@@ -39,18 +39,12 @@ Backend записывает в `properties JSONB` следующие едины
 папки `backend`:
 
 ```powershell
-python -m app.scripts.load_data `
+python -m app.scripts.load_data_v2 `
   --catalog-jsonl ../data/catalog/regulated_mtr_catalog_1000.jsonl `
   --skip-sample
 ```
 
 Команда повторно запускается безопасно: существующие строки с теми же
-кодами МТР и КСМ обновляются. После загрузки PostgreSQL индекс Qdrant
-пересоздается отдельно:
-
-```powershell
-python -m app.scripts.index_qdrant --force
-```
-
-Qdrant получает вектор и ссылку на `mtr_items.id`, но PostgreSQL остается
-основным хранилищем карточек и складских свойств.
+кодами МТР обновляются. PostgreSQL и JSON-каталог остаются основным
+хранилищем карточек и складских свойств (векторная индексация в Qdrant
+не входит в активный стек поиска).

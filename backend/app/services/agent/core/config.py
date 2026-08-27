@@ -1,8 +1,6 @@
 # agent/core/config.py
 
-from dataclasses import dataclass, field
-from typing import Optional
-from app.core.config import settings
+from dataclasses import dataclass
 
 
 @dataclass

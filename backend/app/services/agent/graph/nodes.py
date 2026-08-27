@@ -22,6 +22,10 @@ from ..tools.analytic_tools import (
 from ..answer.builder import build_answer
 
 
+def _set_repository(state: AgentState) -> None:
+    state.setdefault("context", {}).setdefault("repository", get_repository())
+
+
 def parse_node(state: AgentState) -> Dict[str, Any]:
     from ..parsing.hybrid_parser import HybridParser
     
@@ -36,6 +40,7 @@ def parse_node(state: AgentState) -> Dict[str, Any]:
 def catalog_node(state: AgentState) -> Dict[str, Any]:
     ctx = get_repository()
     result = catalog_search(state, ctx)
+    result["_tool_name"] = "catalog_search"
     _merge_result(state, result)
     return {"candidates": state.get("candidates", [])}
 
@@ -43,12 +48,14 @@ def catalog_node(state: AgentState) -> Dict[str, Any]:
 def stock_node(state: AgentState) -> Dict[str, Any]:
     ctx = get_repository()
     result = stock_query(state, ctx)
+    result["_tool_name"] = "stock_query"
     _merge_result(state, result)
     return {"stock_rows": state.get("stock_rows", [])}
 
 
 def rules_node(state: AgentState) -> Dict[str, Any]:
     result = rules_engine(state)
+    result["_tool_name"] = "rules_engine"
     _merge_result(state, result)
     return {"candidates": state.get("candidates", [])}
 
@@ -56,12 +63,14 @@ def rules_node(state: AgentState) -> Dict[str, Any]:
 def graph_node(state: AgentState) -> Dict[str, Any]:
     ctx = get_repository()
     result = graph_search(state, ctx)
+    result["_tool_name"] = "graph_search"
     _merge_result(state, result)
     return {"ksm_targets": state.get("ksm_targets", [])}
 
 
 def impact_node(state: AgentState) -> Dict[str, Any]:
     result = impact_analyzer(state)
+    result["_tool_name"] = "impact_analyzer"
     _merge_result(state, result)
     return {"warnings": state.get("warnings", [])}
 
@@ -69,8 +78,33 @@ def impact_node(state: AgentState) -> Dict[str, Any]:
 def regulation_node(state: AgentState) -> Dict[str, Any]:
     ctx = get_repository()
     result = regulation_lookup(state, ctx)
+    result["_tool_name"] = "regulation_lookup"
     _merge_result(state, result)
     return {"warnings": state.get("warnings", [])}
+
+
+def inventory_node(state: AgentState) -> Dict[str, Any]:
+    _set_repository(state)
+    result = inventory_calculator(state)
+    result["_tool_name"] = "inventory_calculator"
+    _merge_result(state, result)
+    return {"components": state.get("components", [])}
+
+
+def maintenance_node(state: AgentState) -> Dict[str, Any]:
+    _set_repository(state)
+    result = maintenance_planner(state)
+    result["_tool_name"] = "maintenance_planner"
+    _merge_result(state, result)
+    return {"components": state.get("components", [])}
+
+
+def duplicates_node(state: AgentState) -> Dict[str, Any]:
+    _set_repository(state)
+    result = duplicate_detector(state)
+    result["_tool_name"] = "duplicate_detector"
+    _merge_result(state, result)
+    return {"components": state.get("components", [])}
 
 
 def llm_enhance_node(state: AgentState) -> Dict[str, Any]:

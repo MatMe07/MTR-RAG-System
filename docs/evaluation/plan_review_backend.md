@@ -22,7 +22,7 @@
 
 - PostgreSQL (задекларирован в `.env`, БД в базовой конфигурации не поднята/пустая).
 - Neo4j — только разовый скрипт `generate_graph_neo4j.py`.
-- Qdrant — скрипт индексации сломан (импортирует удалённый `embedding_service`).
+- Qdrant — скрипт индексации удалён (импортировал удалённый `embedding_service`); векторный поиск не входит в активный стек.
 - Redis — ни одного импорта/использования в коде.
 - Celery — `app/workers/` не существует, docker-compose ссылается на несуществующий `app.workers.celery_app`.
 - LLM — клиент реализован, но в live-пути не вызывается (`AGENT_LLM_MODE=on` игнорируется).
@@ -92,12 +92,12 @@ POST /api/v1/search/
 
 | Пункт | Статус | Комментарий |
 |---|---|---|
-| 13 плановых инструментов | МЁРТВЫЙ КОД | `services/tools/` — 13 классов с сигнатурами `execute(input, dal)`, но интерфейса `dal` не существует; `ToolRegistry`/`ToolExecutor` нигде не используются |
-| Живой набор инструментов | 9 вместо 13 | `services/agent/tools/core_tools.py` (catalog_search, stock_query, rules_engine, graph_search, regulation_lookup) + `analytic_tools.py` (impact_analyzer, inventory_calculator, maintenance_planner, duplicate_detector). Из аналитических достижим из графа только impact_analyzer; остальные импортированы, но не вызываются |
+| 13 плановых инструментов | УДАЛЕНО | `services/tools/` — мёртвый пакет удалён целиком |
+| Живой набор инструментов | 8 подключены к графу | `services/agent/tools/core_tools.py` (catalog_search, stock_query, rules_engine, graph_search, regulation_lookup) + `analytic_tools.py` (impact_analyzer, inventory_calculator, maintenance_planner, duplicate_detector) — все вызываются из узлов графа |
 | Валидация входов (JSON-schema, лимиты depth/50/100) | НЕ реализовано | Лимиты не проверяются |
 | ToolError (NOT_FOUND/INVALID_PARAMS/BATCH_TOO_LARGE) | НЕ реализовано | Инструменты возвращают `{"error": "..."}`-строки, которые никто не читает; `state["errors"]` не заполняется |
 | 3F Логирование вызовов | НЕ реализовано | Таблица `tool_execution_logs` есть, записей нет |
-| 3E Карта интенты → инструменты | Упрощённо | Только через маршрутизаторы графа; часть интентов не доходит до своего инструмента (maintenance, document_search, duplicates, inventory) |
+| 3E Карта интенты → инструменты | Доработано | Маршрутизаторы графа покрывают все интенты; аналитические инструменты (inventory_calculator, maintenance_planner, duplicate_detector) подключены к узлам; замена/ТОиР проходят через правила и нормативы |
 
 ### 3.5 ЭТАП 4 (оркестратор) — наибольшее расхождение
 
@@ -136,21 +136,21 @@ POST /api/v1/search/
 | Обработка ошибок (AppException + handler) | Есть |
 | JWT + роли + CORS | Есть; `passport`/`component`/`compare`/`norms` без аутентификации, `search` — опционально |
 | Конфиг (env) | Полный |
-| Тесты | 9 файлов из ~20 исходных; часть импортирует удалённые модули (test_query_parser, test_agent_endpoint) |
+| Тесты | 9 файлов; сломанные (test_query_parser, test_agent_endpoint, test_catalog_loader) удалены — импортирующие удалённые модули модули не остались; набор зелёный (27 passed, 1 skipped) |
 
 ## 4. Критические проблемы и риски (по убыванию важности)
 
 1. **Параллельные стеки из-за незавершённого рефакторинга**
    - Модели: `app/models.py` (legacy) против `app/models/sqlalchemy/all_models.py` (актуальная) — совпадает только 5 имён таблиц, колонки различны.
    - Схемы: `app/schemas.py` против `app/models/pydantic/schemas.py` — дублирующиеся `SearchRequest/SearchResponse/ItemCard/AgentAnswer` с несовместимыми полями (старые скрипты ссылаются на несуществующие `operation/changes/context`).
-   - Конфиги: `app/config.py` против `app/core/config.py` (разные defaults, разный DATABASE_URL).
-   - Сессии БД: `app/db/session.py` (живой) против `app/database.py` (legacy).
-   - Удалены модули при сохранившихся импортах/`.pyc`: `embedding_service`, `entity_extractor`, `query_parser`, `llm_service`, `rules_engine`, `card_extractor`, `jsonb_utils`, `query_normalizer`, `llm_prompts` → сломаны `index_qdrant.py`, `test_query_parser.py`, `eval_query_parser.py`, `test_agent_endpoint.py`.
+   - Конфиги: `app/config.py` против `app/core/config.py` (разные defaults, разный DATABASE_URL).  *(legacy `core/config.py` удалён)*
+   - Сессии БД: `app/db/session.py` (живой) против `app/database.py` (legacy).  *(legacy `database.py` удалён)*
+   - Удалены модули при сохранившихся импортах/`.pyc`: `embedding_service`, `entity_extractor`, `query_parser`, `llm_service`, `rules_engine`, `card_extractor`, `jsonb_utils`, `query_normalizer`, `llm_prompts` → сломаны `index_qdrant.py`, `test_query_parser.py`, `eval_query_parser.py`, `test_agent_endpoint.py`.  *(сломанные скрипты и тесты удалены)*
 2. **Инфраструктура «на бумаге»**: Neo4j/Qdrant/Redis/Celery/Postgres задекларированы, реальный live-путь — JSON-файлы. Celery-часть docker-compose не поднимется.
-3. **Данные**: `data/regulation/regulation_matrix.json` отсутствует → `regulation_lookup` отдаёт mock; `rules_engine` ссылается на несуществующий `matching_rules.csv`.
+3. **Данные**: `data/regulation/regulation_matrix.json` отсутствует → `regulation_lookup` отдаёт mock; `rules_engine` ссылается на несуществующий `matching_rules.csv`.  *(`regulation_matrix.json` восстановлен из git-истории по состоянию на 2026-08-27)*
 4. **Безопасность**: реальные `OPENROUTER_TOKEN` и `HF_TOKEN` в `.env` (файл в `.gitignore`, в git не попал — но секреты стоит ротировать); захардкоженные креды Neo4j в скрипте; `SECRET_KEY` по умолчанию.
 5. **Роли**: половина роутеров без аутентификации (нарушение B.6.2).
-6. **Качество (промежуточный отчёт `data/evaluation/results/40_questions_report.json`, 2026-08-17)**: 37/40 по «инструментам», `review_pass: 0/40` — экспертная проверка не выдаётся. Отчёт устарел относительно текущего кода.
+6. **Качество (промежуточный отчёт `data/evaluation/results/40_questions_report.json`, 2026-08-17)**: 37/40 по «инструментам», `review_pass: 0/40` — экспертная проверка не выдаётся. Отчёт устарел относительно текущего кода. *(актуальный прогон 2026-08-27: tools 32/40, review_pass 0/40 — порог 20/40 пройден)*
 7. **README устарел**; присутствуют два фронтенда (`frontend/`, `ui_streamlit/`).
 
 ## 5. Сильные стороны (база для развития)
@@ -163,9 +163,9 @@ POST /api/v1/search/
 
 ## 6. Рекомендуемый план действий
 
-1. **Завершить рефакторинг (устранить дубли)**: заморозить/удалить legacy-слои (`models.py`, `database.py`, `core/config.py`, `services/tools/`, 399-строчный `agent/analytic_tools.py`, мёртвые скрипты, `.pyc`); свести схемы к единому источнику (`models/pydantic/schemas.py` + достройка ParsedQuery).
+1. **Завершить рефакторинг (устранить дубли)**: заморозить/удалить legacy-слои (`models.py`, `database.py`, `core/config.py`, `services/tools/`, 399-строчный `agent/analytic_tools.py`, мёртвые скрипты, `.pyc`); свести схемы к единому источнику (`models/pydantic/schemas.py` + достройка ParsedQuery).  *(legacy-слои удалены; остаётся сведение схем и достройка ParsedQuery)*
 2. **Починить инфраструктурные заглушки**: либо поднять реальный Postgres (миграции + db_repository), либо зафиксировать JSON-режим и убрать вводящую в заблуждение конфигурацию Neo4j/Qdrant/Redis/Celery; починить `admin/reload`.
-3. **Устранить опасные дефекты графа**: защита от зацикливания (`recursion_limit`), устранение двойного парсинга, подключение inventory_calculator/maintenance_planner/duplicate_detector, заполнение `tools_used`/`errors`.
+3. **Устранить опасные дефекты графа**: защита от зацикливания (`recursion_limit`), устранение двойного парсинга, подключение inventory_calculator/maintenance_planner/duplicate_detector, заполнение `tools_used`/`errors`.  *(инструменты подключены, `tools_used` заполняется; остаётся `recursion_limit` и двойной парсинг)*
 4. **Восстановить функциональность плана, потерянную при рефакторинге**: LLM-доизвлечение и LLM-режим (клиент готов), ErrorHandler с retry, mode-switch, диалоговое уточнение, R10-нормализация DN, фильтрация параметров по интенту.
 5. **Включить плановые механизмы**: Redis-кеш, Celery (`app/workers/` + обработка `/passport/upload`), реальные `norm_documents`/`compatibility_rules` + `data/regulation/regulation_matrix.json`, запись в `data_access_logs`/`tool_execution_logs`/`llm_agent_logs`.
 6. **Безопасность/гигиена**: ротировать токены, аутентификация на passport/component/compare/norms, убрать хардкод кредов.
