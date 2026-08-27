@@ -18,6 +18,33 @@
   как сырые dict — это точка валидации.
 - `search_router.route_query_text` возвращает dict решения без схемы.
 
+## Текущий статус (2026-08-26)
+
+План писан под прежний макет (`app/services/llm_service.py`,
+`app/services/agents/warnings.py`, `AgentContext`, `route_query_text`).
+Часть уже закрыта в новом стеке:
+
+- **Ф5 — LLM-слой**: в новом стеке реализован
+  `app/services/agent/llm/client.py` (LLMClient) и
+  `app/services/agent/llm/cache.py` (LLMCache). Промпты вынесены.
+- **Ф6 — JSON-предупреждения**: движок в `app/services/agent/answer/warnings.py`,
+  каноничные тексты в `app/services/agent/answer/scenario_warnings.json`.
+- **Ф7 — схемы**:
+  1. `CatalogProperty`, `CatalogCodes`, `CatalogCard`, `RouterDecision` —
+     реализованы в `app/schemas.py` (п. 1 закрыт; тесты
+     `test_catalog_schema.py`).
+  2. Валидация каталога при загрузке — реализована:
+     `json_repository._load_catalog()` валидирует каждую карточку через
+     `CatalogCard`, невалидные пропускает с варнингом + сводкой (п. 2
+     закрыт). Проверка: `python app/scripts/validate_catalog.py` (1000/1000).
+  3. `route_query_text` в новом стеке нет (агент роутит сам, API идёт
+     напрямую в `AgentExecutor.execute`). `RouterDecision` сохранён как
+     контракт + тест на extra="ignore". Отдельный детерминированный роутер
+     больше не вызывается (п. 3 не применим без восстановления старого слоя).
+
+Осталось (необязательно): повторный прогон полного набора тестов и
+обновление README о закрытых фазах.
+
 ## Фаза 5 — Разделение LLM-слоя
 
 Новые модули:

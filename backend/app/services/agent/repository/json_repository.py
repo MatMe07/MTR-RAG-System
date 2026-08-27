@@ -1,11 +1,14 @@
 # agent/repository/json_repository.py
 
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .interfaces import IRepository
 from ..core.exceptions import RepositoryError
+
+log = logging.getLogger("mtr.json.repo")
 
 
 class JsonRepository(IRepository):
@@ -96,17 +99,49 @@ class JsonRepository(IRepository):
         pass
     
     def _load_catalog(self) -> List[Dict[str, Any]]:
+        from app.schemas import CatalogCard  # Phase 7: валидация через Pydantic-схему
+
         cards = []
+        skipped = 0
         try:
             if not self._catalog_path.exists():
                 return self._load_sample_catalog()
-            
+
             with open(self._catalog_path, "r", encoding="utf-8") as f:
                 for line in f:
-                    if line.strip():
-                        cards.append(json.loads(line))
+                    if not line.strip():
+                        continue
+                    try:
+                        raw = json.loads(line)
+                    except json.JSONDecodeError as e:
+                        skipped += 1
+                        log.warning(
+                            "[repo.json] Каталог: битая JSON-строка (пропущена): %s", e
+                        )
+                        continue
+                    try:
+                        CatalogCard.model_validate(raw)
+                    except Exception as e:
+                        skipped += 1
+                        log.warning(
+                            "[repo.json] Каталог: карточка не прошла CatalogCard "
+                            "(id=%s): %s",
+                            raw.get("card_id") or raw.get("name"),
+                            str(e)[:120],
+                        )
+                        continue
+                    cards.append(raw)
         except Exception as e:
+            log.warning("[repo.json] Ошибка загрузки каталога, fallback на сэмпл: %s", e)
             return self._load_sample_catalog()
+
+        if skipped:
+            log.warning(
+                "[repo.json] Каталог: загружено %d карточек, пропущено %d "
+                "(не прошли CatalogCard)",
+                len(cards),
+                skipped,
+            )
         return cards
     
     def _load_sample_catalog(self) -> List[Dict[str, Any]]:
