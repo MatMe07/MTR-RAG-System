@@ -3,7 +3,7 @@
 from typing import Any, Dict, List
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
-from .warnings import build_scenario_warnings
+from .warnings import build_scenario_warnings, evaluate_parameter_rules
 from .status import (
     determine_status,
     build_recommendations,
@@ -27,12 +27,13 @@ class AnswerBuilder:
             answers.append("Не удалось собрать ответ: недостаточно данных.")
 
         scenario_warnings = build_scenario_warnings(parsed, intent)
+        rule_warnings, rule_recommendations = evaluate_parameter_rules(parsed)
 
         components = self._to_components(result.get("components", []))
         sources = self._to_sources(result.get("sources", []))
 
         warnings = list(dict.fromkeys(
-            list(result.get("warnings", [])) + scenario_warnings
+            list(result.get("warnings", [])) + scenario_warnings + rule_warnings
         ))
         missing = list(dict.fromkeys(result.get("missing", [])))
 
@@ -43,7 +44,7 @@ class AnswerBuilder:
             has_request=_request_present(parsed),
         )
         review = bool(result.get("review")) or status == STATUS_EXPERT
-        recommendations = build_recommendations(status, warnings, missing)
+        recommendations = build_recommendations(status, warnings, missing) + rule_recommendations
 
         return AgentAnswer(
             query=parsed.original_query,

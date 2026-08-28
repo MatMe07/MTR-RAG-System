@@ -24,6 +24,7 @@ class AgentConfig:
     # LangGraph
     checkpoint_thread_id: str = "default"
     checkpoint_type: str = "memory"  # memory | sqlite
+    recursion_limit: int = 50
     
     # Логирование
     debug: bool = False

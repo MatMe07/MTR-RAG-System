@@ -51,6 +51,30 @@ PARAM_LABELS = {
 _NUMERIC_TOLERANCE = 0.1
 
 
+def _param_labels() -> Dict[str, str]:
+    """Лейблы параметров: БД (param_labels) поверх дефолта кода."""
+    try:
+        from ..rules.dynamic_rules import get_dynamic_rules
+
+        labels = get_dynamic_rules().param_labels()
+        merged = dict(PARAM_LABELS)
+        if isinstance(labels, dict):
+            merged.update(labels)
+        return merged
+    except Exception:  # noqa: BLE001
+        return dict(PARAM_LABELS)
+
+
+def _numeric_tolerance() -> float:
+    """Числовой допуск сравнения (База данных > дефолт кода)."""
+    try:
+        from ..rules.dynamic_rules import get_dynamic_rules
+
+        return get_dynamic_rules().numeric_tolerance()
+    except Exception:  # noqa: BLE001
+        return _NUMERIC_TOLERANCE
+
+
 def candidate_tz_status(match_percent: Optional[float]) -> str:
     """ТЗ-статус отдельного кандидата по проценту совпадения."""
     percent = match_percent or 0.0
@@ -76,9 +100,10 @@ def evaluate_candidate(
 
     props = card.get("properties", {}) or {}
     tf = getattr(parsed, "technical_filters", {}) or {}
+    labels = _param_labels()
     # Только пользовательские параметры: служебные ключи парсера
     # (raw_value, h2s_confirmed и т.п.) не участвуют в сравнении.
-    tf = {k: v for k, v in tf.items() if k in PARAM_LABELS}
+    tf = {k: v for k, v in tf.items() if k in labels}
     item_types = getattr(parsed, "item_types", []) or []
 
     def prop_val(key: str) -> Any:
@@ -102,7 +127,7 @@ def evaluate_candidate(
         checks.append((key, want, prop_val(key)))
 
     for key, want, got in checks:
-        label = PARAM_LABELS.get(key, key)
+        label = labels.get(key, key)
         if got is None or (isinstance(got, str) and not got.strip()):
             missing.append(label)
             continue
@@ -111,7 +136,8 @@ def evaluate_candidate(
             ok = str(got).strip().lower() == str(want).strip().lower()
         elif isinstance(got, (int, float)):
             if isinstance(want, (int, float)):
-                ok = abs(got - want) <= abs(want) * _NUMERIC_TOLERANCE
+                tol = _numeric_tolerance()
+                ok = abs(got - want) <= abs(want) * tol
             else:
                 ok = str(got).strip().lower() == str(want).strip().lower()
         else:

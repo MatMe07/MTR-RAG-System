@@ -11,6 +11,16 @@ from ..answer.status import evaluate_candidate, candidate_tz_status
 log = logging.getLogger("mtr.agent.tools")
 
 
+def _matching_tolerances() -> Dict[str, float]:
+    """Допуски матчинга из БД (БД > дефолт кода)."""
+    try:
+        from ..rules.dynamic_rules import get_dynamic_rules
+
+        return get_dynamic_rules().matching_tolerances()
+    except Exception:  # noqa: BLE001
+        return {"dn": 0.1, "angle": 0.0, "wall_thickness": 0.15, "default": 0.1}
+
+
 def _empty_result() -> Dict[str, Any]:
     return {
         "text": "",
@@ -255,16 +265,20 @@ def _matches_filters(card: Dict, parsed: Any) -> bool:
         v = (props.get(key) or {}).get("value")
         return v if isinstance(v, (int, float)) else None
 
+    def tol(key: str) -> float:
+        tolerances = _matching_tolerances()
+        return tolerances.get(key, tolerances.get("default", 0.1))
+
     if tf.get("dn") and num("dn"):
-        if abs(num("dn") - tf["dn"]) > tf["dn"] * 0.1:
+        if abs(num("dn") - tf["dn"]) > abs(tf["dn"]) * tol("dn"):
             return False
 
     if tf.get("angle") and num("angle"):
-        if abs(num("angle") - tf["angle"]) > 0:
+        if abs(num("angle") - tf["angle"]) > abs(tf["angle"]) * tol("angle"):
             return False
 
     if tf.get("wall_thickness") and num("wall_thickness"):
-        if abs(num("wall_thickness") - tf["wall_thickness"]) > tf["wall_thickness"] * 0.15:
+        if abs(num("wall_thickness") - tf["wall_thickness"]) > abs(tf["wall_thickness"]) * tol("wall_thickness"):
             return False
 
     item_types = getattr(parsed, "item_types", [])
@@ -285,12 +299,16 @@ def _match_score(card: Dict, parsed: Any) -> float:
     hits = 0.0
     checks = 0.0
 
+    tolerances = _matching_tolerances()
+    default_tol = tolerances.get("default", 0.1)
+
     for key in ["dn", "angle", "wall_thickness", "pn"]:
         want = tf.get(key)
         if want is not None:
             checks += 1
             got = num(key)
-            if got is not None and abs(got - want) <= max(abs(want), 1e-9) * 0.1:
+            tol = tolerances.get(key, default_tol)
+            if got is not None and abs(got - want) <= max(abs(want), 1e-9) * tol:
                 hits += 1
 
     item_types = getattr(parsed, "item_types", [])

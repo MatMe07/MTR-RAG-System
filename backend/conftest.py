@@ -14,3 +14,8 @@ if os.environ.get("AGENT_LLM_MODE") not in ("auto", "on"):
 # Чтобы прогнать их против реальной БД, задайте явно: AGENT_STORAGE=db.
 if os.environ.get("AGENT_STORAGE") not in ("json", "db"):
     os.environ["AGENT_STORAGE"] = "json"
+
+# Тесты БД-компонентов идут на SQLite: PK/JSON-типы детектятся по _is_sqlite
+# при импорте app.db.session, поэтому URL выставляется до любых app-импортов.
+if not os.environ.get("DATABASE_URL"):
+    os.environ["DATABASE_URL"] = "sqlite://"

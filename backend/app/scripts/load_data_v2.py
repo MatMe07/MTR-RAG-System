@@ -12,6 +12,7 @@ from app.models.sqlalchemy.all_models import (
     ValidationConstant, ValidationRule,
 )
 from app.core.security import hash_password
+from app.services.agent.rules.seed import seed_rules_standalone
 from datetime import datetime, timezone
 
 
@@ -238,6 +239,11 @@ if __name__ == "__main__":
         create_tables()
 
     seed_admin()
+
+    print("Seeding validation rules from code...")
+    counts = seed_rules_standalone()
+    print(f"Rules seeded: constants={counts['constants']}, "
+          f"synonyms={counts['synonyms']}, rules={counts['rules']}")
 
     if not args.skip_sample:
         load_sample_data()

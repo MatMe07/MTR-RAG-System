@@ -16,6 +16,24 @@ class AdminService:
     def __init__(self, db: Session):
         self.db = db
 
+    # ── Invalidation ────────────────────────────────────────────────
+
+    def _invalidate_dynamic_rules(self) -> None:
+        """После изменений правил/синонимов/констант — сброс кэшей,
+        чтобы новые значения применились без перезапуска."""
+        try:
+            from app.services.agent.rules.dynamic_rules import get_dynamic_rules
+
+            get_dynamic_rules().refresh(force=True)
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            from app.services.agent.parsing.dictionaries import refresh_dictionaries_force
+
+            refresh_dictionaries_force()
+        except Exception:  # noqa: BLE001
+            pass
+
     # ── Group Keywords ──────────────────────────────────────────────
 
     def list_group_keywords(self, group_name: str | None = None) -> list[dict[str, Any]]:
@@ -110,6 +128,7 @@ class AdminService:
         self.db.add(syn)
         self.db.commit()
         self.db.refresh(syn)
+        self._invalidate_dynamic_rules()
         return self._syn_to_dict(syn)
 
     def update_synonym(self, item_id: int, data: dict[str, Any]) -> dict[str, Any]:
@@ -121,6 +140,7 @@ class AdminService:
                 setattr(syn, key, data[key])
         self.db.commit()
         self.db.refresh(syn)
+        self._invalidate_dynamic_rules()
         return self._syn_to_dict(syn)
 
     def delete_synonym(self, item_id: int) -> None:
@@ -129,6 +149,7 @@ class AdminService:
             raise NotFoundError(f"SynonymRecord id={item_id} not found")
         self.db.delete(syn)
         self.db.commit()
+        self._invalidate_dynamic_rules()
 
     # ── Validation Constants ────────────────────────────────────────
 
@@ -161,6 +182,7 @@ class AdminService:
         self.db.add(vc)
         self.db.commit()
         self.db.refresh(vc)
+        self._invalidate_dynamic_rules()
         return {"id": vc.id, "constant_name": vc.constant_name, "value": vc.value}
 
     def update_validation_constant(self, item_id: int, data: dict[str, Any]) -> dict[str, Any]:
@@ -173,6 +195,7 @@ class AdminService:
             vc.description = data["description"]
         self.db.commit()
         self.db.refresh(vc)
+        self._invalidate_dynamic_rules()
         return {"id": vc.id, "constant_name": vc.constant_name, "value": vc.value}
 
     def delete_validation_constant(self, item_id: int) -> None:
@@ -181,6 +204,7 @@ class AdminService:
             raise NotFoundError(f"ValidationConstant id={item_id} not found")
         self.db.delete(vc)
         self.db.commit()
+        self._invalidate_dynamic_rules()
 
     # ── Validation Rules ────────────────────────────────────────────
 
@@ -207,6 +231,7 @@ class AdminService:
         self.db.add(vr)
         self.db.commit()
         self.db.refresh(vr)
+        self._invalidate_dynamic_rules()
         return self._vr_to_dict(vr)
 
     def update_validation_rule(self, item_id: int, data: dict[str, Any]) -> dict[str, Any]:
@@ -218,6 +243,7 @@ class AdminService:
                 setattr(vr, key, data[key])
         self.db.commit()
         self.db.refresh(vr)
+        self._invalidate_dynamic_rules()
         return self._vr_to_dict(vr)
 
     def delete_validation_rule(self, item_id: int) -> None:
@@ -226,18 +252,30 @@ class AdminService:
             raise NotFoundError(f"ValidationRule id={item_id} not found")
         self.db.delete(vr)
         self.db.commit()
+        self._invalidate_dynamic_rules()
 
     # ── Cache ───────────────────────────────────────────────────────
 
     def reload_cache(self) -> dict[str, Any]:
-        try:
-            from services.agent.parsing.dictionaries import reload_dictionaries
+        """Перезагрузка кеша: каталог репозитория агента + справочники."""
+        reloaded = []
 
-            reload_dictionaries()
-        except ImportError:
-            pass
+        from app.services.agent.repository.repository_factory import reset_repository
 
-        return {"status": "ok", "message": "Cache reloaded"}
+        reset_repository()
+        reloaded.append("catalog_repository")
+
+        import importlib
+
+        from app.services.agent.parsing import dictionaries as dict_module
+
+        importlib.reload(dict_module)
+
+        self._invalidate_dynamic_rules()
+
+        reloaded.append("dictionaries")
+
+        return {"status": "ok", "message": "Cache reloaded", "reloaded": reloaded}
 
     # ── Serializers ─────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-27T21:18:33.834353+00:00",
+  "generated_at": "2026-08-28T18:58:13.207772+00:00",
   "mode": "off",
   "strict": false,
   "min_tools_coverage": 20,
@@ -36,7 +36,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -64,7 +64,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -176,7 +176,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -204,7 +204,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -232,7 +232,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -260,7 +260,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -285,7 +285,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -312,7 +312,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -450,7 +450,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -505,7 +505,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -662,7 +662,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -689,7 +689,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -740,7 +740,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -924,7 +924,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -952,7 +952,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -1003,7 +1003,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {

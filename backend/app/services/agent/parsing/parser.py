@@ -16,6 +16,7 @@ from .ambiguity_detector import AmbiguityDetector
 from .context_extractor import ContextExtractor
 from .confidence_calculator import ConfidenceCalculator
 from .utils.data_utils import clean_technical_filters
+from .dictionaries import refresh_dictionaries
 
 
 from app.schemas import (
@@ -60,6 +61,9 @@ class QueryParser:
             return self._empty_response(text or "")
 
         text = text.strip()
+
+        # Обновляем алиасы из БД (не чаще раза в TTL, без перезапуска)
+        refresh_dictionaries()
 
         # =========================================================
         # 1. Парсинг операций

@@ -16,7 +16,7 @@ from .parser import QueryParser
 from .parsers.operation_parser import OperationParser
 from .enhanced.natasha_parser import NatashaParser
 # from .normalizers.morph_normalizer import MorphNormalizer
-from .dictionaries import get_operations
+from .dictionaries import get_operations, refresh_dictionaries
 from .confidence_calculator import ConfidenceCalculator
 
 
@@ -44,6 +44,9 @@ class HybridParser:
         """
         Основной метод парсинга с гибридным подходом
         """
+        # Алиасы из БД подтягиваются перед парсингом (TTL-кэш, дешёво)
+        refresh_dictionaries()
+
         # 1. Rule-based парсинг
         rule_result = self.rule_parser.parse(text)
         

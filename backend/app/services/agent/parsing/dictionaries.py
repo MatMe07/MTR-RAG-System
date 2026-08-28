@@ -3,6 +3,15 @@
 from typing import Dict, List, Set, Optional, Tuple
 from dataclasses import dataclass, field
 
+from ..rules.dynamic_rules import get_dynamic_rules
+
+
+# Хранилище публичных словарей, обновляется из БД (см. refresh_dictionaries).
+import time as _time
+
+_ALIAS_LAST_REFRESH: float = 0.0
+_ALIAS_TTL = 30.0
+
 
 # =========================================================
 # 1. ТИПЫ ДЕТАЛЕЙ И ИХ АЛИАСЫ
@@ -343,6 +352,45 @@ CLIMATE_ALIASES: Dict[str, str] = {
 }
 
 # =========================================================
+# 4b. ОБНОВЛЕНИЕ СЛОВАРЕЙ ИЗ БД
+# =========================================================
+
+def refresh_dictionaries(force: bool = False) -> None:
+    """Подтягивает алиасы из БД (synonyms) в публичные словари.
+    Записи БД добавляются/переопределяют дефолты кода (merge).
+    Вызов дешёвый: реальное чтение БД — не чаще одного раза в _ALIAS_TTL.
+    """
+    global _ALIAS_LAST_REFRESH
+    now = _time.monotonic()
+    if not force and _ALIAS_LAST_REFRESH and (now - _ALIAS_LAST_REFRESH) < _ALIAS_TTL:
+        return
+    try:
+        provider = get_dynamic_rules()
+    except Exception:  # noqa: BLE001
+        _ALIAS_LAST_REFRESH = now
+        return
+    for group, target in (
+        ("item_type", ITEM_TYPE_ALIASES),
+        ("operation", OPERATION_ALIASES),
+        ("medium", MEDIUM_ALIASES),
+        ("climate", CLIMATE_ALIASES),
+    ):
+        try:
+            records = provider.synonyms(group)
+        except Exception:  # noqa: BLE001
+            continue
+        for rec in records:
+            raw = (rec.get("raw") or "").strip().lower()
+            norm = (rec.get("norm") or "").strip().lower()
+            if raw and norm:
+                target[raw] = norm
+    _ALIAS_LAST_REFRESH = now
+
+def refresh_dictionaries_force() -> None:
+    """Принудительное обновление (после записи правил через admin API)."""
+    refresh_dictionaries(force=True)
+
+# =========================================================
 # 5. МАРКИ СТАЛИ
 # =========================================================
 
@@ -513,21 +561,25 @@ STANDARD_ANGLES: List[int] = [30, 45, 60, 90]
 
 def get_item_types() -> List[str]:
     """Получить список всех типов деталей"""
+    refresh_dictionaries()
     return list(set(ITEM_TYPE_ALIASES.values()))
 
 
 def get_operations() -> List[str]:
     """Получить список всех операций"""
+    refresh_dictionaries()
     return list(set(OPERATION_ALIASES.values()))
 
 
 def get_mediums() -> List[str]:
     """Получить список всех сред"""
+    refresh_dictionaries()
     return list(set(MEDIUM_ALIASES.values()))
 
 
 def get_climates() -> List[str]:
     """Получить список всех климатик"""
+    refresh_dictionaries()
     return list(set(CLIMATE_ALIASES.values()))
 
 
@@ -543,41 +595,49 @@ def get_strength_classes() -> List[str]:
 
 def get_aliases_for_item_type(item_type: str) -> List[str]:
     """Получить алиасы для типа детали"""
+    refresh_dictionaries()
     return [alias for alias, type_ in ITEM_TYPE_ALIASES.items() if type_ == item_type]
 
 
 def get_aliases_for_operation(operation: str) -> List[str]:
     """Получить алиасы для операции"""
+    refresh_dictionaries()
     return [alias for alias, op in OPERATION_ALIASES.items() if op == operation]
 
 
 def get_aliases_for_medium(medium: str) -> List[str]:
     """Получить алиасы для среды"""
+    refresh_dictionaries()
     return [alias for alias, med in MEDIUM_ALIASES.items() if med == medium]
 
 
 def get_aliases_for_climate(climate: str) -> List[str]:
     """Получить алиасы для климатики"""
+    refresh_dictionaries()
     return [alias for alias, clim in CLIMATE_ALIASES.items() if clim == climate]
 
 
 def is_valid_item_type(item_type: str) -> bool:
     """Проверка валидности типа детали"""
+    refresh_dictionaries()
     return item_type in get_item_types()
 
 
 def is_valid_operation(operation: str) -> bool:
     """Проверка валидности операции"""
+    refresh_dictionaries()
     return operation in get_operations()
 
 
 def is_valid_medium(medium: str) -> bool:
     """Проверка валидности среды"""
+    refresh_dictionaries()
     return medium in get_mediums()
 
 
 def is_valid_climate(climate: str) -> bool:
     """Проверка валидности климатики"""
+    refresh_dictionaries()
     return climate in get_climates()
 
 
