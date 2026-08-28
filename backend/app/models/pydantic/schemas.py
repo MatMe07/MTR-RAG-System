@@ -257,6 +257,26 @@ class SearchRequest(BaseModel):
     filters: Optional[dict] = None
 
 
+class ClarifyRequest(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    session_id: str = Field(..., description="Идентификатор диалога уточнения")
+    query: str = Field(..., description="Ответ пользователя на уточняющий вопрос")
+
+
+class ClarifyResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    session_id: str
+    route: str = Field("clarification", description="clarification | answer | expert")
+    turn: int = 0
+    question: str = Field("", description="Уточняющий вопрос (1G.1)")
+    missing: list = Field(default_factory=list, description="Недостающие параметры")
+    status: str = Field("", description="Статус полноты: PARTIAL/REQUIRES_EXPERT/UNCLEAR/COMPLETE")
+    message: str = Field("", description="Сообщение (режим expert/1G.4)")
+    answer: Optional["SearchResponse"] = None
+
+
 class SearchResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

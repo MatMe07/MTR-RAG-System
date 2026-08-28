@@ -35,11 +35,13 @@
 - Explanation: шаблонный build_explanation (explanation.py); LLM-вариант — позже.
 - DOD: test_answer_tz.py (23 теста 5D); E2E http POST /api/v1/search -> ТЗ-структура; полный pytest 53 passed / 1 skipped; UI-поля (status/labels) не сломаны.
 
-### Шаг 2 — Фаза C «Этап 1: матрица интентов»
-- Декларативная матрица 28 интентов (INTENT_REQUIREMENTS, INCOMPATIBLE_INTENTS, PARAMETER_VALIDATION_RULES, BLOCKER_FIELDS).
-- filter_params_for_intent; статусы ParsedQuery (COMPLETE/PARTIAL/REQUIRES_EXPERT/UNCLEAR).
-- Backend-цикл уточнения до 3 итераций (1G) через RequireClarification.
-- DOD: прогресс на complex_questions_40 + тесты; диалог в API.
+### Шаг 2 — Фаза C «Этап 1: матрица интентов» — ВЫПОЛНЕНА
+- Декларативная матрица в app/services/agent/intent/matrix.py: INTENT_ORDER/INTENT_REQUIREMENTS (24 интента, required = OR-AND-группы), INCOMPATIBLE_INTENTS, PARAMETER_VALIDATION_RULES, BLOCKER_FIELDS (единый источник; status.py импортирует из матрицы).
+- detect.py: detect_intents (приоритеты 1B.8/1B.9, явный глагол — главный), params_from_parsed, filter_params_for_intent (1H.1), missing_required_for_intent, incompatible_detected (1H.2), determine_parsed_status (1H.4: COMPLETE/PARTIAL/REQUIRES_EXPERT/UNCLEAR), enrich_parsed (заполняет ParsedQuery.intents/status/missing_params/params; вызывается в executor и parse_node).
+- Схема ParsedQuery расширена: intents, status, missing_params, params (аддитивно).
+- clarify.py: ClarificationManager (1G.2 сессии), RequireClarification, build_question (1G.1), до 3 циклов → status REQUIRES_EXPERT (1G.4), слияние текстов (1G.3).
+- API: POST /api/v1/search/clarify {session_id, query} -> {route: clarification|answer|expert, turn, question, missing, status, answer}.
+- DOD: test_intent_matrix.py (19 тестов); E2E-диалог (уточнение → выполнение → expert); полный pytest 72 passed / 1 skipped; complex_questions_40 без регрессий.
 
 ### Шаг 3 — Инфраструктура «полный стек»
 1. Поднять docker-compose (db/redis/neo4j/qdrant); .env.

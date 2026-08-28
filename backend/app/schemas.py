@@ -294,6 +294,24 @@ class ParsedQuery(BaseModel):
         default_factory=dict,
         description="Детали уверенности по каждому полю"
     )
+    
+    # ===== Интентный слой (Этап 1, §1B–1H) =====
+    intents: List[str] = Field(
+        default_factory=list,
+        description="Гранулярные интенты в порядке приоритета (FIND_BY_PARAMS, CHECK_STOCK, ...)"
+    )
+    status: str = Field(
+        default="",
+        description="Статус полноты запроса: COMPLETE | PARTIAL | REQUIRES_EXPERT | UNCLEAR"
+    )
+    missing_params: Dict[str, List[str]] = Field(
+        default_factory=dict,
+        description="Недостающие обязательные параметры по каждому интенту"
+    )
+    params: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Объединённые параметры запроса (filter_params_for_intent)"
+    )
 
 
 class AgentRequest(BaseModel):

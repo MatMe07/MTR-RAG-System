@@ -3,6 +3,9 @@
 import logging
 import time
 from typing import Optional, Any, Dict
+
+from langgraph.errors import GraphRecursionError
+
 from app.schemas import AgentAnswer, ParsedQuery
 
 from .core.config import DEFAULT_CONFIG, AgentConfig
@@ -67,15 +70,36 @@ class AgentExecutor:
                 parsed.ambiguities,
                 (time.time() - parser_start) * 1000,
             )
+            self._enrich_parsed(parsed)
 
         state = create_initial_state(query=query, parsed=parsed)
         state["context"]["intent"] = self._resolve_intent(parsed)
         log.info("[Executor] Intent resolved: %s", state["context"]["intent"])
 
-        config = {"configurable": {"thread_id": thread_id or self.config.checkpoint_thread_id}}
+        config = {
+            "configurable": {"thread_id": thread_id or self.config.checkpoint_thread_id},
+            "recursion_limit": self.config.recursion_limit,
+        }
         graph_start = time.time()
         log.info("[Executor] Invoking graph...")
-        result = self.graph.invoke(state, config=config)
+        try:
+            result = self.graph.invoke(state, config=config)
+        except GraphRecursionError:
+            log.warning("[Executor] Recursion limit exceeded (limit=%d) for query=%r",
+                        self.config.recursion_limit, query)
+            answer = self._build_answer_from_result(parsed, {
+                "components": [],
+                "sources": [],
+                "warnings": ["Не удалось завершить анализ: превышен лимит шагов анализа."],
+                "missing": [],
+                "review": True,
+                "answers": ["Анализ не завершён из-за сложности запроса. Обратитесь к эксперту."],
+                "mode": "offline_rules",
+                "tools_used": [],
+            })
+            log.info("[Executor] Total execution (recursion fallback): %.0fms",
+                     (time.time() - start) * 1000)
+            return answer
         graph_elapsed = (time.time() - graph_start) * 1000
 
         log.info(
@@ -98,8 +122,24 @@ class AgentExecutor:
         log.info("[Executor] Total execution: %.0fms", (time.time() - start) * 1000)
         return answer
 
+    def _enrich_parsed(self, parsed: ParsedQuery) -> None:
+        """Интентный слой: intents/status/missing_params Парсеру (Этап 1, §1H)."""
+        try:
+            from .intent.detect import enrich_parsed as _enrich
+
+            enriched = _enrich(parsed)
+            log.info(
+                "[Executor] Parsed enriched: status=%s intents=%s missing=%s",
+                getattr(enriched, "status", ""),
+                getattr(enriched, "intents", []),
+                getattr(enriched, "missing_params", {}),
+            )
+        except Exception as e:  # прагматично: не ломаем основной путь
+            log.warning("[Executor] Intent enrichment failed: %s", e)
+
     def _resolve_intent(self, parsed: ParsedQuery) -> str:
         operations = getattr(parsed, "operations", [])
+        query = getattr(parsed, "original_query", "").lower()
         query = getattr(parsed, "original_query", "").lower()
 
         if "дубл" in query:

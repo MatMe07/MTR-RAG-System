@@ -2,6 +2,7 @@
 
 from typing import Any, Dict
 import time
+import logging
 
 from ..core.state import AgentState
 from ..repository.repository_factory import get_repository
@@ -21,19 +22,31 @@ from ..tools.analytic_tools import (
 )
 from ..answer.builder import build_answer
 
+log = logging.getLogger("mtr.agent.graph.nodes")
+
 
 def _set_repository(state: AgentState) -> None:
     state.setdefault("context", {}).setdefault("repository", get_repository())
 
 
 def parse_node(state: AgentState) -> Dict[str, Any]:
-    from ..parsing.hybrid_parser import HybridParser
-    
-    parser = HybridParser()
-    parsed = parser.parse(state["query"])
-    state["parsed"] = parsed
+    parsed = state.get("parsed")
+    if parsed is None:
+        from ..parsing.hybrid_parser import HybridParser
+
+        parser = HybridParser()
+        parsed = parser.parse(state["query"])
+        state["parsed"] = parsed
+
+    if not getattr(parsed, "intents", None):
+        from ..intent.detect import enrich_parsed
+
+        try:
+            enrich_parsed(parsed)
+        except Exception as e:  # прагматично: не ломаем основной путь
+            log.warning("[parse_node] intent enrichment failed: %s", e)
+
     state["context"]["intent"] = _resolve_intent(parsed)
-    
     return {"parsed": parsed}
 
 

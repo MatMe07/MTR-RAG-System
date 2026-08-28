@@ -11,6 +11,7 @@ from datetime import date
 from typing import Any, Dict, List, Optional
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource
+from app.services.agent.intent.matrix import BLOCKER_FIELDS
 
 STATUS_MATCH = "соответствует"
 STATUS_ANALOG = "потенциальный аналог"
@@ -18,13 +19,6 @@ STATUS_MISMATCH = "не соответствует"
 STATUS_NOT_FOUND = "нет данных"
 STATUS_UNCLEAR = "требует проверки"
 STATUS_EXPERT = "требует экспертной проверки"
-
-# Критические параметры: их расхождение или недостаток данных по ним →
-# эскалация до экспертной проверки.
-BLOCKER_FIELDS = {
-    "dn", "pn", "angle", "wall_thickness",
-    "medium", "material", "steel_grade", "item_type",
-}
 
 # Критические предупреждения: только фразы, сигнализирующие о блокирующем
 # дефекте данных/подтверждения. Обычные дисклеймеры (ГОСТ не присваивает КСМ,

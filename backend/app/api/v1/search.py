@@ -8,11 +8,72 @@ from typing import Optional
 from app.db.session import get_db
 from app.api.deps.auth import get_current_user
 from app.core.exceptions import AppException
-from app.models.pydantic.schemas import SearchRequest, SearchResponse
+from app.models.pydantic.schemas import SearchRequest, SearchResponse, ClarifyRequest, ClarifyResponse
 from app.services.search_service import SearchService
 
 router = APIRouter()
 log = logging.getLogger("mtr.search")
+
+
+@router.post("/clarify", response_model=ClarifyResponse)
+def clarify(
+    body: ClarifyRequest,
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
+):
+    """Диалоговое уточнение (1G): до 3 циклов, затем REQUIRES_EXPERT."""
+    from app.services.agent.parsing.hybrid_parser import HybridParser
+    from app.services.agent.intent.clarify import (
+        RequireClarification,
+        get_clarification_manager,
+    )
+    from app.services.agent.intent.detect import enrich_parsed
+
+    manager = get_clarification_manager()
+    try:
+        parsed = HybridParser().parse(body.query)
+        enrich_parsed(parsed)
+        decision = manager.process(body.session_id, parsed, body.query)
+        if decision == "proceed":
+            merged = manager.accumulated_text(body.session_id) or body.query
+            svc = SearchService(db)
+            answer = svc.execute_search(
+                SearchRequest(query=merged, mode="deterministic"),
+                user_id=None,
+            )
+            return ClarifyResponse(
+                session_id=body.session_id,
+                route="answer",
+                turn=manager.turns(body.session_id),
+                status=getattr(parsed, "status", "COMPLETE"),
+                answer=answer,
+            )
+        # 'expert' после max_turns (1G.4)
+        return ClarifyResponse(
+            session_id=body.session_id,
+            route="expert",
+            turn=manager.turns(body.session_id),
+            status="REQUIRES_EXPERT",
+            message=(
+                "Недостаточно данных для выполнения запроса. "
+                "Обратитесь к эксперту."
+            ),
+        )
+    except RequireClarification as rc:
+        return ClarifyResponse(
+            session_id=rc.session_id,
+            route="clarification",
+            turn=rc.turn,
+            question=rc.question,
+            missing=rc.missing,
+            status=rc.status,
+        )
+    except AppException:
+        raise
+    except Exception as e:
+        log.exception("CLARIFY FAILED: %s", e)
+        from app.core.exceptions import InternalError
+        raise InternalError(f"Clarify failed: {e}")
 
 
 class SearchHistoryItem(BaseModel):
