@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=str(_REPO_ROOT / ".env"),
         env_file_encoding="utf-8",
-        extra="ignore",
+        extra="ignore", 
     )
 
     # Дефолты — локальный docker-стек (docker-compose.yml). Продакшен/облако
@@ -32,26 +32,17 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 1440
 
-    LLM_MODEL: str = "llama3:70b"
+    # Параметры агента (единый источник — подхватываются AgentConfig)
+    LLM_MODEL: str = "nvidia/nemotron-3-super-120b-a12b:free"
     LLM_TEMPERATURE: float = 0.0
     LLM_TIMEOUT: int = 120
     OPENROUTER_BASE_URL: str = ""
     OPENROUTER_TOKEN: str = ""
-
-    OCR_ENGINE: str = "tesseract"
-
-    CORS_ORIGINS: str = "http://localhost:3000"
-
-    EMBEDDING_MODEL: str = "BAAI/bge-m3"
-    HF_TOKEN: str = ""
-
     LOG_LEVEL: str = "INFO"
     AGENT_LLM_MODE: str = "on"
     AGENT_STORAGE: str = "db"
 
-    USE_LOCAL_LLM: bool = False
-    OLLAMA_BASE_URL: str = "http://localhost:11434/v1"
-    OLLAMA_MODEL: str = "qwen2.5:3b"
+    CORS_ORIGINS: str = "http://localhost:3000"
 
     @property
     def cors_origins_list(self) -> list[str]:

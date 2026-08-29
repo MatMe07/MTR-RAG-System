@@ -31,10 +31,19 @@ class LLMClient:
             try:
                 from langchain_openai import ChatOpenAI
                 
-                # Пробуем OpenRouter
+                # Пробуем OpenRouter: env (процесс) > config (settings/.env)
                 import os
-                api_key = os.getenv("OPENROUTER_API_KEY") or os.getenv("LLM_API_KEY")
-                base_url = os.getenv("OPENROUTER_BASE_URL") or "https://openrouter.ai/api/v1"
+                api_key = (
+                    os.getenv("OPENROUTER_API_KEY")
+                    or os.getenv("LLM_API_KEY")
+                    or self.config.llm_api_key
+                    or None
+                )
+                base_url = (
+                    os.getenv("OPENROUTER_BASE_URL")
+                    or self.config.llm_base_url
+                    or "https://openrouter.ai/api/v1"
+                )
                 model = os.getenv("LLM_MODEL") or self.config.llm_model
                 
                 self._client = ChatOpenAI(

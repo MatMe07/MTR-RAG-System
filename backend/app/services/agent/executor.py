@@ -10,7 +10,7 @@ from app.schemas import AgentAnswer, ParsedQuery
 
 from .core.config import DEFAULT_CONFIG, AgentConfig
 from .core.state import create_initial_state
-from .graph.agent_graph import get_graph 
+from .graph.agent_graph import get_graph
 from .parsing.hybrid_parser import HybridParser
 from .repository.repository_factory import get_repository
 from .answer.builder import build_answer
