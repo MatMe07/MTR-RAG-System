@@ -1,7 +1,6 @@
 {
     "sqltools.useNodeRuntime": true,
     "sqltools.connections": [
-
         {
             "ssh": "Disabled",
             "previewLimit": 50,
@@ -13,6 +12,17 @@
             "database": "mtr",
             "username": "postgres",
             "password": "xoxot3041"
+        },
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "MYdb",
+            "group": "127.0.0.1",
+            "database": "syn",
+            "username": "postgres"
         }
     ],
     "python-envs.pythonProjects": []

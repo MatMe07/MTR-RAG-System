@@ -3,6 +3,10 @@ __pycache__/
 .pytest_cache/
 venv/
 .env
+.envMain
 *.db
 data/generated/
 artifacts/
+settings.json
+.vscode/
+.opencode

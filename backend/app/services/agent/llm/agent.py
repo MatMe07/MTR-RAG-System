@@ -29,7 +29,7 @@ from .response_parser import LLMResponseParser
 log = logging.getLogger("mtr.agent.llm_agent")
 
 MAX_ITERATIONS = 10
-MAX_TOTAL_SECONDS = 60.0
+MAX_TOTAL_SECONDS = 120.0
 MAX_REPEAT = 2  # не более 2 повторных вызовов одного инструмента подряд
 
 # Критерии остановки (4C.5): LLM должна завершить цикл, если выполнен
@@ -97,6 +97,7 @@ class LLMAgent:
     def run(self, query: str, parsed: Any = None) -> Dict[str, Any]:
         """Запуск цикла LLM. Возвращает результат, совместимый со сборщиком ответа."""
         self.iterations = 0
+        
         tools = self._available_tools()
         parser = LLMResponseParser(
             available_tools={t["name"] for t in tools},
