@@ -43,7 +43,7 @@
 - API: POST /api/v1/search/clarify {session_id, query} -> {route: clarification|answer|expert, turn, question, missing, status, answer}.
 - DOD: test_intent_matrix.py (19 тестов); E2E-диалог (уточнение → выполнение → expert); полный pytest 72 passed / 1 skipped; complex_questions_40 без регрессий.
 
-### Шаг 3 — Инфраструктура «полный стек»
+### Шаг 3 — Инфраструктура «полный стек» — ВЫПОЛНЕНА (2026-08-29)
 1. Поднять docker-compose (db/redis/neo4j/qdrant); .env.
 2. alembic upgrade head на реальном PG.
 3. Провайдеры: catalog(PG, fallback JSON), stock(PG), graph(Neo4j+pipeline_edges, fallback JSON), norms(PG+Qdrant, fallback полнотекст), passport(PG). DAL с detail_level, data_access_logs, Redis-кеш+инвалидация.
@@ -51,16 +51,28 @@
 5. repository_factory/db_repository основной, JSON — fallback, селектор по конфигу.
 - DOD: /search и инструменты работают против PG; интеграционный тест.
 
-### Шаг 4 — Фаза D «Этап 3: 13 инструментов»
+### Шаг 4 — Фаза D «Этап 3: 13 инструментов» — ВЫПОЛНЕНА (коммит 975d92f)
 - Обёртки над DAL: search_catalog, get_component, search_by_passport, check_stock, get_low_stock_items, get_unused_stock, get_unit_structure, get_neighbors, is_installed_anywhere, check_compatibility, check_compatibility_batch, search_norms, get_component_history.
 - JSON-schema I/O, ToolError (INVALID_PARAMS/BATCH_TOO_LARGE/NOT_FOUND/DAL_ERROR), лимиты (depth≤5, limit≤100, batch≤50), tool_execution_logs (PG), карта intent→tools.
 - DOD: тесты 3G.1–3G.2; реестр для LLM-режима.
 
-### Шаг 5 — Фаза E «Этап 4: два изолированных режима»
+### Шаг 5 — Фаза E «Этап 4: два изолированных режима» — ВЫПОЛНЕНА (2026-08-29)
 - Детерминированный: langgraph + ErrorHandler (retry DAL_ERROR ≤3, skip NOT_FOUND, STOP на INVALID_PARAMS).
 - LLM-режим: LLMAgent-цикл call_tool/ask_user/finish через ToolRegistry, лимиты 10 итер/60с/без повторов, llm_agent_logs.
 - Ветвление по request.mode; рекомендация переключения при UNCLEAR/REQUIRES_EXPERT.
 - DOD: 20 интеграционных запросов, оба режима; детерм < 10 с, LLM < 60 с.
+
+## Финализация (Шаг 6, 2026-08-29)
+
+- Секреты вычищены из config.py и scripts/GEN (дефолты — локальный compose-стек;
+  облако/ключи — только через env/.env). Qdrant REST в NormsProvider теперь
+  корректно работает и с https-облаком (api-key header).
+- `llm_agent_logs` пишется в PG с самовосстановлением (как tool_execution_logs).
+- Celery-каркас восстановлен: `app/workers/celery_app.py` + `tasks.py`
+  (docker-compose celery-worker/beat снова валиден).
+- Интеграционный тест `test_phase5_stack_integration.py` (11 тестов) авто-skip
+  при недоступном стеке (в данной WSL-окружении Docker Desktop не поднят —
+  skip ожидаем; ранее прогнан против живого стека: 11 passed).
 
 ## Риски
 
