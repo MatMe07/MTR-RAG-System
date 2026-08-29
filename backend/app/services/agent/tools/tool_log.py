@@ -30,15 +30,19 @@ class ToolLogRecord:
 
 
 class ToolExecutionLogger:
-    """Логгер вызовов инструментов с fallback на память."""
+    """Логгер вызовов инструментов с fallback на память (самовосстановление)."""
 
     def __init__(self, max_memory: int = 2000):
         self._max_memory = max_memory
         self._memory: deque = deque(maxlen=max_memory)
-        self._db_unavailable = False
+        self._fail_streak = 0
+        self._retry_every = 100
 
     def _write_db(self, rec: ToolLogRecord) -> None:
-        if self._db_unavailable:
+        if self._fail_streak and self._fail_streak >= self._retry_every:
+            # периодическое самовосстановление после падения БД
+            self._fail_streak = 0
+        if self._fail_streak:
             return
         try:
             from app.db.session import SessionLocal
@@ -61,8 +65,8 @@ class ToolExecutionLogger:
             finally:
                 db.close()
         except Exception as e:
-            self._db_unavailable = True
-            log.warning("ToolExecutionLogger: БД недоступна, лог в памяти: %s", e)
+            self._fail_streak += 1
+            log.warning("ToolExecutionLogger: БД недоступна (%d), лог в памяти: %s", self._fail_streak, e)
 
     def record(
         self,

@@ -39,8 +39,22 @@ def get_repository(storage: Optional[str] = None) -> IRepository:
 
 
 def reset_repository() -> None:
-    """Сброс кеша репозитория"""
+    """Сброс кеша репозитория (включая Redis-кеш каталога)."""
     global _repository
     if _repository:
         _repository.close()
         _repository = None
+
+    try:
+        from .providers.redis_cache import flush_redis_cache
+
+        flush_redis_cache()
+    except Exception:
+        pass
+
+    try:
+        from ..tools.tool_log import reset_tool_logger
+
+        reset_tool_logger()
+    except Exception:
+        pass

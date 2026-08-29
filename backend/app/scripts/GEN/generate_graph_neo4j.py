@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import pandas as pd
 from neo4j import GraphDatabase
@@ -17,7 +18,10 @@ with open(DEFAULT_ASSERTIONS, encoding='utf-8') as f:
     templates = json.load(f)
 
 # ---------- 2. Подключение к Neo4j ----------
-driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "qwerty1234"))
+NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "changeme")
+driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 def clear_graph(tx):
     tx.run("MATCH (n) DETACH DELETE n")

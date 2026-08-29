@@ -137,11 +137,12 @@ class ToolDAL:
             "ksm_code": ksm_code,
             "quantity": _prop(card, "stock_qty", 0.0),
             "unit": "pcs",
-            "business_unit": None,
-            "stock_category": None,
-            "cost": self.repo.get_stock_cost(ksm_code),
-            "planned_involvement_date": None,
-            "forecast_involvement_date": None,
+            "business_unit": _prop(card, "business_unit"),
+            "stock_category": _prop(card, "stock_category"),
+            "cost": _prop(card, "cost", self.repo.get_stock_cost(ksm_code)),
+            "planned_involvement_date": _prop(card, "planned_involvement_date"),
+            "forecast_involvement_date": _prop(card, "forecast_involvement_date"),
+            "stock_balance": _prop(card, "stock_balance"),
             "source": "repository",
         }
 
@@ -169,7 +170,20 @@ class ToolDAL:
     # ПАСПОРТА
     # =======================================================================
     def get_passport_params(self, document_id: str) -> Dict[str, Any]:
-        """Извлечение параметров паспорта (регэкспы по тестовым документам)."""
+        """Извлечение параметров паспорта.
+
+        Источник Шага 3 — провайдер паспортов (PG); если документ не загружен
+        в БД — legacy регэкспы по тестовым файлам.
+        """
+        repo_method = getattr(self.repo, "get_passport_params", None)
+        if repo_method is not None:
+            try:
+                result = repo_method(document_id)
+            except Exception:
+                result = None
+            if result is not None and result.get("params"):
+                return result
+
         path = self._find_passport(document_id)
         if path is None:
             return {"document_id": document_id, "params": {}}
@@ -451,6 +465,20 @@ class ToolDAL:
     # НОРМАТИВЫ
     # =======================================================================
     def search_norms(self, query: str, limit: int = 5, document_type: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Поиск нормативов.
+
+        Источник Шага 3 — Qdrant (векторный), при недоступности/пустой
+        коллекции — полнотекстовый токен-матчер по фрагментам (legacy).
+        """
+        repo_method = getattr(self.repo, "search_norms", None)
+        if repo_method is not None:
+            try:
+                result = repo_method(query, limit=limit, document_type=document_type)
+            except Exception:
+                result = None
+            if result is not None:
+                return result
+
         tokens = self._tokens(query)
         scored: List[Dict[str, Any]] = []
         for frag in self._norm_fragments():
@@ -537,9 +565,17 @@ class ToolDAL:
     def get_component_history(self, ksm_code: str, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
         """История изменений атрибутов.
 
-        В JSON-режиме нет источника истории — возвращается пустой список.
-        Для DbRepository источник появится вместе с провайдерами (Шаг 3).
+        Источник Шага 3 — mtr_item_history (PostgreSQL). Если провайдер
+        отсутствует/пусто — возвращается пустой список (как в JSON-режиме).
         """
+        repo_method = getattr(self.repo, "get_component_history", None)
+        if repo_method is not None:
+            try:
+                result = repo_method(ksm_code, limit=limit, offset=offset)
+            except Exception:
+                result = []
+            if result:
+                return result
         return []
 
     def close(self) -> None:

@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -11,15 +13,18 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # Дефолты — локальный docker-стек (docker-compose.yml). Продакшен/облако
+    # задаётся через переменные окружения или .env (в gitignore).
     DATABASE_URL: str = "postgresql://syn:syn_password@localhost:5432/syn"
 
-    NEO4J_URI: str = "bolt://neo4j:7687"
+    NEO4J_URI: str = "bolt://localhost:7687"
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = "changeme"
 
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
     QDRANT_COLLECTION: str = "mtr_descriptions"
+    QDRANT_API_KEY: Optional[str] = None
 
     REDIS_URL: str = "redis://localhost:6379/0"
 
