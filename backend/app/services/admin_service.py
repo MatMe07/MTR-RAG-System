@@ -315,7 +315,11 @@ class AdminService:
     # ── Cache ───────────────────────────────────────────────────────
 
     def reload_cache(self) -> dict[str, Any]:
-        """Перезагрузка кеша: каталог репозитория агента + справочники."""
+        """Перезагрузка данных без рестарта процесса.
+
+        Сбрасывает синглтоны: репозиторий агента (каталог/граф/нормы),
+        Redis-кеш, логгер инструментов, ToolDAL, правила и БД-словари.
+        """
         reloaded = []
 
         from app.services.agent.repository.repository_factory import reset_repository
@@ -323,11 +327,19 @@ class AdminService:
         reset_repository()
         reloaded.append("catalog_repository")
 
-        import importlib
+        try:
+            from app.services.agent.repository.providers.redis_cache import reset_redis_cache
 
-        from app.services.agent.parsing import dictionaries as dict_module
+            reset_redis_cache()
+        except Exception:  # noqa: BLE001 — Redis необязателен
+            pass
 
-        importlib.reload(dict_module)
+        try:
+            from app.services.agent.tools.instruments import reset_tool_dal
+
+            reset_tool_dal()
+        except Exception:  # noqa: BLE001
+            pass
 
         self._invalidate_dynamic_rules()
 

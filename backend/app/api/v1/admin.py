@@ -17,6 +17,27 @@ def _get_admin_service(db: Session, current_user: dict) -> AdminService:
     return AdminService(db)
 
 
+# ── Reload ───────────────────────────────────────────────────────────
+# Регистрируется ДО generic-маршрутов /dictionaries/{dict_name}: иначе
+# Starlette матчит POST /dictionaries/reload на create_dict_entry (первый
+# подходящий маршрут), который требует body → 422.
+
+@router.post("/dictionaries/reload")
+def reload_cache(
+    current_user: dict = Depends(require_role(UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    try:
+        svc = _get_admin_service(db, current_user)
+        return svc.reload_cache()
+    except AppException:
+        raise
+    except Exception as e:
+        from app.core.exceptions import InternalError
+
+        raise InternalError(f"Failed to reload cache: {e}")
+
+
 # ── Generic dictionary endpoints ─────────────────────────────────────
 
 @router.get("/dictionaries/{dict_name}")
@@ -130,22 +151,6 @@ def delete_dict_entry(
         from app.core.exceptions import InternalError
 
         raise InternalError(f"Failed to delete entry in '{dict_name}': {e}")
-
-
-@router.post("/dictionaries/reload")
-def reload_cache(
-    current_user: dict = Depends(require_role(UserRole.ADMIN)),
-    db: Session = Depends(get_db),
-):
-    try:
-        svc = _get_admin_service(db, current_user)
-        return svc.reload_cache()
-    except AppException:
-        raise
-    except Exception as e:
-        from app.core.exceptions import InternalError
-
-        raise InternalError(f"Failed to reload cache: {e}")
 
 
 # ── Validation Rules ─────────────────────────────────────────────────

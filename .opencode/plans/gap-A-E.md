@@ -15,7 +15,7 @@
 - Этап 3 (инструменты): РЕАЛИЗОВАНО (Шаг 4, коммит 975d92f) — 13 инструментов-обёрток (tools/instruments.py), JSON-schema валидация (validation.py + registry.validate_input), ToolError/коды (3D), лимиты (depth≤5, limit≤100, batch≤50), tool_execution_logs (tool_log.py + модель, PG с fallback в память), карта intent→tools (3E, 24 интента). Дымовой прогон всех 13 в JSON-fallback — работает (search_by_passport по DOC-#### требует PG-провайдера или fixtures; истории get_component_history в fallback-данных нет). Тесты: test_tools_instruments.py + test_tools_instruments_integration.py (29 passed).
 - Этап 4 (оркестратор): РЕАЛИЗОВАНО (Шаг 5, 2026-08-29) — детерминированный langgraph + ErrorHandler-retry, изолированный LLM-цикл call_tool/ask_user/finish (10 итер/60с), ветвление по request.mode, llm_agent_logs.
 - Этап 5 (ответ): РЕАЛИЗОВАНО (Шаг 1, Фаза B) — структура по ТЗ 11.2 (tz_result.py → SearchResponse), StatusDeterminator (6 статусов), рекомендации, expert_review_id, lnd_section, format_sources; LLM-объяснение (build_explanation) — шаблонный, LLM-вариант остаётся.
-- БЭКЕНД-АРХИТЕКТУРА: API-слои, JWT, CORS, логирование, исключения, Alembic, аудит — есть. Celery-каркас восстановлен (workers/). НЕ сделано: admin/reload (A3 Шага 0), compose-заглушки не проверены (Docker в WSL не поднят), UI-STREAMLIT вне итерации.
+- БЭКЕНД-АРХИТЕКТУРА: API-слои, JWT, CORS, логирование, исключения, Alembic, аудит — есть. Celery-каркас восстановлен (workers/); admin/reload ПОЧИНЕН (A3, см. Шаг 0). НЕ сделано: compose-заглушки не проверены (Docker в WSL не поднят), UI-STREAMLIT вне итерации.
 - UI-STREAMLIT: набор views вместо ролевой 8-экранной структуры — вне итерации.
 
 ## Порядок исполнения
@@ -23,7 +23,7 @@
 ### Шаг 0 — Фаза A «Стабилизация» (без зависимостей)
 1. A1: parse_node переиспользует state["parsed"] (nodes.py) — фикс двойного парсинга.
 2. A2: recursion_limit + guard GraphRecursionError в get_agent_graph (agent_graph.py).
-3. A3: admin/reload — префикс app., реальная перезагрузка каталога, без try/except pass.
+3. A3: admin/reload — ВЫПОЛНЕНА (2026-08-29). Причина падения: POST /dictionaries/reload затенялся generic create (POST /dictionaries/{dict_name}, регистрировался раньше) → 422. Маршрут перенесён выше generic-роутов; reload_cache: reset_repository + reset_redis_cache + reset_tool_dal + refresh(force=True) справочников (убран хрупкий importlib.reload). Тест test_admin_reload.py (2). Доп. находка: python-jose требует sub строкой — в auth login сделан str(user.id), админ-токены валидны.
 4. A4: сведение схем — удалены мёртвые дубликаты-близнецы из models/pydantic/schemas.py (AgentRequest, AgentAnswer, ExpertReviewRequest, ItemCard, MatchResult, RouteRequest, RouteResponse — не используются) и legacy SearchRequest/SearchResponse из app/schemas.py (живые — в models). Итог: каждое используемое имя определено один раз; runtime-схемы — в app/schemas.py, API-контрактные — в models/pydantic. Расходящиеся контрактные пары (ItemCard rich vs flat, AgentAnswer rich vs API-минимальный) осознанно отложены в Фазу B (там решаются по ТЗ 11.2), см. план Фазы B.
 - DOD: полный pytest зелёный.
 
