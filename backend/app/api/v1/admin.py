@@ -240,3 +240,73 @@ def delete_validation_rule(
         from app.core.exceptions import InternalError
 
         raise InternalError(f"Failed to delete validation rule for '{item_type}': {e}")
+
+
+# ===========================================================================
+# Импорт данных (2E) — инвентаризация каталога/склада/графа
+# ===========================================================================
+
+class ImportCatalogBody(BaseModel):
+    items: list[dict[str, Any]]
+    changed_by: str | None = None
+
+
+class ImportStockBody(BaseModel):
+    rows: list[dict[str, Any]]
+    changed_by: str | None = None
+
+
+class ImportGraphBody(BaseModel):
+    graph: dict[str, Any]
+    changed_by: str | None = None
+
+
+@router.post("/imports/catalog")
+def import_catalog(
+    body: ImportCatalogBody,
+    current_user: dict = Depends(require_role(UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    from app.services.import_service import ImportService
+
+    try:
+        actor = body.changed_by or (current_user or {}).get("username") or (current_user or {}).get("id")
+        return ImportService(db).import_catalog(body.items, changed_by=str(actor))
+    except Exception as e:
+        from app.core.exceptions import InternalError
+
+        raise InternalError(f"Failed to import catalog: {e}")
+
+
+@router.post("/imports/stock")
+def import_stock(
+    body: ImportStockBody,
+    current_user: dict = Depends(require_role(UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    from app.services.import_service import ImportService
+
+    try:
+        actor = body.changed_by or (current_user or {}).get("username") or (current_user or {}).get("id")
+        return ImportService(db).import_stock(body.rows, changed_by=str(actor))
+    except Exception as e:
+        from app.core.exceptions import InternalError
+
+        raise InternalError(f"Failed to import stock: {e}")
+
+
+@router.post("/imports/graph")
+def import_graph(
+    body: ImportGraphBody,
+    current_user: dict = Depends(require_role(UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    from app.services.import_service import ImportService
+
+    try:
+        actor = body.changed_by or (current_user or {}).get("username") or (current_user or {}).get("id")
+        return ImportService(db).import_graph(body.graph, changed_by=str(actor))
+    except Exception as e:
+        from app.core.exceptions import InternalError
+
+        raise InternalError(f"Failed to import graph: {e}")
