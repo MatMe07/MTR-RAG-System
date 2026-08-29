@@ -17,11 +17,13 @@ class AuditService:
         action: str,
         data: dict[str, Any] | None = None,
     ) -> None:
+        import json
+
         entry = Log(
             request_id=request_id,
             user_id=user_id,
             action=action,
-            data=data or {},
+            data=json.dumps(data or {}, ensure_ascii=False, default=str),
         )
         self.db.add(entry)
         self.db.commit()

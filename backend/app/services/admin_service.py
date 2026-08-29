@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
@@ -15,6 +15,19 @@ from app.models.sqlalchemy.all_models import (
 class AdminService:
     def __init__(self, db: Session):
         self.db = db
+
+    # ── Вспомогательные ─────────────────────────────────────────────
+
+    def _audit(self, action: str, payload: Optional[dict] = None, actor: Optional[dict] = None) -> None:
+        """1K.6/1L.6: журналирование изменений справочников и правил."""
+        try:
+            from app.services.audit_service import AuditService
+
+            user_id = str(actor["id"]) if actor and actor.get("id") else None
+            request_id = str(actor.get("request_id")) if actor and actor.get("request_id") else None
+            AuditService(self.db).log(request_id, user_id, action, payload or {})
+        except Exception:  # noqa: BLE001 — аудит не должен ломать основную операцию
+            pass
 
     # ── Invalidation ────────────────────────────────────────────────
 
@@ -43,7 +56,7 @@ class AdminService:
         rows = q.order_by(GroupKeyword.group_name, GroupKeyword.priority.desc()).all()
         return [self._gk_to_dict(r) for r in rows]
 
-    def create_group_keyword(self, data: dict[str, Any]) -> dict[str, Any]:
+    def create_group_keyword(self, data: dict[str, Any], actor: Optional[dict] = None) -> dict[str, Any]:
         gk = GroupKeyword(
             group_name=data["group_name"],
             keyword=data["keyword"],
@@ -53,9 +66,11 @@ class AdminService:
         self.db.add(gk)
         self.db.commit()
         self.db.refresh(gk)
+        self._audit("admin.dictionaries.group_keywords.create", {"id": gk.id, "group": gk.group_name, "keyword": gk.keyword}, actor)
+        self._invalidate_dynamic_rules()
         return self._gk_to_dict(gk)
 
-    def update_group_keyword(self, item_id: int, data: dict[str, Any]) -> dict[str, Any]:
+    def update_group_keyword(self, item_id: int, data: dict[str, Any], actor: Optional[dict] = None) -> dict[str, Any]:
         gk = self.db.query(GroupKeyword).filter(GroupKeyword.id == item_id).first()
         if not gk:
             raise NotFoundError(f"GroupKeyword id={item_id} not found")
@@ -64,14 +79,18 @@ class AdminService:
                 setattr(gk, key, data[key])
         self.db.commit()
         self.db.refresh(gk)
+        self._audit("admin.dictionaries.group_keywords.update", {"id": gk.id, "group": gk.group_name, "keyword": gk.keyword}, actor)
+        self._invalidate_dynamic_rules()
         return self._gk_to_dict(gk)
 
-    def delete_group_keyword(self, item_id: int) -> None:
+    def delete_group_keyword(self, item_id: int, actor: Optional[dict] = None) -> None:
         gk = self.db.query(GroupKeyword).filter(GroupKeyword.id == item_id).first()
         if not gk:
             raise NotFoundError(f"GroupKeyword id={item_id} not found")
+        self._audit("admin.dictionaries.group_keywords.delete", {"id": gk.id, "group": gk.group_name, "keyword": gk.keyword}, actor)
         self.db.delete(gk)
         self.db.commit()
+        self._invalidate_dynamic_rules()
 
     # ── Contextual Overrides ────────────────────────────────────────
 
@@ -79,7 +98,7 @@ class AdminService:
         rows = self.db.query(ContextualOverride).order_by(ContextualOverride.priority.desc()).all()
         return [self._co_to_dict(r) for r in rows]
 
-    def create_contextual_override(self, data: dict[str, Any]) -> dict[str, Any]:
+    def create_contextual_override(self, data: dict[str, Any], actor: Optional[dict] = None) -> dict[str, Any]:
         co = ContextualOverride(
             trigger_phrase=data["trigger_phrase"],
             target_group=data["target_group"],
@@ -89,9 +108,11 @@ class AdminService:
         self.db.add(co)
         self.db.commit()
         self.db.refresh(co)
+        self._audit("admin.dictionaries.contextual_overrides.create", {"id": co.id, "trigger": co.trigger_phrase, "target": co.target_group}, actor)
+        self._invalidate_dynamic_rules()
         return self._co_to_dict(co)
 
-    def update_contextual_override(self, item_id: int, data: dict[str, Any]) -> dict[str, Any]:
+    def update_contextual_override(self, item_id: int, data: dict[str, Any], actor: Optional[dict] = None) -> dict[str, Any]:
         co = self.db.query(ContextualOverride).filter(ContextualOverride.id == item_id).first()
         if not co:
             raise NotFoundError(f"ContextualOverride id={item_id} not found")
@@ -100,14 +121,18 @@ class AdminService:
                 setattr(co, key, data[key])
         self.db.commit()
         self.db.refresh(co)
+        self._audit("admin.dictionaries.contextual_overrides.update", {"id": co.id, "trigger": co.trigger_phrase, "target": co.target_group}, actor)
+        self._invalidate_dynamic_rules()
         return self._co_to_dict(co)
 
-    def delete_contextual_override(self, item_id: int) -> None:
+    def delete_contextual_override(self, item_id: int, actor: Optional[dict] = None) -> None:
         co = self.db.query(ContextualOverride).filter(ContextualOverride.id == item_id).first()
         if not co:
             raise NotFoundError(f"ContextualOverride id={item_id} not found")
+        self._audit("admin.dictionaries.contextual_overrides.delete", {"id": co.id, "trigger": co.trigger_phrase, "target": co.target_group}, actor)
         self.db.delete(co)
         self.db.commit()
+        self._invalidate_dynamic_rules()
 
     # ── Synonyms ────────────────────────────────────────────────────
 
@@ -118,7 +143,7 @@ class AdminService:
         rows = q.order_by(SynonymRecord.group_name).all()
         return [self._syn_to_dict(r) for r in rows]
 
-    def create_synonym(self, data: dict[str, Any]) -> dict[str, Any]:
+    def create_synonym(self, data: dict[str, Any], actor: Optional[dict] = None) -> dict[str, Any]:
         syn = SynonymRecord(
             group_name=data["group_name"],
             raw_value=data["raw_value"],
@@ -128,10 +153,11 @@ class AdminService:
         self.db.add(syn)
         self.db.commit()
         self.db.refresh(syn)
+        self._audit("admin.dictionaries.synonyms.create", {"id": syn.id, "raw": syn.raw_value, "norm": syn.normalized_value, "group": syn.group_name}, actor)
         self._invalidate_dynamic_rules()
         return self._syn_to_dict(syn)
 
-    def update_synonym(self, item_id: int, data: dict[str, Any]) -> dict[str, Any]:
+    def update_synonym(self, item_id: int, data: dict[str, Any], actor: Optional[dict] = None) -> dict[str, Any]:
         syn = self.db.query(SynonymRecord).filter(SynonymRecord.id == item_id).first()
         if not syn:
             raise NotFoundError(f"SynonymRecord id={item_id} not found")
@@ -140,13 +166,15 @@ class AdminService:
                 setattr(syn, key, data[key])
         self.db.commit()
         self.db.refresh(syn)
+        self._audit("admin.dictionaries.synonyms.update", {"id": syn.id, "raw": syn.raw_value, "norm": syn.normalized_value, "group": syn.group_name}, actor)
         self._invalidate_dynamic_rules()
         return self._syn_to_dict(syn)
 
-    def delete_synonym(self, item_id: int) -> None:
+    def delete_synonym(self, item_id: int, actor: Optional[dict] = None) -> None:
         syn = self.db.query(SynonymRecord).filter(SynonymRecord.id == item_id).first()
         if not syn:
             raise NotFoundError(f"SynonymRecord id={item_id} not found")
+        self._audit("admin.dictionaries.synonyms.delete", {"id": syn.id, "raw": syn.raw_value, "group": syn.group_name}, actor)
         self.db.delete(syn)
         self.db.commit()
         self._invalidate_dynamic_rules()
@@ -166,7 +194,7 @@ class AdminService:
             for r in rows
         ]
 
-    def create_validation_constant(self, data: dict[str, Any]) -> dict[str, Any]:
+    def create_validation_constant(self, data: dict[str, Any], actor: Optional[dict] = None) -> dict[str, Any]:
         existing = (
             self.db.query(ValidationConstant)
             .filter(ValidationConstant.constant_name == data["constant_name"])
@@ -182,10 +210,11 @@ class AdminService:
         self.db.add(vc)
         self.db.commit()
         self.db.refresh(vc)
+        self._audit("admin.rules.constants.create", {"id": vc.id, "name": vc.constant_name}, actor)
         self._invalidate_dynamic_rules()
         return {"id": vc.id, "constant_name": vc.constant_name, "value": vc.value}
 
-    def update_validation_constant(self, item_id: int, data: dict[str, Any]) -> dict[str, Any]:
+    def update_validation_constant(self, item_id: int, data: dict[str, Any], actor: Optional[dict] = None) -> dict[str, Any]:
         vc = self.db.query(ValidationConstant).filter(ValidationConstant.id == item_id).first()
         if not vc:
             raise NotFoundError(f"ValidationConstant id={item_id} not found")
@@ -195,13 +224,15 @@ class AdminService:
             vc.description = data["description"]
         self.db.commit()
         self.db.refresh(vc)
+        self._audit("admin.rules.constants.update", {"id": vc.id, "name": vc.constant_name}, actor)
         self._invalidate_dynamic_rules()
         return {"id": vc.id, "constant_name": vc.constant_name, "value": vc.value}
 
-    def delete_validation_constant(self, item_id: int) -> None:
+    def delete_validation_constant(self, item_id: int, actor: Optional[dict] = None) -> None:
         vc = self.db.query(ValidationConstant).filter(ValidationConstant.id == item_id).first()
         if not vc:
             raise NotFoundError(f"ValidationConstant id={item_id} not found")
+        self._audit("admin.rules.constants.delete", {"id": vc.id, "name": vc.constant_name}, actor)
         self.db.delete(vc)
         self.db.commit()
         self._invalidate_dynamic_rules()
@@ -212,7 +243,7 @@ class AdminService:
         rows = self.db.query(ValidationRule).order_by(ValidationRule.item_type).all()
         return [self._vr_to_dict(r) for r in rows]
 
-    def create_validation_rule(self, data: dict[str, Any]) -> dict[str, Any]:
+    def create_validation_rule(self, data: dict[str, Any], actor: Optional[dict] = None) -> dict[str, Any]:
         existing = (
             self.db.query(ValidationRule)
             .filter(ValidationRule.item_type == data["item_type"])
@@ -231,10 +262,11 @@ class AdminService:
         self.db.add(vr)
         self.db.commit()
         self.db.refresh(vr)
+        self._audit("admin.rules.rule.create", {"id": vr.id, "item_type": vr.item_type}, actor)
         self._invalidate_dynamic_rules()
         return self._vr_to_dict(vr)
 
-    def update_validation_rule(self, item_id: int, data: dict[str, Any]) -> dict[str, Any]:
+    def update_validation_rule(self, item_id: int, data: dict[str, Any], actor: Optional[dict] = None) -> dict[str, Any]:
         vr = self.db.query(ValidationRule).filter(ValidationRule.id == item_id).first()
         if not vr:
             raise NotFoundError(f"ValidationRule id={item_id} not found")
@@ -243,13 +275,15 @@ class AdminService:
                 setattr(vr, key, data[key])
         self.db.commit()
         self.db.refresh(vr)
+        self._audit("admin.rules.rule.update", {"id": vr.id, "item_type": vr.item_type}, actor)
         self._invalidate_dynamic_rules()
         return self._vr_to_dict(vr)
 
-    def delete_validation_rule(self, item_id: int) -> None:
+    def delete_validation_rule(self, item_id: int, actor: Optional[dict] = None) -> None:
         vr = self.db.query(ValidationRule).filter(ValidationRule.id == item_id).first()
         if not vr:
             raise NotFoundError(f"ValidationRule id={item_id} not found")
+        self._audit("admin.rules.rule.delete", {"id": vr.id, "item_type": vr.item_type}, actor)
         self.db.delete(vr)
         self.db.commit()
         self._invalidate_dynamic_rules()

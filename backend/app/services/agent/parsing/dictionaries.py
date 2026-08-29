@@ -384,6 +384,14 @@ def refresh_dictionaries(force: bool = False) -> None:
             norm = (rec.get("norm") or "").strip().lower()
             if raw and norm:
                 target[raw] = norm
+        # group_keywords (1J/1L): новые слова группы действуют как канон (raw=norm).
+        try:
+            for keyword in provider.get_keywords(group):
+                k = (keyword or "").strip().lower()
+                if k:
+                    target.setdefault(k, k)
+        except Exception:  # noqa: BLE001
+            continue
     _ALIAS_LAST_REFRESH = now
 
 def refresh_dictionaries_force() -> None:

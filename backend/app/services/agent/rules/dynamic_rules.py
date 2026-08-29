@@ -116,10 +116,38 @@ class DynamicRules:
         data = self._load_from_db()
         if data is None:
             self._db_unavailable_at = time.monotonic()
+            fallback = self._load_redis_snapshot()
+            if fallback is not None:
+                self._data = fallback
+                self._loaded_at = time.monotonic()
             return
         self._db_unavailable_at = None
         self._data = data
         self._loaded_at = time.monotonic()
+        self._push_redis_snapshot()
+
+    # ------------------------------------------------------------------
+    # Снапшот в Redis (1J.2): снимок на 1 час + fallback при падении БД.
+    # ------------------------------------------------------------------
+    def _push_redis_snapshot(self) -> None:
+        """Публикует свежий снимок словарей/правил в Redis."""
+        if self._data is None:
+            return
+        try:
+            from ..repository.providers.redis_cache import set_dictionary_snapshot
+
+            set_dictionary_snapshot(self._data)
+        except Exception as e:  # noqa: BLE001
+            log.debug("push redis snapshot skipped: %s", e)
+
+    def _load_redis_snapshot(self) -> Optional[Dict[str, Any]]:
+        """Последний опубликованный снимок из Redis (fallback для БД)."""
+        try:
+            from ..repository.providers.redis_cache import get_dictionary_snapshot
+
+            return get_dictionary_snapshot()
+        except Exception:  # noqa: BLE001
+            return None
 
     def _load_from_db(self) -> Optional[Dict[str, Any]]:
         try:
@@ -134,6 +162,8 @@ class DynamicRules:
                     SynonymRecord,
                     ValidationConstant,
                     ValidationRule,
+                    GroupKeyword,
+                    ContextualOverride,
                 )
 
                 constants = {}
@@ -181,7 +211,35 @@ class DynamicRules:
                         "logical_conditions": lc,
                         "is_active": bool(vr.is_active),
                     }
-                return {"constants": constants, "synonyms": synonyms, "rules": rules}
+                keywords = [
+                    {
+                        "group": k.group_name,
+                        "keyword": k.keyword,
+                        "priority": int(k.priority or 0),
+                    }
+                    for k in db.query(GroupKeyword)
+                    .filter(GroupKeyword.is_active.is_(True))
+                    .order_by(GroupKeyword.priority.desc(), GroupKeyword.id)
+                    .all()
+                ]
+                overrides = [
+                    {
+                        "trigger": o.trigger_phrase,
+                        "target": o.target_group,
+                        "priority": int(o.priority or 0),
+                    }
+                    for o in db.query(ContextualOverride)
+                    .filter(ContextualOverride.is_active.is_(True))
+                    .order_by(ContextualOverride.priority.desc(), ContextualOverride.id)
+                    .all()
+                ]
+                return {
+                    "constants": constants,
+                    "synonyms": synonyms,
+                    "rules": rules,
+                    "keywords": keywords,
+                    "overrides": overrides,
+                }
             finally:
                 if close:
                     db.close()
@@ -265,6 +323,44 @@ class DynamicRules:
             s for s in self._data.get("synonyms") or []
             if s.get("group") == group
         ]
+
+    # ==================================================================
+    # Контракт DictionaryManager (Этап 1, секция 1L.2)
+    # ==================================================================
+    def get_keywords(self, group: str, limit: Optional[int] = None) -> List[str]:
+        """Активные ключевые слова группы group (group_keywords)."""
+        self._ensure()
+        if not self._data:
+            return []
+        out = [
+            k["keyword"] for k in self._data.get("keywords") or []
+            if k.get("group") == group
+        ]
+        if limit is not None:
+            out = out[: max(0, int(limit))]
+        return out
+
+    def get_synonym(self, term: str, group: Optional[str] = None) -> Optional[str]:
+        """Каноническая форма термина по таблице synonyms (raw → norm)."""
+        self._ensure()
+        if not term:
+            return None
+        term = str(term).strip().lower()
+        for rec in self._data.get("synonyms") or []:
+            if rec.get("group") in (None, group) and (rec.get("raw") or "").strip().lower() == term:
+                return rec.get("norm") or None
+        return None
+
+    def get_constant(self, name: str, default: Any = None) -> Any:
+        return self.constant(name, default)
+
+    def get_validation_rule(self, item_type: str) -> Optional[Dict[str, Any]]:
+        return self.validation_rule(item_type)
+
+    def contextual_overrides(self) -> List[Dict[str, Any]]:
+        """Контекстные переопределения (ContextualOverride), по приоритету."""
+        self._ensure()
+        return list(self._data.get("overrides") or []) if self._data else []
 
 
 _rules: Optional[DynamicRules] = None

@@ -1,8 +1,12 @@
 # repository/providers/redis_cache.py
-"""Redis-кеш (read-through) для каталога и остатков.
+"""Redis-кеш (read-through) для каталога, остатков и словарей.
 
 При недоступности Redis кеш работает как no-op: чтение/запись проваливаются
 молча, каталог строится из PostgreSQL (или JSON-fallback).
+
+Словари (Этап 1, секция 1J.2): снимок dynamic-правил/справочников живёт в
+Redis ровно 1 час, версия-счётчик позволяет обнаружить обновление из
+админ-эндпоинтов без перезапуска.
 """
 
 import json
@@ -15,6 +19,10 @@ log = logging.getLogger("mtr.repository.redis_cache")
 
 DEFAULT_URL = "redis://localhost:6379/0"
 DEFAULT_TTL = 300
+# 1J.2: словари кешируются на 1 час.
+DICTIONARIES_TTL = 3600
+_PREFIX_SNAPSHOT = "dictionaries:snapshot"
+_PREFIX_VERSION = "dictionaries:version"
 
 
 class RedisCache:
@@ -66,14 +74,14 @@ class RedisCache:
         except Exception:
             return None
 
-    def set(self, key: str, value: Any) -> None:
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
         c = self._conn()
         if c is None:
             return
         try:
             c.setex(
                 self._key(key),
-                self._ttl,
+                int(ttl) if ttl is not None else self._ttl,
                 json.dumps(value, ensure_ascii=False, default=str),
             )
         except Exception:
@@ -134,3 +142,50 @@ def reset_redis_cache() -> None:
     if _cache_singleton is not None:
         _cache_singleton.close()
         _cache_singleton = None
+
+
+# ===========================================================================
+# Словари (1J.2): снимок dynamic-правил в Redis с версией-счётчиком.
+# ===========================================================================
+
+def set_dictionary_snapshot(data: Dict[str, Any]) -> None:
+    """Пишет снимок словарей в Redis (TTL 1 час) и инкрементит версию."""
+    cache = get_redis_cache()
+    if not cache.available:
+        return
+    try:
+        version = cache.get(_PREFIX_VERSION) or 0
+        version = int(version) + 1
+        cache.set(_PREFIX_VERSION, version, ttl=DICTIONARIES_TTL)
+        cache.set(_PREFIX_SNAPSHOT, data, ttl=DICTIONARIES_TTL)
+    except Exception as e:  # noqa: BLE001
+        log.warning("set_dictionary_snapshot failed: %s", e)
+
+
+def get_dictionary_snapshot() -> Optional[Dict[str, Any]]:
+    """Снимок словарей из Redis, если он свежее локального version (или первый)."""
+    cache = get_redis_cache()
+    if not cache.available:
+        return None
+    try:
+        return cache.get(_PREFIX_SNAPSHOT)
+    except Exception:
+        return None
+
+
+def dictionary_version() -> Optional[int]:
+    cache = get_redis_cache()
+    if not cache.available:
+        return None
+    try:
+        v = cache.get(_PREFIX_VERSION)
+        return int(v) if v is not None else None
+    except Exception:
+        return None
+
+
+def invalidate_dictionary_snapshot() -> None:
+    """Инвалидация словарного снимка после изменений в админ-эндпоинтах."""
+    cache = get_redis_cache()
+    if cache.available:
+        cache.delete(_PREFIX_SNAPSHOT, _PREFIX_VERSION)

@@ -65,7 +65,7 @@ def create_dict_entry(
             from app.core.exceptions import NotFoundError
 
             raise NotFoundError(f"Dictionary '{dict_name}' not found")
-        return method(body)
+        return method(body, current_user)
     except AppException:
         raise
     except Exception as e:
@@ -94,7 +94,7 @@ def update_dict_entry(
             from app.core.exceptions import NotFoundError
 
             raise NotFoundError(f"Dictionary '{dict_name}' not found")
-        return method(item_id, body)
+        return method(item_id, body, current_user)
     except AppException:
         raise
     except Exception as e:
@@ -122,7 +122,7 @@ def delete_dict_entry(
             from app.core.exceptions import NotFoundError
 
             raise NotFoundError(f"Dictionary '{dict_name}' not found")
-        method(item_id)
+        method(item_id, current_user)
         return {"status": "deleted"}
     except AppException:
         raise
@@ -185,7 +185,7 @@ def create_validation_rule(
 ):
     try:
         svc = _get_admin_service(db, current_user)
-        return svc.create_validation_rule(body.model_dump())
+        return svc.create_validation_rule(body.model_dump(), current_user)
     except AppException:
         raise
     except Exception as e:
@@ -209,7 +209,7 @@ def update_validation_rule(
             from app.core.exceptions import NotFoundError
 
             raise NotFoundError(f"Validation rule for '{item_type}' not found")
-        return svc.update_validation_rule(existing["id"], body)
+        return svc.update_validation_rule(existing["id"], body, current_user)
     except AppException:
         raise
     except Exception as e:
@@ -232,7 +232,7 @@ def delete_validation_rule(
             from app.core.exceptions import NotFoundError
 
             raise NotFoundError(f"Validation rule for '{item_type}' not found")
-        svc.delete_validation_rule(existing["id"])
+        svc.delete_validation_rule(existing["id"], current_user)
         return {"status": "deleted"}
     except AppException:
         raise

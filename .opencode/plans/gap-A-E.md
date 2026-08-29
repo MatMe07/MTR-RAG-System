@@ -9,7 +9,7 @@
 
 ## Сверка «план ⇄ код» (зафиксировано 2026-08-28)
 
-- Этап 1 (парсинг): реализован HybridParser (9 парсеров + нормализаторы), ParsedQuery. НЕТ: матрицы 28 интентов (INTENT_REQUIREMENTS, INCOMPATIBLE_INTENTS, PARAMETER_VALIDATION_RULES, BLOCKER_FIELDS), filter_params_for_intent, статусов ParsedQuery, диалогового уточнения 1G в графе, DictionaryManager/БД-словарей (1J/1K/1L).
+- Этап 1 (парсинг): реализован HybridParser (9 парсеров + нормализаторы), ParsedQuery. НЕТ: матрицы 28 интентов (INTENT_REQUIREMENTS, INCOMPATIBLE_INTENTS, PARAMETER_VALIDATION_RULES, BLOCKER_FIELDS), filter_params_for_intent, статусов ParsedQuery, диалогового уточнения 1G в графе. DictionaryManager/БД-словари (1J/1K/1L): РЕАЛИЗОВАНО (2026-08-29) — DynamicRules (keywords/synonyms/константы/правила/overrides), group_keywords в парсере, Redis-снапшот, аудит изменений (1K.6), автопредложение (1L.5).
 - Этап 1.1 (хранилище): миграции alembic 001–005 и models/sqlalchemy есть; PG не используется рантаймом; Neo4j/Qdrant в коде отсутствуют.
 - Этап 2 (DAL): есть фасад IRepository; НЕТ async-DAL/провайдеров, detail_level, Redis-кеша, data_access_logs, процедур импорта.
 - Этап 3 (инструменты): есть registry + 4 аналитических инструмента; НЕТ 13 инструментов-обёрток, JSON-schema валидации, ToolError, tool_execution_logs.
