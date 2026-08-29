@@ -10,6 +10,7 @@ from .status import (
     expert_review_id,
     _request_present,
     STATUS_EXPERT,
+    STATUS_UNCLEAR,
 )
 
 
@@ -22,7 +23,10 @@ class AnswerBuilder:
         intent: str,
         result: Dict[str, Any]
     ) -> AgentAnswer:
-        answers = result.get("answers", [])
+        answers = [a for a in (result.get("answers") or []) if a]
+        answer_text = result.get("answer")
+        if answer_text and answer_text not in answers:
+            answers.insert(0, answer_text)
         if not answers:
             answers.append("Не удалось собрать ответ: недостаточно данных.")
 
@@ -45,6 +49,11 @@ class AnswerBuilder:
         )
         review = bool(result.get("review")) or status == STATUS_EXPERT
         recommendations = build_recommendations(status, warnings, missing) + rule_recommendations
+        mode = result.get("mode", "offline_rules")
+        if mode != "llm" and status in (STATUS_UNCLEAR, STATUS_EXPERT):
+            recommendations.append(
+                "Не удалось однозначно обработать запрос. Попробовать LLM-режим?"
+            )
 
         return AgentAnswer(
             query=parsed.original_query,

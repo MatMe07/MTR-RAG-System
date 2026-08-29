@@ -8,7 +8,7 @@
 """
 
 from datetime import date
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource
 from app.services.agent.intent.matrix import BLOCKER_FIELDS
@@ -88,7 +88,7 @@ def candidate_tz_status(match_percent: Optional[float]) -> str:
 def evaluate_candidate(
     card: Dict[str, Any],
     parsed: Any,
-) -> (List[str], List[str], List[str]):
+) -> Tuple[List[str], List[str], List[str]]:
     """Сравнивает запрошенные параметры с карточкой.
 
     Возвращает (matched, mismatched, missing) — человекочитаемые имена

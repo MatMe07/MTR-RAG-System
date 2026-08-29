@@ -72,7 +72,7 @@ def catalog_search(state: AgentState, ctx) -> Dict[str, Any]:
 
     if not ctx:
         result["text"] = "Репозиторий не доступен"
-        result["error"] = "repository_not_available"
+        result["error"] = {"code": "DAL_ERROR", "message": "Репозиторий не доступен"}
         log.warning("[catalog_search] Repository not available")
         return result
 
@@ -114,6 +114,7 @@ def stock_query(state: AgentState, ctx) -> Dict[str, Any]:
 
     if not ctx:
         result["text"] = "Репозиторий не доступен"
+        result["error"] = {"code": "DAL_ERROR", "message": "Репозиторий не доступен"}
         log.warning("[stock_query] Repository not available")
         return result
 
@@ -186,6 +187,7 @@ def graph_search(state: AgentState, ctx) -> Dict[str, Any]:
 
     if not ctx:
         result["text"] = "Репозиторий не доступен"
+        result["error"] = {"code": "DAL_ERROR", "message": "Репозиторий не доступен"}
         log.warning("[graph_search] Repository not available")
         return result
 
@@ -241,6 +243,7 @@ def regulation_lookup(state: AgentState, ctx) -> Dict[str, Any]:
 
     if not ctx:
         result["text"] = "Репозиторий не доступен"
+        result["error"] = {"code": "DAL_ERROR", "message": "Репозиторий не доступен"}
         log.warning("[regulation_lookup] Repository not available")
         return result
 

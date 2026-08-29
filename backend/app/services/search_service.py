@@ -25,13 +25,19 @@ class SearchService:
         from app.services.audit_service import AuditService
 
         start = time.time()
-        log.info("[SearchService] Starting search: query=%r mode=%s", request.query, request.mode)
+        request_id = str(uuid.uuid4())
+        log.info("[SearchService] Starting search: query=%r mode=%s request_id=%s",
+                 request.query, request.mode, request_id)
 
         try:
             executor = AgentExecutor()
             log.info("[SearchService] AgentExecutor created")
 
-            answer = executor.execute(request.query)
+            answer = executor.execute(
+                request.query,
+                mode=getattr(request, "mode", "deterministic") or "deterministic",
+                request_id=request_id,
+            )
             elapsed = (time.time() - start) * 1000
 
             log.info(

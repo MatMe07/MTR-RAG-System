@@ -22,11 +22,12 @@ log = logging.getLogger("mtr.agent.executor")
 class AgentExecutor:
     """Исполнитель агента — точка входа"""
 
-    def __init__(self, config: Optional[AgentConfig] = None):
+    def __init__(self, config: Optional[AgentConfig] = None, llm_agent: Optional[Any] = None):
         self.config = config or DEFAULT_CONFIG
         self._graph = None
         self._repository = None
         self._llm = None
+        self._llm_agent = llm_agent
 
     @property
     def graph(self):
@@ -51,9 +52,14 @@ class AgentExecutor:
         query: str,
         parsed: Optional[ParsedQuery] = None,
         thread_id: Optional[str] = None,
+        mode: str = "deterministic",
+        request_id: Optional[str] = None,
     ) -> AgentAnswer:
         start = time.time()
-        log.info("[Executor] Execute query=%r", query)
+        log.info("[Executor] Execute query=%r mode=%s request_id=%s", query, mode, request_id)
+
+        if mode == "llm":
+            return self._execute_llm(query, parsed, start, request_id=request_id)
 
         if parsed is None:
             log.info("[Executor] No parsed query, running HybridParser...")
@@ -122,6 +128,40 @@ class AgentExecutor:
         log.info("[Executor] Total execution: %.0fms", (time.time() - start) * 1000)
         return answer
 
+    def _execute_llm(
+        self,
+        query: str,
+        parsed: Optional[ParsedQuery],
+        start: float,
+        request_id: Optional[str] = None,
+    ) -> AgentAnswer:
+        """Режим 2 (4C): LLM-управляемый цикл call_tool/ask_user/finish."""
+        if parsed is None:
+            parser = HybridParser()
+            parsed = parser.parse(query)
+            self._enrich_parsed(parsed)
+
+        from .llm.agent import LLMAgent
+        from .tools.tool_dal import ToolDAL
+
+        agent = self._llm_agent or LLMAgent(
+            config=self.config,
+            llm=self.llm,
+            dal=ToolDAL(self.repository),
+            request_id=request_id,
+        )
+        intent = self._resolve_intent(parsed)
+        log.info("[Executor] LLM-agent started: request_id=%s", getattr(agent, "_request_id", "-"))
+        result = agent.run(query, parsed)
+        log.info(
+            "[Executor] LLM-agent finished in %.0fms: iterations=%d tools=%s components=%d",
+            (time.time() - start) * 1000,
+            getattr(agent, "iterations", 0),
+            result.get("tools_used", []),
+            len(result.get("components", [])),
+        )
+        return build_answer(parsed, intent, result)
+
     def _enrich_parsed(self, parsed: ParsedQuery) -> None:
         """Интентный слой: intents/status/missing_params Парсеру (Этап 1, §1H)."""
         try:
@@ -139,7 +179,6 @@ class AgentExecutor:
 
     def _resolve_intent(self, parsed: ParsedQuery) -> str:
         operations = getattr(parsed, "operations", [])
-        query = getattr(parsed, "original_query", "").lower()
         query = getattr(parsed, "original_query", "").lower()
 
         if "дубл" in query:
