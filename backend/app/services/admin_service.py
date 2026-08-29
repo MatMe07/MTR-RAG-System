@@ -18,7 +18,28 @@ class AdminService:
 
     # ── Вспомогательные ─────────────────────────────────────────────
 
-    def _audit(self, action: str, payload: Optional[dict] = None, actor: Optional[dict] = None) -> None:
+    @staticmethod
+    def _json_str(value) -> str:
+        import json
+        import json as _json
+        if isinstance(value, str):
+            return value
+        return _json.dumps(value, ensure_ascii=False, default=list)
+
+    @staticmethod
+    def _json_lst(value) -> list:
+        import json
+        if isinstance(value, list):
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                return parsed if isinstance(parsed, list) else []
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return []
+
+    def _audit(self, action, payload: Optional[dict] = None, actor: Optional[dict] = None) -> None:
         """1K.6/1L.6: журналирование изменений справочников и правил."""
         try:
             from app.services.audit_service import AuditService
@@ -253,9 +274,9 @@ class AdminService:
             raise ValidationError(f"Rule for item_type '{data['item_type']}' already exists")
         vr = ValidationRule(
             item_type=data["item_type"],
-            required_params=data.get("required_params", []),
-            forbidden_params=data.get("forbidden_params", []),
-            optional_params=data.get("optional_params", []),
+            required_params=self._json_str(data.get("required_params", [])),
+            forbidden_params=self._json_str(data.get("forbidden_params", [])),
+            optional_params=self._json_str(data.get("optional_params", [])),
             logical_conditions=data.get("logical_conditions"),
             is_active=data.get("is_active", True),
         )
@@ -272,7 +293,10 @@ class AdminService:
             raise NotFoundError(f"ValidationRule id={item_id} not found")
         for key in ("required_params", "forbidden_params", "optional_params", "logical_conditions", "is_active"):
             if key in data:
-                setattr(vr, key, data[key])
+                value = data[key]
+                if key in ("required_params", "forbidden_params", "optional_params"):
+                    value = self._json_str(value)
+                setattr(vr, key, value)
         self.db.commit()
         self.db.refresh(vr)
         self._audit("admin.rules.rule.update", {"id": vr.id, "item_type": vr.item_type}, actor)
@@ -345,12 +369,19 @@ class AdminService:
 
     @staticmethod
     def _vr_to_dict(r: ValidationRule) -> dict[str, Any]:
+        import json
+        lc = r.logical_conditions
+        if isinstance(lc, str):
+            try:
+                lc = json.loads(lc)
+            except (json.JSONDecodeError, TypeError):
+                lc = None
         return {
             "id": r.id,
             "item_type": r.item_type,
-            "required_params": r.required_params,
-            "forbidden_params": r.forbidden_params,
-            "optional_params": r.optional_params,
-            "logical_conditions": r.logical_conditions,
+            "required_params": r.required_params if isinstance(r.required_params, list) else __class__._json_lst(r.required_params),
+            "forbidden_params": r.forbidden_params if isinstance(r.forbidden_params, list) else __class__._json_lst(r.forbidden_params),
+            "optional_params": r.optional_params if isinstance(r.optional_params, list) else __class__._json_lst(r.optional_params),
+            "logical_conditions": lc,
             "is_active": r.is_active,
         }
