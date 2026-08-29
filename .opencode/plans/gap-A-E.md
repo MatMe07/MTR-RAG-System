@@ -11,7 +11,7 @@
 
 - Этап 1 (парсинг): реализован HybridParser (9 парсеров + нормализаторы), ParsedQuery. НЕТ: матрицы 28 интентов (INTENT_REQUIREMENTS, INCOMPATIBLE_INTENTS, PARAMETER_VALIDATION_RULES, BLOCKER_FIELDS), filter_params_for_intent, статусов ParsedQuery, диалогового уточнения 1G в графе. DictionaryManager/БД-словари (1J/1K/1L): РЕАЛИЗОВАНО (2026-08-29) — DynamicRules (keywords/synonyms/константы/правила/overrides), group_keywords в парсере, Redis-снапшот, аудит изменений (1K.6), автопредложение (1L.5), тесты test_dictionary_manager (8; полный прогон 208 passed).
 - Этап 1.1 (хранилище): миграции alembic 001–005 и models/sqlalchemy есть; PG не используется рантаймом; Neo4j/Qdrant в коде отсутствуют.
-- Этап 2 (DAL): есть фасад IRepository; НЕТ async-DAL/провайдеров, detail_level, Redis-кеша, data_access_logs, процедур импорта.
+- Этап 2 (DAL): есть фасад IRepository; НЕТ async-DAL/провайдеров, Redis-кеша, data_access_logs, процедур импорта. detail_level (2C): РЕАЛИЗОВАНО (2026-08-29) — инструменты search_catalog/get_component и REST component_service (basic/with_stock/full), тесты test_component_service (5); полный прогон 213 passed.
 - Этап 3 (инструменты): есть registry + 4 аналитических инструмента; НЕТ 13 инструментов-обёрток, JSON-schema валидации, ToolError, tool_execution_logs.
 - Этап 4 (оркестратор): есть детерминированный langgraph; НЕТ изолированного LLM-цикла (call_tool/ask_user/finish, 10 итер/60с), ErrorHandler-retry, ветвления по request.mode.
 - Этап 5 (ответ): есть AnswerBuilder → AgentAnswer; НЕТ структуры по ТЗ 11.2, StatusDeterminator-маппинга, рекомендаций, expert_review_id, lnd_section, LLM-объяснения.
