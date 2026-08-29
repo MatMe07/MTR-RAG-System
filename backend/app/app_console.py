@@ -32,16 +32,19 @@ def run_search(query: str, mode: str) -> SearchResponse:
     executor = AgentExecutor(config)
 
     start = time.time()
-    answer = executor.execute(query)
+    answer = executor.execute(query, mode=mode)
     elapsed = (time.time() - start) * 1000
 
     response = SearchResponse(
         request_id=str(uuid.uuid4()),
-        status="ok",
+        query=query,
+        mode=mode,
+        status=answer.status or ("ok" if not answer.human_review_required else "requires_expert"),
         results=answer.components or [],
         warnings=answer.warnings or [],
-        recommendations=[],
+        recommendations=answer.recommendations or [],
         requires_expert=answer.human_review_required,
+        expert_review_id=answer.expert_review_id,
         execution_time_ms=elapsed,
     )
 
