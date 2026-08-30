@@ -40,6 +40,49 @@ def _medium_match(want: Any, got: Any) -> bool:
     return w == g or w in g or g in w
 
 
+# Ключевые слова среды -> коды участков графа (для которого узел/компонент валиден).
+_MEDIUM_UNITS = [
+    ("h2s", {"gas_h2s", "gas_h2s_co2"}),
+    ("сероводород", {"gas_h2s", "gas_h2s_co2"}),
+    ("co2", {"gas_co2", "gas_h2s_co2"}),
+    ("углекисл", {"gas_co2", "gas_h2s_co2"}),
+    ("природн", {"natural_gas"}),
+    ("коррозион", {"corrosive_medium"}),
+    ("конденсат", {"oil"}),
+    ("нефт", {"oil"}),
+    ("вод", {"process_water"}),
+]
+
+
+def _medium_unit_codes(medium: str) -> set:
+    """Коды участков графа, релевантные упомянутой среде."""
+    m = str(medium or "").lower()
+    codes: set = set()
+    for kw, cs in _MEDIUM_UNITS:
+        if kw in m:
+            codes |= cs
+    return codes
+
+
+def _query_medium(state: AgentState) -> str:
+    """Среда из запроса: фильтры > id участка > текст вопроса."""
+    parsed = state.get("parsed")
+    tf = getattr(parsed, "technical_filters", {}) or {}
+    medium = tf.get("medium")
+    if medium:
+        return str(medium)
+    for uid in (getattr(parsed, "unit_ids", []) or []):
+        u = str(uid).lower()
+        for kw, _ in _MEDIUM_UNITS:
+            if kw in u:
+                return kw
+    q = str(getattr(parsed, "original_query", None) or "").lower()
+    for kw, _ in _MEDIUM_UNITS:
+        if kw in q:
+            return kw
+    return ""
+
+
 def _empty_result() -> Dict[str, Any]:
     return {
         "text": "",
@@ -145,6 +188,24 @@ def catalog_search(state: AgentState, ctx) -> Dict[str, Any]:
         result["components"].append(comp)
         result["sources"].append(_source("catalog", card.get("card_id"), card.get("designation")))
 
+        # Нормативная привязка карточки (ГОСТ из card.sources).
+        std_ids = set()
+        for src in (card.get("sources") or []):
+            if src.get("type") != "standard":
+                continue
+            doc_id = src.get("document_id") or src.get("source_id")
+            if not doc_id or doc_id in std_ids:
+                continue
+            std_ids.add(doc_id)
+            frag = (src.get("source_fragment") or {}).get("text") or src.get("file_name") or doc_id
+            result["sources"].append(_source("standard", doc_id, frag))
+
+        result["sources"].append(_source(
+            "passport_or_tu",
+            card.get("card_id"),
+            "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)",
+        ))
+
     state["candidates"] = candidates
     result["text"] = f"Найдено {len(candidates)} позиций"
     result["duration_ms"] = (time.time() - start) * 1000
@@ -238,20 +299,37 @@ def graph_search(state: AgentState, ctx) -> Dict[str, Any]:
         return result
 
     parsed = state["parsed"]
-    unit_ids = getattr(parsed, "unit_ids", [])
-    component_ids = getattr(parsed, "component_ids", [])
+    graph = ctx.get_graph()
+    object_id = graph.get("object_id") or "gas_pipeline_object.json"
+    object_name = graph.get("name") or "демо-объект"
+
+    # Граф объекта и его проектная схема — всегда релевантные источники.
+    result["sources"].append(_source("object_graph", object_id, object_name))
+    result["sources"].append(
+        _source("project_documentation", object_id, "проектная схема объекта"))
+    result["sources"].append(
+        _source("maintenance_policy", "MTR-TOIR-POLICY-001", "регламент ТОиР (черновой)"))
+
+    unit_ids = list(getattr(parsed, "unit_ids", []) or [])
+    component_ids = list(getattr(parsed, "component_ids", []) or [])
+
+    # Резолв участка по среде, если явных id нет (напр. «участок с H2S»).
+    if not unit_ids and not component_ids:
+        want_codes = _medium_unit_codes(_query_medium(state))
+        for unit in graph.get("units", []):
+            if unit.get("medium_code") in want_codes:
+                unit_ids.append(unit.get("unit_id"))
 
     if not unit_ids and not component_ids:
-        result["text"] = "Не указаны участки или компоненты"
-        result["missing"] = ["unit_ids", "component_ids"]
-        log.info("[graph_search] No unit_ids or component_ids provided")
+        result["text"] = f"Параметры участка/компонента не указаны; доступен граф: {object_name}"
+        result["duration_ms"] = (time.time() - start) * 1000
+        log.info("[graph_search] No unit_ids/component_ids provided; object sources only")
         return result
 
     components = []
     for uid in unit_ids:
         components.extend(ctx.get_components_by_unit(uid))
     for cid in component_ids:
-        graph = ctx.get_graph()
         for comp in graph.get("components", []):
             if comp.get("component_id") == cid:
                 components.append(comp)
@@ -273,6 +351,24 @@ def graph_search(state: AgentState, ctx) -> Dict[str, Any]:
                 "source_id": comp.get("component_id"),
             })
             result["sources"].append(_source("object_graph", comp.get("component_id"), comp.get("unit_id")))
+
+        # Статус применимости в графе требует паспорт изделия.
+        status = comp.get("compatibility_status") or ""
+        if "passport" in status:
+            result["sources"].append(
+                _source("passport", comp.get("component_id"),
+                        "паспорт изделия (статус в графе требует паспорт)"))
+
+    # История эксплуатации для рисковой зоны (агрессивная среда/коррозия).
+    risk_medium = _query_medium(state).lower()
+    risk_ctx = any(k in risk_medium for k in ("h2s", "co2", "коррозион", "риск", "важн"))
+    risk_ctx = risk_ctx or any(
+        k in str(u).lower() for u in unit_ids for k in ("h2s", "co2", "corr", "sour"))
+    if risk_ctx:
+        for uid in unit_ids:
+            result["sources"].append(
+                _source("maintenance_history", uid,
+                        "риски по истории эксплуатации (МВП: расчётно)"))
 
     state["ksm_targets"] = targets
     result["text"] = f"Найдено {len(components)} компонентов"
@@ -297,6 +393,25 @@ def regulation_lookup(state: AgentState, ctx) -> Dict[str, Any]:
 
     for limitation in reg.get("important_limitations", [])[:3]:
         result["warnings"].append(limitation)
+
+    # Профили среды: требования по документам/ЛНД для релевантной среды.
+    medium = _query_medium(state).lower()
+    want_codes = _medium_unit_codes(medium) | ({medium} if medium else set())
+    for profile in reg.get("medium_profiles", []):
+        code = str(profile.get("code") or "").lower()
+        if code not in want_codes and not (medium and medium in code):
+            continue
+        evidence = profile.get("required_evidence") or []
+        if "ТУ" in evidence:
+            result["sources"].append(_source("TU", code, "технические условия на изделие"))
+        if "внутренний ЛНД" in evidence:
+            result["sources"].append(
+                _source("internal_lnd", code, "внутренний ЛНД по применимости к среде"))
+        if "заключение эксперта" in evidence:
+            result["sources"].append(_source("expert_decisions", code, "заключение эксперта по среде"))
+        if "паспорт изделия" in evidence:
+            result["sources"].append(
+                _source("passport", code, "паспорт изделия (требование профиля среды)"))
 
     result["sources"].append(_source("regulation", "regulation_matrix.json"))
     result["text"] = f"Проверено {len(result['warnings'])} нормативов"

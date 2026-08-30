@@ -219,6 +219,11 @@ def maintenance_planner(state: AgentState) -> Dict[str, Any]:
         )
 
     result["warnings"].append("Черновик: периодичность и состав работ утверждает служба ТОиР")
+    result["sources"].append(
+        _source("maintenance_policy", "MTR-TOIR-POLICY-001", "регламент ТОиР (черновой)"))
+    result["sources"].append(
+        _source("maintenance_history", "MTR-TOIR-HISTORY-001",
+                "история эксплуатации участка (МВП: расчётно)"))
     result["review"] = True
     result["text"] = f"Спланировано {len(result['components'])} позиций (комплект: {kit_rows})"
     result["duration_ms"] = (time.time() - start) * 1000
@@ -266,6 +271,9 @@ def duplicate_detector(state: AgentState) -> Dict[str, Any]:
             })
     
     result["warnings"] = ["Совпадение параметров не доказывает дубль — нужен аудит экспертом"]
+    result["sources"].append(
+        _source("expert_decisions", "expert-review-001",
+                "дубли/расхождения каталога решает эксперт"))
     result["review"] = True
     result["text"] = f"Найдено {len(dup_groups)} групп с одинаковыми параметрами"
     result["duration_ms"] = (time.time() - start) * 1000
