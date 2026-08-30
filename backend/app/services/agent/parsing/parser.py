@@ -300,13 +300,18 @@ class QueryParser:
         text_lower = text.lower()
         changes = {}
 
-        # Среда: H2S
-        if re.search(r"(?:перевод|переводят|сменить|смена|заменить).{0,50}(?:на|для)\s+h2s", text_lower):
-            changes["medium"] = "H2S"
-
-        # Среда: CO2
-        if re.search(r"(?:перевод|переводят|сменить|смена).{0,50}(?:на|для)\s+co2", text_lower):
-            changes["medium"] = "CO2"
+        # Смена среды на агрессивную (H2S/CO2 и синонимы): перевод/переход/смена/
+        # замена/изменение среды В ДРУГУЮ не засчитывается без явной агрессивной цели.
+        medium_change = re.search(
+            r"(?:перевод\w*|переход\w*|смен\w*|замен\w*|измен\w*сред[аы])"
+            r".{0,60}(?:на|для)\s+(h2s|сероводород\w*|co2|со2|углекисл\w+)",
+            text_lower,
+        )
+        if medium_change:
+            target = medium_change.group(1).lower()
+            changes["medium"] = (
+                "H2S" if target in ("h2s",) or target.startswith("сероводород") else "CO2"
+            )
 
         # Диаметр: "DN200 вместо DN150"
         diameter_match = re.search(

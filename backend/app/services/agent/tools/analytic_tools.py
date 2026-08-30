@@ -28,9 +28,18 @@ def impact_analyzer(state: AgentState) -> Dict[str, Any]:
     checks = []
     affected = set()
     
-    if changes.get("dn_to") or changes.get("dn_from"):
+    dn_to = changes.get("dn_to")
+    dn_from = changes.get("dn_from")
+    if dn_to or dn_from:
         checks.append("проверить фланцы, прокладки, болты на новый DN")
         affected.update(["фланцы", "прокладки", "болты"])
+        if dn_to and dn_from:
+            checks.append(f"подобрать переход DN{dn_from:.0f}→DN{dn_to:.0f} на границе участка")
+        checks.append("проверить свободный проход (изменение прохода на стыке)")
+        affected.update(["трубы", "переходы", "изменение прохода"])
+        result["warnings"].append(
+            "Изменение DN является изменением узла и не должно утверждаться автоматически."
+        )
     
     if changes.get("medium"):
         checks.append(f"проверить совместимость материалов и уплотнений со средой {changes['medium']}")
@@ -40,7 +49,36 @@ def impact_analyzer(state: AgentState) -> Dict[str, Any]:
         checks.append("проверить класс прочности и сварку по нормативной базе")
         affected.update(["сварные швы"])
     
-    for c in checks[:5]:
+    # Реальные соседние детали из графа (если известен участок/компонент).
+    ctx = state.get("context", {}).get("repository")
+    seen_units = set()
+    for target in state.get("ksm_targets", [])[:20]:
+        comp = target.get("component", {})
+        unit = comp.get("unit_id")
+        if not unit or unit in seen_units:
+            continue
+        seen_units.add(unit)
+        if ctx is None:
+            continue
+        for n in ctx.get_components_by_unit(unit):
+            ncid = n.get("component_id")
+            if str(comp.get("component_id")) == str(ncid):
+                continue
+            nksm = n.get("ksm_code")
+            ncard = ctx.get_card_by_ksm(nksm) if nksm else None
+            result["components"].append({
+                "ksm_code": nksm,
+                "mtr_code": (ncard.get("codes") or {}).get("mtr_code") if ncard else None,
+                "name": (ncard.get("name") if ncard else None) or n.get("designation"),
+                "item_type": n.get("item_type"),
+                "quantity": None,
+                "status": "затронуто (соседний узел)",
+                "detail": f"участок {unit}: проверить при замене",
+                "source_id": ncid,
+            })
+            result["sources"].append(_source("object_graph", ncid, unit))
+    
+    for c in checks[:6]:
         result["components"].append({
             "ksm_code": None,
             "mtr_code": None,
@@ -52,7 +90,7 @@ def impact_analyzer(state: AgentState) -> Dict[str, Any]:
             "source_id": None,
         })
     
-    for name in sorted(affected)[:5]:
+    for name in sorted(affected)[:6]:
         result["components"].append({
             "ksm_code": None,
             "mtr_code": None,
@@ -110,30 +148,79 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
 
 @register_tool("maintenance_planner", "Черновик плана ТОиР")
 def maintenance_planner(state: AgentState) -> Dict[str, Any]:
-    """Черновик плана ТОиР"""
+    """Черновик плана ТОиР: работы по целевым деталям + комплекс соседних узлов.
+
+    Граф участка даёт соседние детали (стыки, через-компоненты: прокладки,
+    фланцы, болты), которые при ТОиР проверяют/меняют комплектом.
+    """
     start = time.time()
     result = _empty_result()
-    
+
+    ctx = state.get("context", {}).get("repository")
     targets = state.get("ksm_targets", [])
-    
-    for target in targets[:20]:
+
+    planned_units: set = set()
+    kit_rows = 0
+
+    for target in targets[:10]:
         comp = target.get("component", {})
         card = target.get("card")
-        
+        unit = comp.get("unit_id")
+
         result["components"].append({
             "ksm_code": comp.get("ksm_code"),
             "mtr_code": (card.get("codes") or {}).get("mtr_code") if card else None,
             "name": card.get("name") if card else comp.get("designation"),
             "item_type": comp.get("item_type"),
             "status": "работа: обслуживание/проверка",
-            "detail": f"участок {comp.get('unit_id')}",
+            "detail": f"участок {unit}",
             "source_id": comp.get("component_id"),
         })
-        result["sources"].append(_source("object_graph", comp.get("component_id"), comp.get("unit_id")))
-    
-    result["warnings"] = ["Черновик: периодичность и состав работ утверждает служба ТОиР"]
+        result["sources"].append(_source("object_graph", comp.get("component_id"), unit))
+
+        # Комплект: соседние детали того же участка из графа.
+        if ctx and unit and unit not in planned_units:
+            planned_units.add(unit)
+            for n in ctx.get_components_by_unit(unit):
+                ncid = n.get("component_id")
+                if str(comp.get("component_id")) == str(ncid):
+                    continue
+                ncard = ctx.get_card_by_ksm(n.get("ksm_code")) if n.get("ksm_code") else None
+                result["components"].append({
+                    "ksm_code": n.get("ksm_code"),
+                    "mtr_code": (ncard.get("codes") or {}).get("mtr_code") if ncard else None,
+                    "name": (ncard.get("name") if ncard else None) or n.get("designation"),
+                    "item_type": n.get("item_type"),
+                    "status": "комплект: проверить при ТОиР",
+                    "detail": f"участок {unit}",
+                    "source_id": ncid,
+                })
+                kit_rows += 1
+                result["sources"].append(_source("object_graph", ncid, unit))
+
+    # Расходники.
+    result["components"].append({
+        "ksm_code": None,
+        "mtr_code": None,
+        "name": "Расходные материалы",
+        "item_type": None,
+        "quantity": None,
+        "status": "комплект",
+        "detail": "прокладки, крепёж, материалы по регламенту ТОиР",
+        "source_id": None,
+    })
+
+    # H2S-эскалация: состав работ при агрессивной среде согласует эксперт.
+    tf = getattr(state["parsed"], "technical_filters", {}) or {}
+    medium = str(tf.get("medium") or "").lower()
+    if "h2s" in medium or "сероводород" in medium:
+        result["warnings"].append(
+            "Среда с H2S: состав работ и материалы согласует служба ТОиР и эксперт по коррозии."
+        )
+
+    result["warnings"].append("Черновик: периодичность и состав работ утверждает служба ТОиР")
     result["review"] = True
-    result["text"] = f"Спланировано {len(result['components'])} работ"
+    result["text"] = f"Спланировано {len(result['components'])} позиций (комплект: {kit_rows})"
     result["duration_ms"] = (time.time() - start) * 1000
     return result
 

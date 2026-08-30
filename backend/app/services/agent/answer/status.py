@@ -165,7 +165,8 @@ def _requires_expert(parsed: Any, intent: Optional[str], components: List[AgentC
     только каталогом.
     """
     if parsed is None or intent not in (
-        "replacement", "maintenance", "object_configuration", "document_search"
+        "replacement", "maintenance", "object_configuration", "document_search",
+        "impact_analysis",
     ):
         return False
     tf = getattr(parsed, "technical_filters", {}) or {}

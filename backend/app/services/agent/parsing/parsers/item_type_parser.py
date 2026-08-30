@@ -10,6 +10,43 @@ from ..dictionaries import ITEM_TYPE_ALIASES
 from ..utils.fuzzy_utils import FuzzyMatcher
 
 
+# Маркеры «добавь деталь» (ADD_COMPONENT): перечисленные ДО маркера типы —
+# это существующие детали схемы/участка, а не фильтр поиска.
+_ADD_MARKERS = (
+    "добавь", "добавить", "добавляем", "дополни", "дополнить",
+    "дополнена", "укомплектуй", "поставить", "поставь", "установи",
+)
+
+
+def narrow_add_target_types(text: str, item_types: List[str]) -> List[str]:
+    """Оставляет только тип(ы) «добавляемой» детали для интента ADD_COMPONENT.
+
+    Пример: «В схеме есть труба, отвод, переход, заглушка и тройник, добавь
+    деталь для перекрытия потока» → item_types=[труба, отвод, ...] (существующие),
+    целевой тип — «задвижка» (контекст «перекрыт»). Типы до маркера «добавь»
+    не должны попадать в фильтр поиска каталога.
+    """
+    if not text or not item_types:
+        return item_types
+
+    low = text.lower()
+    pos = -1
+    for marker in _ADD_MARKERS:
+        idx = low.find(marker)
+        if idx != -1 and (pos == -1 or idx < pos):
+            pos = idx
+
+    if pos == -1:
+        return item_types
+
+    tail_types = ItemTypeParser().parse_all(text[pos:])
+    if not tail_types:
+        return item_types
+
+    target = [t for t in item_types if t in tail_types] or tail_types
+    return target
+
+
 class ItemTypeParser:
     """
     Парсер для определения типов деталей из запроса.

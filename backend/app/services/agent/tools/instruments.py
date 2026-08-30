@@ -213,6 +213,15 @@ def execute_search_by_passport(input: Dict[str, Any], dal: ToolDAL) -> List[Dict
     weights = _passport_weights()
     total_weight = sum(weights[k] for k in extracted if k in weights)
 
+    # Ноль достоверных параметров: по паспорту искать нельзя — это «нет данных»
+    # (score None), а не нулевое «не соответствует» (ложный 0%-скоринг).
+    if not extracted or total_weight == 0:
+        raise ToolError(
+            ToolErrorCode.NOT_FOUND,
+            f"Паспорт {document_id}: параметры не извлечены или недостоверны",
+            {"document_id": document_id},
+        )
+
     agg: Dict[str, Dict[str, Any]] = {}
     for field, meta in extracted.items():
         search_field = PASSPORT_FIELD_TO_SEARCH.get(field)

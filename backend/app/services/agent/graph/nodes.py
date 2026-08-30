@@ -121,70 +121,67 @@ def catalog_node(state: AgentState) -> Dict[str, Any]:
     ctx = get_repository()
     result = _guarded_tool("search_catalog", catalog_search, state, ctx, required=True)
     result["_tool_name"] = "catalog_search"
-    _merge_result(state, result)
-    return {"candidates": state.get("candidates", [])}
+    patch = _merge_result(state, result)
+    return {**patch, "candidates": state.get("candidates", [])}
 
 
 def stock_node(state: AgentState) -> Dict[str, Any]:
     ctx = get_repository()
     result = _guarded_tool("check_stock", stock_query, state, ctx, required=True)
     result["_tool_name"] = "stock_query"
-    _merge_result(state, result)
-    return {"stock_rows": state.get("stock_rows", [])}
+    patch = _merge_result(state, result)
+    return {**patch, "stock_rows": state.get("stock_rows", [])}
 
 
 def rules_node(state: AgentState) -> Dict[str, Any]:
     result = _guarded_tool("rules_engine", lambda s, c: rules_engine(s), state)
     result["_tool_name"] = "rules_engine"
-    _merge_result(state, result)
-    return {"candidates": state.get("candidates", [])}
+    patch = _merge_result(state, result)
+    return {**patch, "candidates": state.get("candidates", [])}
 
 
 def graph_node(state: AgentState) -> Dict[str, Any]:
     ctx = get_repository()
+    _set_repository(state)
     result = _guarded_tool("graph_search", graph_search, state, ctx)
     result["_tool_name"] = "graph_search"
-    _merge_result(state, result)
-    return {"ksm_targets": state.get("ksm_targets", [])}
+    patch = _merge_result(state, result)
+    return {**patch, "ksm_targets": state.get("ksm_targets", [])}
 
 
 def impact_node(state: AgentState) -> Dict[str, Any]:
+    _set_repository(state)
     result = _guarded_tool("impact_analyzer", lambda s, c: impact_analyzer(s), state)
     result["_tool_name"] = "impact_analyzer"
-    _merge_result(state, result)
-    return {"warnings": state.get("warnings", [])}
+    return _merge_result(state, result)
 
 
 def regulation_node(state: AgentState) -> Dict[str, Any]:
     ctx = get_repository()
     result = _guarded_tool("regulation_lookup", regulation_lookup, state, ctx)
     result["_tool_name"] = "regulation_lookup"
-    _merge_result(state, result)
-    return {"warnings": state.get("warnings", [])}
+    return _merge_result(state, result)
 
 
 def inventory_node(state: AgentState) -> Dict[str, Any]:
     _set_repository(state)
     result = _guarded_tool("inventory_calculator", lambda s, c: inventory_calculator(s), state)
     result["_tool_name"] = "inventory_calculator"
-    _merge_result(state, result)
-    return {"components": state.get("components", [])}
+    return _merge_result(state, result)
 
 
 def maintenance_node(state: AgentState) -> Dict[str, Any]:
     _set_repository(state)
     result = _guarded_tool("maintenance_planner", lambda s, c: maintenance_planner(s), state)
     result["_tool_name"] = "maintenance_planner"
-    _merge_result(state, result)
-    return {"components": state.get("components", [])}
+    return _merge_result(state, result)
 
 
 def duplicates_node(state: AgentState) -> Dict[str, Any]:
     _set_repository(state)
     result = _guarded_tool("duplicate_detector", lambda s, c: duplicate_detector(s), state)
     result["_tool_name"] = "duplicate_detector"
-    _merge_result(state, result)
-    return {"components": state.get("components", [])}
+    return _merge_result(state, result)
 
 
 def llm_enhance_node(state: AgentState) -> Dict[str, Any]:
@@ -269,7 +266,17 @@ def _dedup_components(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return list(seen.values())
 
 
-def _merge_result(state: AgentState, result: Dict[str, Any]) -> None:
+def _merge_result(state: AgentState, result: Dict[str, Any]) -> Dict[str, Any]:
+    """Сливает результат инструмента в state (в т.ч. review → review_required).
+
+    Возвращает патч накопленных каналов. LangGraph применяет к state только
+    то, что узел возвращает из функции, поэтому узлы обязаны отдавать все
+    затронутые каналы (иначе in-place-мутации теряются между супершагами).
+
+    Канал context сознательно НЕ возвращаем: он мутируется in-place
+    (_set_repository кладёт туда репозиторий), а несериализуемый объект
+    утекал бы в pull-райты чекпоинтера.
+    """
     if result.get("components"):
         state.setdefault("components", [])
         state["components"].extend(result["components"])
@@ -283,9 +290,17 @@ def _merge_result(state: AgentState, result: Dict[str, Any]) -> None:
     if result.get("review"):
         state["review_required"] = True
     if result.get("text"):
-        state["context"]["last_text"] = result["text"]
+        state.setdefault("context", {})["last_text"] = result["text"]
     if result.get("_tool_name"):
         state.setdefault("context", {}).setdefault("tools_used", []).append(result["_tool_name"])
+
+    return {
+        "components": state.get("components", []),
+        "sources": state.get("sources", []),
+        "warnings": state.get("warnings", []),
+        "missing": state.get("missing", []),
+        "review_required": state.get("review_required", False),
+    }
 
 
 def _resolve_intent(parsed) -> str:

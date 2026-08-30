@@ -1,6 +1,7 @@
 # agent/tools/core_tools.py
 
 import logging
+import re
 from typing import Any, Dict, List, Optional
 import time
 
@@ -9,6 +10,15 @@ from ..core.state import AgentState
 from ..answer.status import evaluate_candidate, candidate_tz_status
 
 log = logging.getLogger("mtr.agent.tools")
+
+_CODE_RE = re.compile(r"\b(MTR|KSM)-[A-Z0-9][A-Z0-9-]*", re.IGNORECASE)
+
+
+def _parsed_codes(parsed: Any) -> List[str]:
+    """MTR/KSM-коды, упомянутые в запросе (FIND_BY_CODE)."""
+    if parsed is None:
+        return []
+    return [m.group(0).upper() for m in _CODE_RE.finditer(parsed.original_query or "")]
 
 
 def _matching_tolerances() -> Dict[str, float]:
@@ -89,13 +99,36 @@ def catalog_search(state: AgentState, ctx) -> Dict[str, Any]:
     parsed = state["parsed"]
     matches = []
 
+    # ADD_COMPONENT: перечисленные до «добавь/поставь/установи» типы — уже
+    # существующие детали схемы, а не фильтр каталога. Сужаем до целевого типа.
+    if "ADD_COMPONENT" in (getattr(parsed, "intents", None) or []):
+        from ..parsing.parsers.item_type_parser import narrow_add_target_types
+
+        narrowed = narrow_add_target_types(
+            getattr(parsed, "original_query", "") or "",
+            getattr(parsed, "item_types", []) or [],
+        )
+        if narrowed:
+            parsed.item_types = narrowed
+            log.info("[catalog_search] ADD_COMPONENT target types: %s", narrowed)
+
+    # Точечный поиск по MTR/KSM-коду: код в запросе — фильтр по коду карточки,
+    # а не по геометрическим параметрам (иначе FIND_BY_CODE возвращает весь тип).
+    codes = _parsed_codes(parsed)
+
     catalog = ctx.get_catalog()
     log.info("[catalog_search] Loaded %d cards from repository", len(catalog))
 
-    for card in catalog:
-        if _matches_filters(card, parsed):
-            score = _match_score(card, parsed)
-            matches.append({"card": card, "score": score})
+    if codes:
+        for card in catalog:
+            c = (card.get("codes") or {})
+            if any(code in (str(c.get("mtr_code") or ""), str(c.get("ksm_code") or "")) for code in codes):
+                matches.append({"card": card, "score": 1.0})
+    else:
+        for card in catalog:
+            if _matches_filters(card, parsed):
+                score = _match_score(card, parsed)
+                matches.append({"card": card, "score": score})
 
     matches.sort(
         key=lambda x: (x["score"] is not None, x["score"] if x["score"] is not None else 0.0),
@@ -309,7 +342,7 @@ def _matches_filters(card: Dict, parsed: Any) -> bool:
     return True
 
 
-def _match_score(card: Dict, parsed: Any) -> float:
+def _match_score(card: Dict, parsed: Any) -> Optional[float]:
     props = card.get("properties", {})
     tf = getattr(parsed, "technical_filters", {}) or {}
 
@@ -363,6 +396,16 @@ def _match_score(card: Dict, parsed: Any) -> float:
         if card.get("item_type") in item_types:
             hits += 1
 
-    if checks == 0:
-        return None  # нет параметров для сравнения — скоринг невозможен
+    # Нет ни одного параметрического фильтра (только тип, либо вообще ничего):
+    # скоринг невозможен. Совпадение одного лишь типа не должно давать 100%
+    # «соответствует» — иначе план/комплект без параметров светится матчем.
+    param_checks = sum(
+        1 for key in ("dn", "angle", "wall_thickness", "pn")
+        if tf.get(key) is not None
+    ) + sum(
+        1 for key in ("medium", "steel_grade", "material")
+        if tf.get(key)
+    )
+    if param_checks == 0:
+        return None
     return hits / checks if checks > 0 else 0.5
