@@ -1,6 +1,6 @@
 # agent/graph/nodes.py
 
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, List
 import time
 import logging
 
@@ -222,9 +222,58 @@ def answer_node(state: AgentState) -> Dict[str, Any]:
     return {"answer": answer}
 
 
+def _component_key(row: Dict[str, Any]) -> Optional[Any]:
+    """Ключ агрегации: mtr_code/ksm_code либо (name, item_type, status) для бескодовых."""
+    for code_key in ("mtr_code", "ksm_code"):
+        code = row.get(code_key)
+        if code:
+            return ("code", code)
+    return ("row", row.get("name"), row.get("item_type"), row.get("status"))
+
+
+def _merge_rows(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
+    """Слияние двух строк-компонентов одной детали (каталог + правила + склад)."""
+    for k in ("mtr_code", "ksm_code", "name", "item_type"):
+        if not a.get(k) and b.get(k):
+            a[k] = b[k]
+    if b.get("match_score") is not None and a.get("match_score") is None:
+        for k in ("match_score", "match_percent", "matched_params",
+                  "mismatched_params", "missing_params", "tz_status"):
+            if b.get(k) is not None:
+                a[k] = b[k]
+        if b.get("status"):
+            a["status"] = b["status"]
+    qty_b = b.get("quantity")
+    if qty_b not in (None, 0) and a.get("quantity") in (None, 0):
+        a["quantity"] = qty_b
+    if a.get("status") != b.get("status") and b.get("status"):
+        extra = str(b["status"])
+        detail = str(a.get("detail") or "")
+        if extra not in detail:
+            join = "; " if detail else ""
+            a["detail"] = f"{detail}{join}{extra}"
+    if not a.get("source_id") and b.get("source_id"):
+        a["source_id"] = b["source_id"]
+    return a
+
+
+def _dedup_components(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Схлопывает дубли одной позиции (каталог+правила+склад = одна запись)."""
+    seen: Dict[Any, Dict[str, Any]] = {}
+    for row in rows:
+        key = _component_key(row)
+        if key in seen:
+            _merge_rows(seen[key], row)
+        else:
+            seen[key] = row
+    return list(seen.values())
+
+
 def _merge_result(state: AgentState, result: Dict[str, Any]) -> None:
     if result.get("components"):
-        state.setdefault("components", []).extend(result["components"])
+        state.setdefault("components", [])
+        state["components"].extend(result["components"])
+        state["components"] = _dedup_components(state["components"])
     if result.get("sources"):
         state.setdefault("sources", []).extend(result["sources"])
     if result.get("warnings"):
@@ -240,28 +289,6 @@ def _merge_result(state: AgentState, result: Dict[str, Any]) -> None:
 
 
 def _resolve_intent(parsed) -> str:
-    operations = getattr(parsed, "operations", [])
-    query = getattr(parsed, "original_query", "").lower()
-    
-    if "дубл" in query:
-        return "duplicates"
-    if getattr(parsed, "proposed_changes", {}):
-        return "impact_analysis"
-    
-    intent_map = {
-        "replace": "replacement",
-        "repair": "maintenance",
-        "inventory": "inventory",
-        "calculate": "inventory",
-        "plan": "maintenance",
-        "impact": "impact_analysis",
-        "explain": "equipment_guidance",
-        "document": "document_search",
-        "assemble": "object_configuration",
-    }
-    
-    for op in operations:
-        if op in intent_map:
-            return intent_map[op]
-    
-    return "search"
+    from ..intent.resolver import resolve_top_level_intent
+
+    return resolve_top_level_intent(parsed)

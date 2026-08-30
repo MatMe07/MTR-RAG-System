@@ -39,29 +39,22 @@ def normalize_medium(value: str) -> str:
 
 def normalize_pn_from_text(value: str) -> float:
     """
-    PN16 → 1.6 МПа
-    PN40 → 4.0 МПа
-    Ру16 → 1.6 МПа
-    РУ40 → 4.0 МПа
-    16 → 1.6 (если явно не указано PN/Ру)
+    Канон PN = «PN-класс» (число): PN16 → 16, PN40 → 40, Ру16 → 16,
+    РУ40 → 40. Рабочее давление в МПа хранится отдельно (working_pressure_mpa = PN / 10).
+    16 (без префикса) → 16.
     """
     value = value.upper().replace(" ", "")
     
-    # PN40 → 4.0
+    # PN40 → 40
     if value.startswith("PN"):
-        num = float(value[2:])
-        return num / 10.0
+        return float(value[2:])
     
-    # РУ40 → 4.0
+    # РУ40 → 40
     if value.startswith("РУ"):
-        num = float(value[2:])
-        return num / 10.0
+        return float(value[2:])
     
-    # Если просто число > 10 — считаем PN
+    # Если просто число — считаем PN-классом
     try:
-        num = float(value)
-        if num >= 10:
-            return num / 10.0
-        return num
+        return float(value)
     except ValueError:
         return None

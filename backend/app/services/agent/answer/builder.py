@@ -17,6 +17,11 @@ from .status import (
 class AnswerBuilder:
     """Сборщик структурированного ответа"""
 
+    # Сколько топ-кандидатов со скорингом показывать в компонентах ответа
+    CANDIDATE_TOP_N = 10
+    # Лимит бескодовых (граф/склад/план) строк
+    AUX_MAX = 25
+
     def build(
         self,
         parsed: ParsedQuery,
@@ -46,6 +51,8 @@ class AnswerBuilder:
             warnings,
             errors=result.get("errors"),
             has_request=_request_present(parsed),
+            parsed=parsed,
+            intent=intent,
         )
         review = bool(result.get("review")) or status == STATUS_EXPERT
         recommendations = build_recommendations(status, warnings, missing) + rule_recommendations
@@ -76,6 +83,19 @@ class AnswerBuilder:
         )
 
     def _to_components(self, rows: List[Dict]) -> List[AgentComponent]:
+        # Кандидаты со скорингом — топ-N по проценту совпадения;
+        # бескодовые (состав участка, склад, план) — как есть.
+        scored = [
+            r for r in rows
+            if isinstance(r, dict) and r.get("match_score") is not None
+        ]
+        aux = [
+            r for r in rows
+            if isinstance(r, dict) and r.get("match_score") is None
+        ]
+        scored.sort(key=lambda r: r.get("match_percent") or 0.0, reverse=True)
+        rows = scored[: self.CANDIDATE_TOP_N] + aux[: self.AUX_MAX]
+
         return [
             AgentComponent(
                 mtr_code=r.get("mtr_code"),
@@ -94,7 +114,6 @@ class AnswerBuilder:
                 missing_params=list(r.get("missing_params") or []),
             )
             for r in rows
-            if isinstance(r, dict)
         ]
     
     def _to_sources(self, rows: List[Dict]) -> List[AgentSource]:

@@ -21,6 +21,15 @@ def _matching_tolerances() -> Dict[str, float]:
         return {"dn": 0.1, "angle": 0.0, "wall_thickness": 0.15, "default": 0.1}
 
 
+def _medium_match(want: Any, got: Any) -> bool:
+    """Совпадение среды: подстрока в обе стороны (H2S в 'газ с H2S и CO2')."""
+    w = str(want).strip().lower()
+    g = str(got).strip().lower()
+    if not w or not g:
+        return False
+    return w == g or w in g or g in w
+
+
 def _empty_result() -> Dict[str, Any]:
     return {
         "text": "",
@@ -55,13 +64,14 @@ def _card_component(card: Dict, score: float = 0.0, reason: str = "") -> Dict[st
 def _enrich_component(comp: Dict[str, Any], card: Dict, score: float, parsed: Any) -> Dict[str, Any]:
     """Добавляет ТЗ-метаданные кандидата (ЭТАП 5)."""
     matched, mismatched, missing = evaluate_candidate(card, parsed)
-    percent = round(score * 100)
-    comp["match_score"] = score
-    comp["match_percent"] = percent
+    if score is not None:
+        percent = round(score * 100)
+        comp["match_score"] = score
+        comp["match_percent"] = percent
+        comp["tz_status"] = candidate_tz_status(percent)
     comp["matched_params"] = matched
     comp["mismatched_params"] = mismatched
     comp["missing_params"] = missing
-    comp["tz_status"] = candidate_tz_status(percent)
     return comp
 
 
@@ -87,7 +97,10 @@ def catalog_search(state: AgentState, ctx) -> Dict[str, Any]:
             score = _match_score(card, parsed)
             matches.append({"card": card, "score": score})
 
-    matches.sort(key=lambda x: x["score"], reverse=True)
+    matches.sort(
+        key=lambda x: (x["score"] is not None, x["score"] if x["score"] is not None else 0.0),
+        reverse=True,
+    )
     candidates = matches[:40]
 
     for m in candidates:
@@ -284,6 +297,11 @@ def _matches_filters(card: Dict, parsed: Any) -> bool:
         if abs(num("wall_thickness") - tf["wall_thickness"]) > abs(tf["wall_thickness"]) * tol("wall_thickness"):
             return False
 
+    # PN: канон = PN-класс (число). Строгий фильтр: несовпадение PN отсекает карточку.
+    if tf.get("pn") and num("pn"):
+        if abs(num("pn") - tf["pn"]) > abs(tf["pn"]) * tol("pn"):
+            return False
+
     item_types = getattr(parsed, "item_types", [])
     if item_types and card.get("item_type") not in item_types:
         return False
@@ -298,6 +316,12 @@ def _match_score(card: Dict, parsed: Any) -> float:
     def num(key):
         v = (props.get(key) or {}).get("value")
         return v if isinstance(v, (int, float)) else None
+
+    def text_val(key):
+        v = props.get(key)
+        if isinstance(v, dict):
+            v = v.get("value")
+        return v
 
     hits = 0.0
     checks = 0.0
@@ -314,10 +338,31 @@ def _match_score(card: Dict, parsed: Any) -> float:
             if got is not None and abs(got - want) <= max(abs(want), 1e-9) * tol:
                 hits += 1
 
+    # Текстовые параметры: среда и марка стали влияют на рейтинг (H2S-кандидаты выше).
+    if tf.get("medium"):
+        checks += 1
+        got = text_val("medium")
+        if got is not None and _medium_match(tf["medium"], got):
+            hits += 1
+
+    if tf.get("steel_grade"):
+        checks += 1
+        got = text_val("steel_grade")
+        if got is not None and str(got).strip().upper() == str(tf["steel_grade"]).strip().upper():
+            hits += 1
+
+    if tf.get("material"):
+        checks += 1
+        got = text_val("material")
+        if got is not None and str(got).strip().lower() == str(tf["material"]).strip().lower():
+            hits += 1
+
     item_types = getattr(parsed, "item_types", [])
     if item_types:
         checks += 1
         if card.get("item_type") in item_types:
             hits += 1
 
+    if checks == 0:
+        return None  # нет параметров для сравнения — скоринг невозможен
     return hits / checks if checks > 0 else 0.5

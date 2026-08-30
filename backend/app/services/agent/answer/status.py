@@ -134,6 +134,10 @@ def evaluate_candidate(
 
         if key == "item_type":
             ok = str(got).strip().lower() == str(want).strip().lower()
+        elif key == "medium":
+            w = str(want).strip().lower()
+            g = str(got).strip().lower()
+            ok = w and g and (w == g or w in g or g in w)
         elif isinstance(got, (int, float)):
             if isinstance(want, (int, float)):
                 tol = _numeric_tolerance()
@@ -153,11 +157,34 @@ def _is_critical_warning(warning: str) -> bool:
     return any(marker in low for marker in _CRITICAL_WARNING_MARKERS)
 
 
+def _requires_expert(parsed: Any, intent: Optional[str], components: List[AgentComponent]) -> bool:
+    """Эскалация: агрессивная среда + операционный интент → требует эксперта.
+
+    Агрессивная среда (H2S/CO2/коррозионно-активная) в сценариях замены,
+    ТОиР, конфигурации объекта или поиска документов не может быть подтверждена
+    только каталогом.
+    """
+    if parsed is None or intent not in (
+        "replacement", "maintenance", "object_configuration", "document_search"
+    ):
+        return False
+    tf = getattr(parsed, "technical_filters", {}) or {}
+    medium = str(tf.get("medium") or "").lower()
+    risky = (
+        "h2s" in medium or "сероводород" in medium
+        or "co2" in medium or "углекисл" in medium
+        or "коррози" in medium
+    )
+    return risky
+
+
 def determine_status(
     components: List[AgentComponent],
     warnings: List[str],
     errors: Optional[List[Any]] = None,
     has_request: bool = True,
+    parsed: Any = None,
+    intent: Optional[str] = None,
 ) -> str:
     """Последовательность проверок по 5A.2."""
     for error in errors or []:
@@ -172,10 +199,18 @@ def determine_status(
     if not components:
         return STATUS_NOT_FOUND if has_request else STATUS_UNCLEAR
 
-    best = max((c.match_score or 0.0) for c in components)
-    status = candidate_tz_status(best * 100)
+    scored = [c for c in components if c.match_score is not None]
+    if scored:
+        best = max(c.match_score for c in scored)
+        status = candidate_tz_status(best * 100)
+    else:
+        # Без скоринга (граф/остатки/план) «не соответствует» не выводим.
+        status = STATUS_UNCLEAR
 
     if any(_is_critical_warning(w) for w in warnings):
+        return STATUS_EXPERT
+
+    if _requires_expert(parsed, intent, components):
         return STATUS_EXPERT
 
     return status

@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-08-29T19:45:02.550201+00:00",
+  "generated_at": "2026-08-30T17:08:58.534346+00:00",
   "mode": "off",
   "strict": false,
   "min_tools_coverage": 20,
   "summary": {
     "total": 40,
-    "tools_ok": 32,
+    "tools_ok": 28,
     "sources_ok": 1,
-    "warnings_ok": 27,
+    "warnings_ok": 31,
     "review_pass": 0
   },
   "cases": [
@@ -92,7 +92,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -120,7 +120,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -239,18 +239,17 @@
       "case_id": "AQ009",
       "category": "inventory",
       "question": "На следующей неделе ремонт участка с H2S, проверь хватает ли труб, отводов, переходов, задвижек, заглушек и тройников по две штуки",
-      "intent": "maintenance",
+      "intent": "inventory",
       "tools": [
-        "graph_search",
-        "maintenance_planner",
         "catalog_search",
         "stock_query",
+        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
       "tools_ok": false,
       "missing_tools": [
-        "inventory_calculator"
+        "graph_search"
       ],
       "sources_ok": false,
       "missing_sources": [
@@ -292,23 +291,24 @@
       "case_id": "AQ011",
       "category": "inventory",
       "question": "Выбери десять самых важных позиций для пополнения склада перед ремонтом газопровода с H2S",
-      "intent": "maintenance",
+      "intent": "inventory",
       "tools": [
-        "graph_search",
-        "maintenance_planner",
         "catalog_search",
         "stock_query",
+        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "graph_search"
+      ],
       "sources_ok": false,
       "missing_sources": [
         "maintenance_policy",
         "object_graph"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
@@ -319,19 +319,17 @@
       "case_id": "AQ012",
       "category": "inventory",
       "question": "Посчитай запас деталей для ремонта трех таких же участков как UNIT-SYN-GAS-001, один полный комплект должен всегда оставаться на складе",
-      "intent": "maintenance",
+      "intent": "inventory",
       "tools": [
         "graph_search",
-        "maintenance_planner",
         "catalog_search",
         "stock_query",
+        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "inventory_calculator"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "maintenance_policy"
@@ -347,11 +345,12 @@
       "case_id": "AQ013",
       "category": "inventory",
       "question": "Найди на складе одинаковые по параметрам детали с разными кодами КСМ и покажи возможные дубли",
-      "intent": "duplicates",
+      "intent": "inventory",
       "tools": [
         "catalog_search",
         "duplicate_detector",
         "stock_query",
+        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
@@ -427,6 +426,34 @@
       "case_id": "AQ016",
       "category": "toir",
       "question": "Составь план обслуживания участка UNIT-SYN-H2S-001 на следующий месяц и перечисли нужные запчасти",
+      "intent": "maintenance",
+      "tools": [
+        "graph_search",
+        "maintenance_planner",
+        "catalog_search",
+        "stock_query",
+        "rules_engine",
+        "regulation_lookup"
+      ],
+      "tools_ok": true,
+      "missing_tools": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "maintenance_history",
+        "maintenance_policy",
+        "passport"
+      ],
+      "warning_ok": true,
+      "review_pass": false,
+      "review_verdict": null,
+      "review_issues": [],
+      "human_review_required": true,
+      "answer_non_empty": true
+    },
+    {
+      "case_id": "AQ017",
+      "category": "toir",
+      "question": "На участке с H2S отказала задвижка COMP-SYN-010, распиши что проверить до снятия и что подготовить для замены",
       "intent": "inventory",
       "tools": [
         "graph_search",
@@ -442,34 +469,6 @@
       ],
       "sources_ok": false,
       "missing_sources": [
-        "maintenance_history",
-        "maintenance_policy",
-        "passport"
-      ],
-      "warning_ok": false,
-      "review_pass": false,
-      "review_verdict": null,
-      "review_issues": [],
-      "human_review_required": true,
-      "answer_non_empty": true
-    },
-    {
-      "case_id": "AQ017",
-      "category": "toir",
-      "question": "На участке с H2S отказала задвижка COMP-SYN-010, распиши что проверить до снятия и что подготовить для замены",
-      "intent": "maintenance",
-      "tools": [
-        "graph_search",
-        "maintenance_planner",
-        "catalog_search",
-        "stock_query",
-        "rules_engine",
-        "regulation_lookup"
-      ],
-      "tools_ok": true,
-      "missing_tools": [],
-      "sources_ok": false,
-      "missing_sources": [
         "maintenance_policy",
         "passport_or_tu"
       ],
@@ -477,24 +476,26 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ018",
       "category": "toir",
       "question": "На трубе 108 на 6 участка с H2S нашли утечку, предложи порядок ремонта и проверь наличие материалов",
-      "intent": "maintenance",
+      "intent": "inventory",
       "tools": [
-        "graph_search",
-        "maintenance_planner",
         "catalog_search",
         "stock_query",
+        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "graph_search",
+        "maintenance_planner"
+      ],
       "sources_ok": false,
       "missing_sources": [
         "maintenance_policy",
@@ -512,13 +513,12 @@
       "case_id": "AQ019",
       "category": "toir",
       "question": "Подготовь список деталей и документов для плановой замены задвижки DN200 PN63 на UNIT-SYN-GAS-001",
-      "intent": "replacement",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
-        "impact_analyzer",
-        "maintenance_planner",
         "rules_engine",
         "regulation_lookup"
       ],
@@ -560,7 +560,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -615,9 +615,11 @@
       "case_id": "AQ023",
       "category": "equipment_guidance",
       "question": "Что нужно поставить перед задвижкой DN200 PN63 на газопроводе и какие детали проверить рядом с ней",
-      "intent": "search",
+      "intent": "inventory",
       "tools": [
         "catalog_search",
+        "stock_query",
+        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
@@ -669,13 +671,10 @@
       "case_id": "AQ025",
       "category": "equipment_guidance",
       "question": "Объясни параметры трубы KSM-SYN-REG-000004 и скажи какие из них важнее всего при подборе замены",
-      "intent": "replacement",
+      "intent": "equipment_guidance",
       "tools": [
-        "graph_search",
         "catalog_search",
         "stock_query",
-        "impact_analyzer",
-        "maintenance_planner",
         "rules_engine",
         "regulation_lookup"
       ],
@@ -716,7 +715,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -747,13 +746,11 @@
       "case_id": "AQ028",
       "category": "object_configuration",
       "question": "В схеме есть труба, отвод, переход, заглушка и тройник, добавь деталь для перекрытия потока и подбери ее параметры",
-      "intent": "replacement",
+      "intent": "object_configuration",
       "tools": [
         "graph_search",
         "catalog_search",
         "stock_query",
-        "impact_analyzer",
-        "maintenance_planner",
         "rules_engine",
         "regulation_lookup"
       ],
@@ -761,9 +758,10 @@
       "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "object_graph"
+        "object_graph",
+        "project_documentation"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
@@ -774,18 +772,19 @@
       "case_id": "AQ029",
       "category": "object_configuration",
       "question": "Проверь весь участок UNIT-SYN-CO2-001 и покажи какие детали подходят по размерам, но еще не подтверждены для CO2",
-      "intent": "search",
+      "intent": "inventory",
       "tools": [
-        "graph_search"
-      ],
-      "tools_ok": false,
-      "missing_tools": [
+        "graph_search",
         "catalog_search",
-        "rules_engine"
+        "stock_query",
+        "inventory_calculator",
+        "rules_engine",
+        "regulation_lookup"
       ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
-        "catalog",
         "passport_or_tu"
       ],
       "warning_ok": false,
@@ -852,17 +851,19 @@
       "case_id": "AQ032",
       "category": "composite_replacement",
       "question": "Поврежден переход COMP-SYN-009 и часть соседней трубы, предложи единый комплект для ремонта",
-      "intent": "maintenance",
+      "intent": "inventory",
       "tools": [
         "graph_search",
-        "maintenance_planner",
         "catalog_search",
         "stock_query",
+        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "maintenance_planner"
+      ],
       "sources_ok": false,
       "missing_sources": [
         "passport_or_tu"
@@ -878,17 +879,19 @@
       "case_id": "AQ033",
       "category": "composite_replacement",
       "question": "Заглушка COMP-SYN-011 повреждена, подготовь список деталей и проверок для безопасной замены",
-      "intent": "maintenance",
+      "intent": "inventory",
       "tools": [
         "graph_search",
-        "maintenance_planner",
         "catalog_search",
         "stock_query",
+        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "maintenance_planner"
+      ],
       "sources_ok": false,
       "missing_sources": [
         "maintenance_policy"
@@ -904,17 +907,19 @@
       "case_id": "AQ034",
       "category": "composite_replacement",
       "question": "Нужно заменить шесть метров трубы 108 на 6 на участке H2S, собери комплект ремонта со склада",
-      "intent": "maintenance",
+      "intent": "inventory",
       "tools": [
-        "graph_search",
-        "maintenance_planner",
         "catalog_search",
         "stock_query",
+        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "graph_search",
+        "maintenance_planner"
+      ],
       "sources_ok": false,
       "missing_sources": [
         "object_graph",
@@ -984,16 +989,19 @@
       "case_id": "AQ037",
       "category": "impact_analysis",
       "question": "Участок UNIT-SYN-GAS-001 переводят с природного газа на H2S, перечисли что нужно перепроверить",
-      "intent": "impact_analysis",
+      "intent": "inventory",
       "tools": [
         "graph_search",
         "catalog_search",
-        "impact_analyzer",
+        "stock_query",
+        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "impact_analyzer"
+      ],
       "sources_ok": false,
       "missing_sources": [
         "internal_lnd",
@@ -1056,15 +1064,16 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
       "case_id": "AQ040",
       "category": "document_search",
       "question": "Покажи откуда взяты ГОСТы для отвода KSM-SYN-REG-000242 и что каждый из них подтверждает",
-      "intent": "search",
+      "intent": "document_search",
       "tools": [
+        "graph_search",
         "catalog_search",
         "rules_engine",
         "regulation_lookup"
@@ -1075,11 +1084,11 @@
       "missing_sources": [
         "standard"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     }
   ]

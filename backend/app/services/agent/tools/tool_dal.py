@@ -88,7 +88,10 @@ class ToolDAL:
             if not self._extra_filters_ok(card, params):
                 continue
             matches.append({"card": card, "score": _match_score(card, parsed)})
-        matches.sort(key=lambda x: x["score"], reverse=True)
+        matches.sort(
+            key=lambda x: (x["score"] is not None, x["score"] if x["score"] is not None else 0.0),
+            reverse=True,
+        )
         return matches
 
     def get_component(self, identifier: str) -> Optional[Dict[str, Any]]:

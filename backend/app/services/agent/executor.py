@@ -178,31 +178,9 @@ class AgentExecutor:
             log.warning("[Executor] Intent enrichment failed: %s", e)
 
     def _resolve_intent(self, parsed: ParsedQuery) -> str:
-        operations = getattr(parsed, "operations", [])
-        query = getattr(parsed, "original_query", "").lower()
+        from .intent.resolver import resolve_top_level_intent
 
-        if "дубл" in query:
-            return "duplicates"
-        if getattr(parsed, "proposed_changes", {}):
-            return "impact_analysis"
-
-        intent_map = {
-            "replace": "replacement",
-            "repair": "maintenance",
-            "inventory": "inventory",
-            "calculate": "inventory",
-            "plan": "maintenance",
-            "impact": "impact_analysis",
-            "explain": "equipment_guidance",
-            "document": "document_search",
-            "assemble": "object_configuration",
-        }
-
-        for op in operations:
-            if op in intent_map:
-                return intent_map[op]
-
-        return "search"
+        return resolve_top_level_intent(parsed)
 
     def _build_answer_from_result(self, parsed: ParsedQuery, result: Dict) -> AgentAnswer:
         intent = result.get("context", {}).get("intent", "search")

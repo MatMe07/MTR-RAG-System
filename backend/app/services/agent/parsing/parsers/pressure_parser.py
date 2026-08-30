@@ -27,7 +27,7 @@ class PressureParser:
     - Рабочее давление в МПа
     - Испытательное давление
     - Различные форматы (PN40, Ру16, давление 4.0 МПа)
-    - Автоматическая нормализация (PN40 -> 4.0 МПа)
+    - Канон PN = «PN-класс» (число): PN40 -> 40; рабочее давление = PN / 10.
     """
     
     # Паттерны для извлечения PN (номинальное давление)
@@ -163,10 +163,10 @@ class PressureParser:
         # 9. Сохраняем raw_value
         if result.get("pn") is not None:
             # Проверяем, был ли PN указан явно
-            if re.search(r'\b(?:PN|Ру)\s*' + str(int(result["pn"] * 10)), text, re.IGNORECASE):
-                result["raw_value"] = f"PN{int(result['pn'] * 10)}"
+            if re.search(r'\b(?:PN|Ру)\s*' + str(int(result["pn"])), text, re.IGNORECASE):
+                result["raw_value"] = f"PN{int(result['pn'])}"
             else:
-                # Если PN был вычислен из МПа, не сохраняем raw_value
+                # Если PN был вычислен из контекста, не сохраняем raw_value
                 result["raw_value"] = None
         
         return result
@@ -262,8 +262,8 @@ class PressureParser:
             return result
         
         # Проверяем, есть ли в тексте DN с таким же числом
-        # PN хранится в МПа, поэтому умножаем на 10 для получения PN числа
-        pn_number = int(round(pn * 10))
+        # PN хранится как PN-класс (число), поэтому сравниваем напрямую
+        pn_number = int(round(pn))
         
         # Ищем DN с этим числом
         dn_patterns = [
@@ -293,9 +293,7 @@ class PressureParser:
     # =========================================================
 
     def _normalize_pn(self, value: float) -> float:
-        """PN40 -> 4.0 МПа, PN63 -> 6.3 МПа"""
-        if value >= 10:
-            return value / 10.0
+        """PN40 -> 40, PN16 -> 16 (PN-класс). МПа храним отдельно."""
         return value
 
     def _pn_to_mpa(self, pn: float) -> Optional[float]:

@@ -48,7 +48,9 @@ INTENT_ORDER: Tuple[str, ...] = (
     # ДОКУМЕНТЫ
     "FIND_DOCUMENTS",
     "FIND_STANDARDS",
+    # КОНФИГУРАЦИЯ ОБЪЕКТА
     "GET_UNIT_STRUCTURE",
+    "ADD_COMPONENT",
 )
 
 # ---------------------------------------------------------------- 1C
@@ -120,6 +122,7 @@ INTENT_REQUIREMENTS: Dict[str, Dict[str, List[Tuple[str, ...]]]] = {
         "optional": [],
     },
     "GET_UNIT_STRUCTURE": {"required": [("unit_id",)], "optional": ["depth"]},
+    "ADD_COMPONENT": {"required": [("item_type",)], "optional": ["dn", "pn", "medium", "unit_id"]},
 }
 
 # ---------------------------------------------------------------- 1H.2

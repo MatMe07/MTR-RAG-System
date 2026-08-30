@@ -122,7 +122,20 @@ def _det_FIND_UNUSED_STOCK(parsed):
 
 
 def _det_PLAN_REPAIR(parsed):
-    return _has_op(parsed, "repair") or any(w in _q(parsed) for w in ("ремонт", "почини"))
+    return _has_op(parsed, "repair") or any(
+        w in _q(parsed) for w in (
+            "ремонт", "почини", "план", "обслужив",
+            "порядок работ", "запчаст", "перечисли",
+        )
+    )
+
+
+def _det_ADD_COMPONENT(parsed):
+    # «добавь деталь/укомплектуй участок» — конфигурация объекта,
+    # даже если параллельно указана «замена» текущей детали.
+    if not _has_op(parsed, "assemble"):
+        return False
+    return any(w in _q(parsed) for w in ("добавь", "добавить", "дополни", "укомплектуй", "перекрыти"))
 
 
 def _det_BUILD_REPAIR_KIT(parsed):
