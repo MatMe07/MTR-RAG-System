@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-08-30T18:03:21.068072+00:00",
+  "generated_at": "2026-08-30T19:16:56.657737+00:00",
   "mode": "off",
   "strict": false,
   "min_tools_coverage": 20,
   "summary": {
     "total": 40,
-    "tools_ok": 28,
+    "tools_ok": 40,
     "sources_ok": 1,
-    "warnings_ok": 31,
+    "warnings_ok": 40,
     "review_pass": 0
   },
   "cases": [
@@ -213,16 +213,15 @@
       "question": "Покажи все детали для H2S, которых сейчас нет на складе, и расставь их по срочности закупки",
       "intent": "inventory",
       "tools": [
+        "graph_search",
         "catalog_search",
         "stock_query",
         "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "graph_search"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "maintenance_policy",
@@ -241,16 +240,15 @@
       "question": "На следующей неделе ремонт участка с H2S, проверь хватает ли труб, отводов, переходов, задвижек, заглушек и тройников по две штуки",
       "intent": "inventory",
       "tools": [
+        "graph_search",
         "catalog_search",
         "stock_query",
         "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "graph_search"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "object_graph"
@@ -293,16 +291,15 @@
       "question": "Выбери десять самых важных позиций для пополнения склада перед ремонтом газопровода с H2S",
       "intent": "inventory",
       "tools": [
+        "graph_search",
         "catalog_search",
         "stock_query",
         "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "graph_search"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "maintenance_policy",
@@ -373,16 +370,15 @@
       "question": "Покажи позиции с остатком больше пятидесяти штук, которые не установлены ни на одном тестовом участке",
       "intent": "inventory",
       "tools": [
+        "graph_search",
         "catalog_search",
         "stock_query",
         "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "graph_search"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "object_graph"
@@ -400,16 +396,15 @@
       "question": "Собери заявку на пополнение склада для участка с CO2, включи только позиции с остатком меньше трех штук",
       "intent": "inventory",
       "tools": [
+        "graph_search",
         "catalog_search",
         "stock_query",
         "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "graph_search"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "maintenance_policy",
@@ -454,19 +449,17 @@
       "case_id": "AQ017",
       "category": "toir",
       "question": "На участке с H2S отказала задвижка COMP-SYN-010, распиши что проверить до снятия и что подготовить для замены",
-      "intent": "inventory",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
-        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "maintenance_planner"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "maintenance_policy",
@@ -483,19 +476,17 @@
       "case_id": "AQ018",
       "category": "toir",
       "question": "На трубе 108 на 6 участка с H2S нашли утечку, предложи порядок ремонта и проверь наличие материалов",
-      "intent": "inventory",
+      "intent": "maintenance",
       "tools": [
+        "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
-        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "graph_search",
-        "maintenance_planner"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "maintenance_policy",
@@ -529,7 +520,7 @@
         "maintenance_policy",
         "passport_or_tu"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
@@ -584,7 +575,7 @@
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -593,6 +584,7 @@
       "question": "Объясни что означает отвод 90 426 на 10 и где такую деталь используют",
       "intent": "equipment_guidance",
       "tools": [
+        "graph_search",
         "catalog_search",
         "stock_query",
         "rules_engine",
@@ -604,11 +596,11 @@
       "missing_sources": [
         "standard"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
-      "human_review_required": false,
+      "human_review_required": true,
       "answer_non_empty": true
     },
     {
@@ -617,23 +609,22 @@
       "question": "Что нужно поставить перед задвижкой DN200 PN63 на газопроводе и какие детали проверить рядом с ней",
       "intent": "inventory",
       "tools": [
+        "graph_search",
         "catalog_search",
         "stock_query",
         "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "graph_search"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "object_graph",
         "project_documentation",
         "standard"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
@@ -735,7 +726,7 @@
       "missing_tools": [],
       "sources_ok": true,
       "missing_sources": [],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
@@ -787,7 +778,7 @@
       "missing_sources": [
         "passport_or_tu"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
@@ -814,7 +805,7 @@
         "maintenance_policy",
         "passport_or_tu"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
@@ -840,7 +831,7 @@
       "missing_sources": [
         "project_documentation"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
@@ -851,19 +842,17 @@
       "case_id": "AQ032",
       "category": "composite_replacement",
       "question": "Поврежден переход COMP-SYN-009 и часть соседней трубы, предложи единый комплект для ремонта",
-      "intent": "inventory",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
-        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "maintenance_planner"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "passport_or_tu"
@@ -879,19 +868,17 @@
       "case_id": "AQ033",
       "category": "composite_replacement",
       "question": "Заглушка COMP-SYN-011 повреждена, подготовь список деталей и проверок для безопасной замены",
-      "intent": "inventory",
+      "intent": "maintenance",
       "tools": [
         "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
-        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "maintenance_planner"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "maintenance_policy"
@@ -907,25 +894,23 @@
       "case_id": "AQ034",
       "category": "composite_replacement",
       "question": "Нужно заменить шесть метров трубы 108 на 6 на участке H2S, собери комплект ремонта со склада",
-      "intent": "inventory",
+      "intent": "maintenance",
       "tools": [
+        "graph_search",
+        "maintenance_planner",
         "catalog_search",
         "stock_query",
-        "inventory_calculator",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "graph_search",
-        "maintenance_planner"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "object_graph",
         "passport_or_tu"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],
@@ -989,25 +974,22 @@
       "case_id": "AQ037",
       "category": "impact_analysis",
       "question": "Участок UNIT-SYN-GAS-001 переводят с природного газа на H2S, перечисли что нужно перепроверить",
-      "intent": "inventory",
+      "intent": "impact_analysis",
       "tools": [
         "graph_search",
         "catalog_search",
-        "stock_query",
-        "inventory_calculator",
+        "impact_analyzer",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "impact_analyzer"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": false,
       "missing_sources": [
         "internal_lnd",
         "passport_or_tu"
       ],
-      "warning_ok": false,
+      "warning_ok": true,
       "review_pass": false,
       "review_verdict": null,
       "review_issues": [],

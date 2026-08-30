@@ -4,6 +4,19 @@ from typing import Literal
 from ..core.state import AgentState
 
 
+# Объектный контекст: запрос говорит про участок/схему/установленные детали,
+# поэтому нужен граф объекта, а не только складской каталог.
+_OBJECT_CONTEXT = (
+    "участк", "газопровод", "трубопровод", "магистрал", "схем",
+    "установлен", "стоит", "стоят", "перед ", "после ", "соседн",
+    "рядом", "все детали", "всех деталей", "норматив",
+)
+
+
+def _has_object_context(query: str) -> bool:
+    return any(token in query for token in _OBJECT_CONTEXT)
+
+
 def router(state: AgentState) -> Literal[
     "catalog", "stock", "graph", "impact", "rules", "regulation",
     "duplicates", "inventory", "maintenance", "answer",
@@ -35,13 +48,13 @@ def router(state: AgentState) -> Literal[
     if intent in ["document_search", "object_configuration"]:
         return "graph"
     
-    # Склад/расчёт → каталог (+ граф, если указаны участки)
+    # Склад/расчёт → каталог (+ граф, если есть участки или объектный контекст)
     if intent in ["inventory", "calculate"]:
-        return "graph" if (unit_ids or component_ids) else "catalog"
+        return "graph" if (unit_ids or component_ids or _has_object_context(query)) else "catalog"
     
-    # Рекомендации по оборудованию → каталог + нормативы
+    # Рекомендации по оборудованию → каталог (+ граф, если есть объектный контекст)
     if intent == "equipment_guidance":
-        return "catalog"
+        return "graph" if (unit_ids or component_ids or _has_object_context(query)) else "catalog"
     
     # Есть явные участки/компоненты → граф
     if unit_ids or component_ids:
