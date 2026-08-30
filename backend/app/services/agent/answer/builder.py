@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
 from .warnings import build_scenario_warnings, evaluate_parameter_rules
+from .reviewer import auto_review, _FALLBACK_ANSWER
 from .status import (
     determine_status,
     build_recommendations,
@@ -29,17 +30,19 @@ class AnswerBuilder:
         result: Dict[str, Any]
     ) -> AgentAnswer:
         answers = [a for a in (result.get("answers") or []) if a]
-        answer_text = result.get("answer")
-        if answer_text and answer_text not in answers:
-            answers.insert(0, answer_text)
+        head_answer = result.get("answer")
+        if head_answer and head_answer not in answers:
+            answers.insert(0, head_answer)
         if not answers:
-            answers.append("Не удалось собрать ответ: недостаточно данных.")
+            answers.append(_FALLBACK_ANSWER)
+        answer_text = "\n".join(answers)
 
         scenario_warnings = build_scenario_warnings(parsed, intent)
         rule_warnings, rule_recommendations = evaluate_parameter_rules(parsed)
 
         components = self._to_components(result.get("components", []))
         sources = self._to_sources(result.get("sources", []))
+        tools_used = list(dict.fromkeys(result.get("tools_used", [])))
 
         warnings = list(dict.fromkeys(
             list(result.get("warnings", [])) + scenario_warnings + rule_warnings
@@ -55,6 +58,7 @@ class AnswerBuilder:
             intent=intent,
         )
         review = bool(result.get("review")) or status == STATUS_EXPERT
+        verdict, review_issues = auto_review(result, tools_used, sources, answer_text)
         recommendations = build_recommendations(status, warnings, missing) + rule_recommendations
         mode = result.get("mode", "offline_rules")
         if mode != "llm" and status in (STATUS_UNCLEAR, STATUS_EXPERT):
@@ -68,8 +72,8 @@ class AnswerBuilder:
             intent_label=self._intent_label(intent),
             route="agent",
             mode=result.get("mode", "offline_rules"),
-            tools_used=list(dict.fromkeys(result.get("tools_used", []))),
-            answer="\n".join(answers),
+            tools_used=tools_used,
+            answer=answer_text,
             components=components,
             warnings=warnings,
             sources=sources,
@@ -80,6 +84,8 @@ class AnswerBuilder:
             expert_review_id=expert_review_id() if status == STATUS_EXPERT else None,
             parsed_confidence=parsed.confidence,
             parsed_query=parsed,
+            review_verdict=verdict,
+            review_issues=review_issues,
         )
 
     def _to_components(self, rows: List[Dict]) -> List[AgentComponent]:
