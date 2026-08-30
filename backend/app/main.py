@@ -48,11 +48,6 @@ def seed_default_users() -> None:
 async def lifespan(app: FastAPI):
     log.info("MTR-RAG-System starting up")
 
-    from app.db.session import engine, Base
-    from app.models.sqlalchemy import all_models  # noqa: F401
-    Base.metadata.create_all(bind=engine)
-    log.info("Database tables ensured")
-
     seed_default_users()
     log.info("Default users ensured")
 
