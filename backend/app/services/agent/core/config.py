@@ -44,5 +44,9 @@ class AgentConfig:
     min_confidence: float = 0.5
     review_threshold: float = 0.7
 
+    # Авто-режим (Auto: deterministic → quality gate → при необходимости LLM)
+    auto_verify: bool = True
+    require_llm_for_auto: bool = False
+
 
 DEFAULT_CONFIG = AgentConfig()

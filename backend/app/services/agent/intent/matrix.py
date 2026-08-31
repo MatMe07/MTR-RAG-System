@@ -31,6 +31,7 @@ INTENT_ORDER: Tuple[str, ...] = (
     # СКЛАД
     "CHECK_STOCK",
     "CHECK_MINIMUM_STOCK",
+    "CHECK_SUFFICIENCY",
     "LIST_OUT_OF_STOCK",
     "FIND_UNUSED_STOCK",
     # РЕМОНТ
@@ -73,6 +74,10 @@ INTENT_REQUIREMENTS: Dict[str, Dict[str, List[Tuple[str, ...]]]] = {
     "CHECK_MINIMUM_STOCK": {
         "required": [("unit_id",), ("item_type",)],
         "optional": ["quantity"],
+    },
+    "CHECK_SUFFICIENCY": {
+        "required": [("item_type", "units_count"), ("unit_id", "units_count")],
+        "optional": ["dn", "medium"],
     },
     "LIST_OUT_OF_STOCK": {"required": [("medium",), ("unit_id",)], "optional": []},
     "FIND_UNUSED_STOCK": {"required": [("min_stock",)], "optional": ["unit_id"]},

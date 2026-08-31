@@ -288,6 +288,87 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
     return result
 
 
+def _aggregate_stock_by_type(targets: List[Dict], stock_rows: List[Dict]) -> Dict[str, Dict]:
+    """Агрегирует остаток по типу детали (item_type) из ksm_targets + stock_rows."""
+    stock_by_ksm = {r.get("ksm_code"): r for r in stock_rows if r.get("ksm_code")}
+    by_type: Dict[str, Dict] = {}
+    for target in targets:
+        card = target.get("card")
+        if not card:
+            continue
+        item_type = card.get("item_type") or "неизвестно"
+        ksm = (card.get("codes") or {}).get("ksm_code")
+        qty = (stock_by_ksm.get(ksm) or {}).get("quantity") or 0
+        bucket = by_type.setdefault(item_type, {"sum_stock": 0.0, "items": 0})
+        bucket["sum_stock"] += qty
+        bucket["items"] += 1
+    return by_type
+
+
+@register_tool("sufficiency_check", "Проверка достаточности запаса «хватает ли по N штук»")
+def sufficiency_check(state: AgentState) -> Dict[str, Any]:
+    """Агрегирует остаток по типу и сравнивает с потребностью N (units_count).
+
+    Результат — verdict «хватает» / «не хватает» по каждому типу детали.
+    """
+    start = time.time()
+    result = _empty_result()
+
+    targets = state.get("ksm_targets", [])
+    stock_rows = state.get("stock_rows", [])
+    parsed = state.get("parsed")
+
+    needed = getattr(parsed, "units_count", None) or 1
+
+    by_type = _aggregate_stock_by_type(targets, stock_rows)
+    if not by_type:
+        result["warnings"].append("Не определены типы деталей для проверки достаточности")
+        result["text"] = "Нет данных для проверки достаточности"
+        result["duration_ms"] = (time.time() - start) * 1000
+        return result
+
+    all_sufficient = True
+    for item_type in sorted(by_type):
+        bucket = by_type[item_type]
+        sum_stock = bucket["sum_stock"]
+        sufficient = sum_stock >= needed
+        deficit = max(0, needed - sum_stock)
+        if not sufficient:
+            all_sufficient = False
+
+        verdict = "хватает" if sufficient else "не хватает"
+        status_parts = [f"потребность {needed} шт.", f"остаток {sum_stock:.0f} шт."]
+        if not sufficient:
+            status_parts.append(f"дефицит {deficit:.0f} шт.")
+
+        result["components"].append({
+            "item_type": item_type,
+            "quantity": sum_stock,
+            "needed": needed,
+            "deficit": deficit,
+            "status": f"{verdict}: {item_type} — {'; '.join(status_parts)}",
+            "verdict": verdict,
+            "detail": "хватает" if sufficient else f"не хватает {deficit:.0f} шт.",
+        })
+
+        result["sources"].append(_source("stock", f"type:{item_type}",
+                                         f"суммарный остаток по типу: {sum_stock:.0f}"))
+
+    if all_sufficient:
+        result["text"] = "Все запрошенные типы в достаточном количестве"
+        result["review"] = False
+    else:
+        result["text"] = "Есть типы, которых не хватает"
+        result["review"] = True
+
+    log.info(
+        "[sufficiency_check] needed=%s types=%d all_sufficient=%s",
+        needed, len(by_type), all_sufficient,
+    )
+    result["duration_ms"] = (time.time() - start) * 1000
+    return result
+
+
 @register_tool("maintenance_planner", "Черновик плана ТОиР")
 def maintenance_planner(state: AgentState) -> Dict[str, Any]:
     """Черновик плана ТОиР: работы по целевым деталям + комплекс соседних узлов.

@@ -17,6 +17,7 @@ from ..tools.core_tools import (
 from ..tools.analytic_tools import (
     impact_analyzer,
     inventory_calculator,
+    sufficiency_check,
     maintenance_planner,
     duplicate_detector,
 )
@@ -167,6 +168,13 @@ def inventory_node(state: AgentState) -> Dict[str, Any]:
     _set_repository(state)
     result = _guarded_tool("inventory_calculator", lambda s, c: inventory_calculator(s), state)
     result["_tool_name"] = "inventory_calculator"
+    return _merge_result(state, result)
+
+
+def sufficiency_node(state: AgentState) -> Dict[str, Any]:
+    _set_repository(state)
+    result = _guarded_tool("sufficiency_check", lambda s, c: sufficiency_check(s), state)
+    result["_tool_name"] = "sufficiency_check"
     return _merge_result(state, result)
 
 

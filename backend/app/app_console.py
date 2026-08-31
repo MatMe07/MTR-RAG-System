@@ -14,7 +14,7 @@ import uuid
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s %(levelname)-7s | %(name)-32s | %(message)s",
     stream=sys.stdout,
 )
@@ -28,7 +28,7 @@ from app.services.agent.executor import AgentExecutor  # noqa: E402
 
 
 def run_search(query: str, mode: str) -> SearchResponse:
-    config = AgentConfig(use_llm=(mode == "llm"))
+    config = AgentConfig(use_llm=(mode in ("llm", "auto")))
     executor = AgentExecutor(config)
 
     start = time.time()
@@ -73,8 +73,13 @@ def main() -> None:
     while not query:
         query = input("Запрос (не может быть пустым): ").strip()
 
-    mode_raw = input("Метод поиска (0 - deterministic, 1 - llm): ").strip()
-    mode = "llm" if mode_raw in ("1", "llm") else "deterministic"
+    mode_raw = input("Метод поиска (0 - deterministic, 1 - llm, 2 - auto): ").strip()
+    mode = {
+        "1": "llm",
+        "llm": "llm",
+        "2": "auto",
+        "auto": "auto",
+    }.get(mode_raw, "deterministic")
     print(f"\n>>> Режим: {mode}\n")
 
     response = run_search(query, mode)

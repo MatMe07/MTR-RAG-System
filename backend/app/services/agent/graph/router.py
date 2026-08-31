@@ -120,19 +120,25 @@ def catalog_router(state: AgentState) -> Literal[
 
 
 def stock_router(state: AgentState) -> Literal[
-    "rules", "impact", "inventory", "answer",
+    "sufficiency", "rules", "impact", "inventory", "answer",
 ]:
     """Роутинг после проверки склада"""
     intent = state.get("context", {}).get("intent", "search")
-    
+    parsed = state.get("parsed")
+    intents = list(getattr(parsed, "intents", []) or []) if parsed else []
+
+    # Проверка достаточности «хватает ли по N штук»
+    if "CHECK_SUFFICIENCY" in intents:
+        return "sufficiency"
+
     # Расчёт запаса
     if intent in ["inventory", "calculate"]:
         return "inventory"
-    
+
     # Анализ влияния при замене
     if intent == "replacement":
         return "impact"
-    
+
     # Правила
     return "rules"
 

@@ -109,6 +109,16 @@ def _det_CHECK_MINIMUM_STOCK(parsed):
     return _det_CHECK_STOCK(parsed) and any(w in _q(parsed) for w in ("минимум", " мин ", "ниже"))
 
 
+def _det_CHECK_SUFFICIENCY(parsed):
+    uc = getattr(parsed, "units_count", None)
+    if not uc:
+        return False
+    return any(w in _q(parsed) for w in (
+        "хватит", "хватает", "достаточн", "по ", "штук",
+        "sufficien", "enough",
+    ))
+
+
 def _det_LIST_OUT_OF_STOCK(parsed):
     if getattr(parsed, "on_stock", None) is False:
         return True

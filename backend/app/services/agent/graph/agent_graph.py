@@ -13,6 +13,7 @@ from .nodes import (
     impact_node,
     regulation_node,
     inventory_node,
+    sufficiency_node,
     maintenance_node,
     duplicates_node,
     answer_node,
@@ -47,6 +48,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
     builder.add_node("impact", impact_node)
     builder.add_node("regulation", regulation_node)
     builder.add_node("inventory", inventory_node)
+    builder.add_node("sufficiency", sufficiency_node)
     builder.add_node("maintenance", maintenance_node)
     builder.add_node("duplicates", duplicates_node)
     builder.add_node("answer", answer_node)
@@ -125,6 +127,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
         "stock",
         stock_router,
         {
+            "sufficiency": "sufficiency",
             "rules": "rules",
             "impact": "impact",
             "inventory": "inventory",
@@ -163,6 +166,8 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
     # ============================================================
     # Детектор дублей → склад
     builder.add_edge("duplicates", "stock")
+    # Проверка достаточности → правила
+    builder.add_edge("sufficiency", "rules")
     # Расчёт запаса → правила
     builder.add_edge("inventory", "rules")
     # После нормативов → ответ

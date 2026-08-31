@@ -307,3 +307,17 @@ class PipelineEdge(Base):
         Index("idx_pe_from", "from_ksm"),
         Index("idx_pe_to", "to_ksm"),
     )
+
+
+class AutoModeEscalation(Base):
+    __tablename__ = "auto_mode_escalations"
+
+    id: Mapped[int] = mapped_column(PKColType(), primary_key=True, autoincrement=True)
+    request_id: Mapped[str | None] = mapped_column(String(64))
+    query: Mapped[str | None] = mapped_column(Text)
+    mode_used: Mapped[str | None] = mapped_column(String(32))
+    gaps: Mapped[dict | None] = mapped_column(JSONCol())
+    verdict: Mapped[str | None] = mapped_column(String(16))
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    llm_tokens_used: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))

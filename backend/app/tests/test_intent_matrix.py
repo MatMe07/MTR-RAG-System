@@ -121,6 +121,18 @@ class DetectIntentsTest(unittest.TestCase):
         reasons = incompatible_detected(detect_intents(parsed))
         self.assertTrue(any("FIND_ALTERNATIVE" in r or "REPLACE" in r for r in reasons))
 
+    def test_check_sufficiency_detected(self):
+        parsed = _q(
+            original_query="хватает ли по две штуки задвижек",
+            item_types=["задвижка"],
+            units_count=2,
+        )
+        self.assertIn("CHECK_SUFFICIENCY", detect_intents(parsed))
+
+    def test_check_sufficiency_no_units_absent(self):
+        parsed = _q(original_query="хватает ли задвижек", item_types=["задвижка"])
+        self.assertNotIn("CHECK_SUFFICIENCY", detect_intents(parsed))
+
 
 class StatusTest(unittest.TestCase):
     def test_complete(self):

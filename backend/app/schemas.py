@@ -394,8 +394,20 @@ class AgentAnswer(BaseModel):
     mode: Optional[str] = Field(None, description="Режим исполнения")
     tools_used: List[str] = Field(default_factory=list, description="Запущенные тулы")
     answer: str = Field(default="", description="Текстовый ответ пользователю")
+    explanation: Optional[str] = Field(
+        None,
+        description="Холистическое объяснение ответа (5A.3): LLM-генеративное для UNCLEAR/EXPERT/«объясни»",
+    )
     components: List[AgentComponent] = Field(default_factory=list, description="Позиции ответа")
     warnings: List[str] = Field(default_factory=list, description="Предупреждения")
+    warning_categories: Dict[str, List[str]] = Field(
+        default_factory=dict,
+        description="Предупреждения, сгруппированные по категориям (вместо единого плоского списка)",
+    )
+    purchase_recommendation: Optional[str] = Field(
+        None,
+        description="Итоговая рекомендация по закупке (для инвентаризации: что срочно, что можно позже)",
+    )
     sources: List[AgentSource] = Field(default_factory=list, description="Источники")
     missing_parameters: List[str] = Field(default_factory=list, description="Чего не хватает для полного ответа")
     human_review_required: bool = Field(False, description="Требуется ли проверка экспертом")
@@ -409,6 +421,18 @@ class AgentAnswer(BaseModel):
     )
     review_verdict: Optional[str] = Field(None, description="Вердикт ревьюера: pass | needs_review")
     review_issues: List[str] = Field(default_factory=list, description="Замечания ревьюера")
+    verification_verdict: Optional[str] = Field(
+        None, description="Вердикт quality gate (auto-режим): pass | review"
+    )
+    verification_reasons: List[str] = Field(
+        default_factory=list, description="Причины вердикта quality gate"
+    )
+    mode_refined: Optional[str] = Field(
+        None, description="Фактический подрежим auto: auto | auto_llm_refine | None"
+    )
+    llm_refine_failed: Optional[bool] = Field(
+        None, description="True если LLM-doоформление не помогло (still_unclear)"
+    )
 
 
 class DocumentInfo(BaseModel):
