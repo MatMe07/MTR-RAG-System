@@ -250,6 +250,7 @@ class ParsedQuery(BaseModel):
     )
     
     # ===== Параметры количества, сроков и сортировки =====
+    quantity: Optional[float] = Field(None, description="Потребность по «N штук» (по две штуки -> 2)")
     units_count: Optional[int] = Field(None, description="Количество участков (множитель), например трёх таких же участков -> 3")
     length_m: Optional[float] = Field(None, description="Длина нового участка в метрах, например длиной сто метров -> 100")
     limit: Optional[int] = Field(None, description="Лимит выдаваемых позиций (топ-N), например выбери пять деталей -> 5")

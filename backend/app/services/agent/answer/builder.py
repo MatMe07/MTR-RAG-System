@@ -1,9 +1,10 @@
 # agent/answer/builder.py
 
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
-from .warnings import build_scenario_warnings, evaluate_parameter_rules
+from .explanation import ExplanationGenerator
+from .warnings import build_scenario_warnings, evaluate_parameter_rules, group_warnings
 from .reviewer import auto_review, _FALLBACK_ANSWER
 from .status import (
     determine_status,
@@ -23,6 +24,10 @@ class AnswerBuilder:
     # Лимит бескодовых (граф/склад/план) строк
     AUX_MAX = 25
 
+    def __init__(self, generator: Optional[Callable[[Dict[str, Any]], Optional[str]]] = None):
+        """generator — LLM-генератор объяснения (5A.3); None → default_generator."""
+        self._explanations = ExplanationGenerator(generator)
+
     def build(
         self,
         parsed: ParsedQuery,
@@ -40,13 +45,19 @@ class AnswerBuilder:
         scenario_warnings = build_scenario_warnings(parsed, intent)
         rule_warnings, rule_recommendations = evaluate_parameter_rules(parsed)
 
-        components = self._to_components(result.get("components", []))
+        raw_components = result.get("components", [])
+        components = self._to_components(raw_components, parsed=parsed)
         sources = self._to_sources(result.get("sources", []))
         tools_used = list(dict.fromkeys(result.get("tools_used", [])))
+        purchase_recommendation = (
+            result.get("purchase_recommendation")
+            or self._purchase_recommendation(raw_components)
+        )
 
         warnings = list(dict.fromkeys(
             list(result.get("warnings", [])) + scenario_warnings + rule_warnings
         ))
+        warning_categories = group_warnings(warnings)
         missing = list(dict.fromkeys(result.get("missing", [])))
 
         status = determine_status(
@@ -66,6 +77,17 @@ class AnswerBuilder:
                 "Не удалось однозначно обработать запрос. Попробовать LLM-режим?"
             )
 
+        explanation = self._explanations.generate(
+            status=status,
+            query=parsed.original_query,
+            mode=mode,
+            parsed=parsed,
+            components=components,
+            warnings=warnings,
+            errors=result.get("errors"),
+            recommendations=recommendations,
+        )
+
         return AgentAnswer(
             query=parsed.original_query,
             intent=intent,
@@ -74,8 +96,11 @@ class AnswerBuilder:
             mode=result.get("mode", "offline_rules"),
             tools_used=tools_used,
             answer=answer_text,
+            explanation=explanation,
             components=components,
             warnings=warnings,
+            warning_categories=warning_categories,
+            purchase_recommendation=purchase_recommendation,
             sources=sources,
             missing_parameters=missing,
             human_review_required=review,
@@ -88,9 +113,15 @@ class AnswerBuilder:
             review_issues=review_issues,
         )
 
-    def _to_components(self, rows: List[Dict]) -> List[AgentComponent]:
-        # Кандидаты со скорингом — топ-N по проценту совпадения;
-        # бескодовые (состав участка, склад, план) — как есть.
+    def _to_components(self, rows: List[Dict], parsed=None) -> List[AgentComponent]:
+        out_of_stock = False
+        if parsed:
+            intents = getattr(parsed, "intents", []) or []
+            out_of_stock = (
+                "LIST_OUT_OF_STOCK" in intents
+                or getattr(parsed, "on_stock", None) is False
+            )
+
         scored = [
             r for r in rows
             if isinstance(r, dict) and r.get("match_score") is not None
@@ -99,8 +130,25 @@ class AnswerBuilder:
             r for r in rows
             if isinstance(r, dict) and r.get("match_score") is None
         ]
-        scored.sort(key=lambda r: r.get("match_percent") or 0.0, reverse=True)
-        rows = scored[: self.CANDIDATE_TOP_N] + aux[: self.AUX_MAX]
+
+        # Аналитические/verdict-строки (sufficiency/inventory/план) всегда
+        # сохраняем в ответе — они отвечают на запрос «хватает ли».
+        verdict_aux = [r for r in aux if self._is_analysis_row(r)]
+        generic_aux = [r for r in aux if not self._is_analysis_row(r)]
+
+        if out_of_stock:
+            scored = [
+                r for r in scored
+                if not r.get("quantity") or r.get("quantity", 0) == 0
+            ]
+            rows = verdict_aux + generic_aux[: self.AUX_MAX] + scored[: self.CANDIDATE_TOP_N]
+        else:
+            scored.sort(key=lambda r: r.get("match_percent") or 0.0, reverse=True)
+            rows = (
+                scored[: self.CANDIDATE_TOP_N]
+                + verdict_aux
+                + generic_aux[: self.AUX_MAX]
+            )
 
         return [
             AgentComponent(
@@ -121,9 +169,50 @@ class AnswerBuilder:
             )
             for r in rows
         ]
+
+    @staticmethod
+    def _is_analysis_row(row: Dict) -> bool:
+        """Признак аналитической (verdict/план) строки, а не просто кандидата."""
+        status = str(row.get("status") or "").lower()
+        detail = str(row.get("detail") or "").lower()
+        hay = f"{status} {detail}"
+        return any(k in hay for k in (
+            "хватает", "не хватает", "дефицит", "потребность",
+            "критично", "рассчитан", "рекомендуется закуп",
+            "дата", "план работ",
+        ))
     
-    def _to_sources(self, rows: List[Dict]) -> List[AgentSource]:
-        return [
+    def _purchase_recommendation(self, rows: List[Dict]) -> Optional[str]:
+        """Итоговая сводка по закупке из компонентов inventory_calculator.
+
+        Использует _urgency_score (1–5), выставленный inventory_calculator.
+        """
+        buckets: Dict[int, List[str]] = {5: [], 4: [], 3: [], 2: [], 1: []}
+        for r in rows:
+            if not isinstance(r, dict):
+                continue
+            score = r.get("_urgency_score")
+            if not isinstance(score, int):
+                continue
+            item_type = r.get("item_type") or "?"
+            if item_type not in buckets[score]:
+                buckets[score].append(item_type)
+
+        parts = []
+        if buckets[5]:
+            parts.append(f"{', '.join(sorted(set(buckets[5])))} — критически срочно")
+        if buckets[4]:
+            parts.append(f"{', '.join(sorted(set(buckets[4])))} — срочно")
+        if buckets[3]:
+            parts.append(f"{', '.join(sorted(set(buckets[3])))} — рекомендуется")
+        if buckets[2] or buckets[1]:
+            low = sorted(set(buckets[2] + buckets[1]))
+            parts.append(f"{', '.join(low)} — можно позже")
+        if not parts:
+            return None
+        return "Рекомендация по закупке: " + "; ".join(parts)
+
+    def _to_sources(self, rows: List[Dict]) -> List[AgentSource]:        return [
             AgentSource(
                 kind=r.get("kind"),
                 id=r.get("id"),

@@ -289,9 +289,26 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
 
 
 def _aggregate_stock_by_type(targets: List[Dict], stock_rows: List[Dict]) -> Dict[str, Dict]:
-    """Агрегирует остаток по типу детали (item_type) из ksm_targets + stock_rows."""
+    """Агрегирует остаток по типу детали (item_type) из stock_rows.
+
+    Предпочитаем stock_rows, когда они несут item_type (не зависят от графа
+    объекта). Если rows без типа (только ksm+quantity) — агрегируем через
+    ksm_targets (карточка даёт item_type).
+    """
+    typed_rows = [r for r in stock_rows if r.get("item_type")]
+
+    if typed_rows:
+        by_type: Dict[str, Dict] = {}
+        for row in typed_rows:
+            item_type = row.get("item_type") or "неизвестно"
+            qty = row.get("quantity") or 0
+            bucket = by_type.setdefault(item_type, {"sum_stock": 0.0, "items": 0})
+            bucket["sum_stock"] += float(qty)
+            bucket["items"] += 1
+        return by_type
+
     stock_by_ksm = {r.get("ksm_code"): r for r in stock_rows if r.get("ksm_code")}
-    by_type: Dict[str, Dict] = {}
+    by_type = {}
     for target in targets:
         card = target.get("card")
         if not card:

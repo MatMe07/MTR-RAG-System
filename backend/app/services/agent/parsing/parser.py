@@ -207,6 +207,7 @@ class QueryParser:
             technical_filters=technical_filters,
             stock_filters=stock_filters,
             units_count=context.get('units_count'),
+            quantity=context.get('quantity'),
             length_m=context.get('length_meters'),
             limit=context.get('limit'),
             timeframe=context.get('timeframe'),

@@ -344,7 +344,18 @@ def determine_parsed_status(
 
 
 def enrich_parsed(parsed: Any) -> Any:
-    """Заполняет ParsedQuery.intents/status/missing_params (мутация)."""
+    """Заполняет ParsedQuery.intents/status/missing_params (мутация).
+
+    Если для «по N штук» распознан parsed.quantity, а units_count не задан —
+    проецируем quantity в units_count (потребность N на проверку достаточности).
+    """
+    uc = getattr(parsed, "units_count", None)
+    qty = getattr(parsed, "quantity", None)
+    if not uc and qty:
+        try:
+            object.__setattr__(parsed, "units_count", int(qty))
+        except (TypeError, ValueError):
+            pass
     intents = detect_intents(parsed)
     status = determine_parsed_status(parsed, intents)
     missing_params = {

@@ -64,6 +64,24 @@ class SufficiencyTest(unittest.TestCase):
         self.assertEqual(comp["deficit"], 1)
         self.assertTrue(result["review"])
 
+    def test_typed_stock_rows_without_targets(self):
+        """stock_rows несут item_type — агрегируем без графа объекта (каталог-путь)."""
+        state = {
+            "parsed": _parsed(item_types=["труба", "задвижка"], units_count=2),
+            "ksm_targets": [],
+            "stock_rows": [
+                {"ksm_code": "T1", "item_type": "труба", "quantity": 5},
+                {"ksm_code": "T2", "item_type": "труба", "quantity": 3},
+                {"ksm_code": "Z1", "item_type": "задвижка", "quantity": 1},
+            ],
+        }
+        result = sufficiency_check(state)
+        verdicts = {c["item_type"]: c["verdict"] for c in result["components"]}
+        self.assertEqual(verdicts, {"труба": "хватает", "задвижка": "не хватает"})
+        deficit = {c["item_type"]: c["deficit"] for c in result["components"]}
+        self.assertEqual(deficit["задвижка"], 1)
+        self.assertTrue(result["review"])
+
 
 if __name__ == "__main__":
     unittest.main()

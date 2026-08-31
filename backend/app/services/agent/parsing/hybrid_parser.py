@@ -204,6 +204,7 @@ class HybridParser:
             technical_filters=technical_filters,
             stock_filters=stock_filters,
             units_count=rule.units_count,
+            quantity=rule.quantity,
             length_m=rule.length_m,
             limit=rule.limit,
             timeframe=rule.timeframe,
