@@ -120,7 +120,7 @@ POST /api/v1/search/
 |---|---|---|
 | 5A.1 ResponseBuilder | Есть | `AnswerBuilder` в `services/agent/answer/builder.py` |
 | 5A.2 StatusDeterminator (95%/70%, блокеры) | Упрощено | Отдельного класса нет; `BLOCKER_FIELDS` в `core/constants.py` есть, но не участвует в статус-логике |
-| 5A.3 ExplanationGenerator (шаблон/LLM) | Частично | Есть шаблонный текст; LLM-режим не работает |
+| 5A.3 ExplanationGenerator (шаблон/LLM) | Есть | Два режима: шаблонный `build_explanation` (per-result) и LLM `ExplanationGenerator` (топ-уровневое поле `explanation`) — для UNCLEAR/EXPERT или маркеров «объясни»; fallback на шаблон при отсутствии LLM/ошибке |
 | 5A.4 SourceFormatter | Есть | `_to_sources` (type/document_id/page) |
 | 5B.1 JSON-ответ | Есть | `SearchResponse` совпадает по форме (status/results/warnings/recommendations/requires_expert/execution_time_ms) |
 | 5B.3 expert_review_id | Частично | `requires_expert` есть (human_review_required), формат review_id — нет |

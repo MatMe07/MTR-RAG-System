@@ -28,7 +28,14 @@ from app.services.agent.answer.status import (
     build_recommendations,
     format_sources,
 )
-from app.services.agent.answer.explanation import build_explanation
+from app.services.agent.answer.explanation import (
+    build_explanation,
+    build_explanation_prompt,
+    default_generator,
+    should_use_llm,
+    ExplanationGenerator,
+)
+from app.services.agent.answer.builder import AnswerBuilder
 from app.services.agent.answer.tz_result import (
     build_tz_result_items,
     component_to_tz_result,
@@ -184,6 +191,122 @@ class ExplanationTest(unittest.TestCase):
 
     def test_not_found_explanation(self):
         self.assertIn("нет подходящих", build_explanation(STATUS_NOT_FOUND))
+
+
+class ExplanationGeneratorLlmTest(unittest.TestCase):
+    """5A.3 LLM-режим: триггеры, fallback, инъекция генератора, builder-wiring."""
+
+    _COMP = _comp(score=0.8, percent=80)
+
+    def _gen(self, calls, text="Инженерное объяснение"):
+        def generator(context):
+            calls.append(context)
+            return text
+        return generator
+
+    def test_explanation_generator_llm(self):
+        calls = []
+        gen = ExplanationGenerator(generator=self._gen(calls))
+        text = gen.generate(
+            status=STATUS_UNCLEAR,
+            query="Нужен уголок 30",
+            components=[self._COMP],
+            warnings=["Неоднозначный параметр"],
+        )
+        self.assertEqual(text, "Инженерное объяснение")
+        self.assertEqual(len(calls), 1)
+        ctx = calls[0]
+        self.assertIn("Нужен уголок 30", ctx["query"])
+        self.assertIn("DN", ctx["critical_params"])
+        self.assertIn("Задвижка", ctx["candidates"])
+
+    def test_no_trigger_for_header_status(self):
+        calls = []
+        gen = ExplanationGenerator(generator=self._gen(calls))
+        text = gen.generate(status=STATUS_MATCH, query="Найди задвижку DN150")
+        self.assertIsNone(text)
+        self.assertEqual(calls, [])
+
+    def test_trigger_by_explain_marker(self):
+        calls = []
+        gen = ExplanationGenerator(generator=self._gen(calls))
+        text = gen.generate(status=STATUS_MATCH, query="Объясни, что значит DN")
+        self.assertEqual(text, "Инженерное объяснение")
+        self.assertEqual(len(calls), 1)
+
+    def test_trigger_by_difference_marker(self):
+        self.assertTrue(should_use_llm(STATUS_MATCH, "Чем отличается переход от отвода?"))
+        self.assertFalse(should_use_llm(STATUS_MATCH, "Подбери отвод 90 на DN159"))
+        self.assertTrue(should_use_llm(STATUS_EXPERT, "Подбери отвод"))
+
+    def test_generator_exception_falls_back(self):
+        def boom(context):
+            raise RuntimeError("llm down")
+        gen = ExplanationGenerator(generator=boom)
+        self.assertIsNone(gen.generate(status=STATUS_UNCLEAR, query="эй"))
+
+    def test_prompt_contains_critical_params_and_requirements(self):
+        prompt = build_explanation_prompt(
+            {
+                "query": "замена задвижки для H2S",
+                "critical_params": ["PN", "среда"],
+                "candidates": "- Задвижка: 80%",
+                "compatibility": "Совпало: DN",
+                "warnings": ["H2S не подтверждён"],
+                "errors": [],
+            }
+        )
+        self.assertIn("Критические параметры", prompt)
+        self.assertIn("PN", prompt)
+        self.assertIn("не совпал", prompt)
+
+    def test_default_generator_off_without_key(self):
+        import os
+        saved = {
+            "OPENROUTER_API_KEY": os.environ.pop("OPENROUTER_API_KEY", None),
+            "LLM_API_KEY": os.environ.pop("LLM_API_KEY", None),
+        }
+        try:
+            gen = ExplanationGenerator()
+            self.assertIsNone(gen.generate(status=STATUS_UNCLEAR, query="эй"))
+            self.assertIsNone(default_generator({}))
+        finally:
+            for k, v in saved.items():
+                if v is not None:
+                    os.environ[k] = v
+
+    def test_builder_wiring_llm_explanation(self):
+        gen = self._gen([])
+        result = {
+            "components": [],
+            "warnings": ["Недостаточно данных"],
+            "sources": [],
+            "missing": [],
+            "review": False,
+            "answers": ["Уточните параметры"],
+            "tools_used": ["search_catalog"],
+        }
+        answer = AnswerBuilder(generator=gen).build(
+            _parsed(query="Нужен уголок 30"), "search", result
+        )
+        self.assertEqual(answer.status, STATUS_UNCLEAR)
+        self.assertEqual(answer.explanation, "Инженерное объяснение")
+
+    def test_builder_wiring_no_explanation_on_header(self):
+        result = {
+            "components": [{"match_score": 0.96, "match_percent": 96, "name": "Задвижка"}],
+            "warnings": [],
+            "sources": [],
+            "missing": [],
+            "review": False,
+            "answers": ["Найдено 1 позиций"],
+            "tools_used": ["search_catalog"],
+        }
+        answer = AnswerBuilder(generator=self._gen([])).build(
+            _parsed(query="Найди задвижку DN150"), "search", result
+        )
+        self.assertEqual(answer.status, STATUS_MATCH)
+        self.assertIsNone(answer.explanation)
 
 
 class SourceFormatterTest(unittest.TestCase):

@@ -1,6 +1,7 @@
 # agent/answer/warnings.py
 
 import json
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -110,6 +111,54 @@ def build_scenario_warnings(parsed: ParsedQuery, intent: str) -> List[str]:
                 warnings.append(rule["text"])
     
     return warnings
+
+
+_WARNING_CATEGORIES = [
+    (
+        "Совместимость со средой",
+        ("h2s", "co2", "сред", "коррози", "стойкост", "пригодн�", "пригодно"),
+    ),
+    (
+        "Достоверность данных",
+        ("гост", "синтетич", "лнд", "паспорт", "каталог", "классификатор", "пример"),
+    ),
+    (
+        "Планирование и закупка",
+        ("черновик", "чернов", "норм", "запас", "закуп", "расчетн", "расчётн", "предварительн", "заявка"),
+    ),
+    (
+        "Экспертная проверка",
+        ("эксперт", "подтвержд", "подтверди", "ответственн", "специалист", "горяче"),
+    ),
+]
+
+
+def group_warnings(warnings: List[str]) -> Dict[str, List[str]]:
+    """Группировка предупреждений по категориям (вместо единого шумного списка).
+
+    Каждая строка попадает в первую подходящую категорию; если ни одна не
+    подошла — в категорию "Прочее". Категории упорядочены: сначала самые
+    важные (совместимость), затем служебные.
+    """
+    grouped: Dict[str, List[str]] = defaultdict(list)
+    for w in warnings:
+        text = w.lower()
+        matched = False
+        for category, keywords in _WARNING_CATEGORIES:
+            if any(k in text for k in keywords):
+                grouped[category].append(w)
+                matched = True
+                break
+        if not matched:
+            grouped["Прочее"].append(w)
+    return dict(grouped)
+
+
+def _warning_category_priority(category: str) -> int:
+    for i, (name, _) in enumerate(_WARNING_CATEGORIES):
+        if category == name:
+            return i
+    return len(_WARNING_CATEGORIES)
 
 
 def build_required_params_warnings(parsed: ParsedQuery, provider: Any = None) -> List[str]:

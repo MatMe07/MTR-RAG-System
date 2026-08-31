@@ -285,6 +285,10 @@ class SearchResponse(BaseModel):
     mode: str = Field("deterministic", description="Режим исполнения (ТЗ 11.2)")
     status: str = Field("", description="ТЗ-статус ответа: соответствует | потенциальный аналог | не соответствует | нет данных | требует проверки | требует экспертной проверки")
     results: list = Field(default_factory=list, description="Список результатов (ТЗ 11.2)")
+    explanation: Optional[str] = Field(
+        None,
+        description="Холистическое объяснение ответа (5A.3): LLM/шаблон для UNCLEAR/EXPERT/«объясни»",
+    )
     warnings: list = Field(default_factory=list)
     recommendations: list = Field(default_factory=list)
     requires_expert: bool = False

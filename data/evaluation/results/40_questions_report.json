@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-08-30T19:55:21.881054+00:00",
+  "generated_at": "2026-08-31T20:41:13.466633+00:00",
   "mode": "off",
   "strict": false,
   "min_tools_coverage": 20,
   "summary": {
     "total": 40,
-    "tools_ok": 40,
-    "sources_ok": 40,
+    "tools_ok": 39,
+    "sources_ok": 39,
     "warnings_ok": 40,
     "review_pass": 40
   },
@@ -218,12 +218,14 @@
         "graph_search",
         "catalog_search",
         "stock_query",
-        "inventory_calculator",
+        "sufficiency_check",
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": true,
-      "missing_tools": [],
+      "tools_ok": false,
+      "missing_tools": [
+        "inventory_calculator"
+      ],
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
@@ -319,8 +321,10 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "expert_decisions"
+      ],
       "warning_ok": true,
       "review_pass": true,
       "review_verdict": "pass",

@@ -63,6 +63,7 @@ class SearchService:
                 mode=getattr(answer, "mode", None) or "deterministic",
                 status=answer_status if answer_status else STATUS_NOT_FOUND,
                 results=build_tz_result_items(answer),
+                explanation=getattr(answer, "explanation", None),
                 warnings=answer.warnings or [],
                 recommendations=getattr(answer, "recommendations", None) or [],
                 requires_expert=answer.human_review_required,
