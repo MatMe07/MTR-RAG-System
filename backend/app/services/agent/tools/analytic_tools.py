@@ -338,11 +338,18 @@ def sufficiency_check(state: AgentState) -> Dict[str, Any]:
     needed = getattr(parsed, "units_count", None) or 1
 
     by_type = _aggregate_stock_by_type(targets, stock_rows)
-    if not by_type:
+
+    # Гарантируем verdict для КАЖДОГО запрошенного типа (в т.ч. нулевой остаток),
+    # чтобы ответ явно говорил, каких типов не хватает (DoD п.3).
+    requested_types = list(getattr(parsed, "item_types", []) or [])
+    if not by_type and not requested_types:
         result["warnings"].append("Не определены типы деталей для проверки достаточности")
         result["text"] = "Нет данных для проверки достаточности"
         result["duration_ms"] = (time.time() - start) * 1000
         return result
+
+    for it in requested_types:
+        by_type.setdefault(it, {"sum_stock": 0.0, "items": 0})
 
     all_sufficient = True
     for item_type in sorted(by_type):

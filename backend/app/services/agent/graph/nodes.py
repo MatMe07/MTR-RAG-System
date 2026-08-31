@@ -29,7 +29,9 @@ log = logging.getLogger("mtr.agent.graph.nodes")
 
 
 def _set_repository(state: AgentState) -> None:
-    state.setdefault("context", {}).setdefault("repository", get_repository())
+    # Репозиторий не кладём в state: он не msgpack-сериализуем и ломает
+    # контрольные точки LangGraph. Инструменты получают ctx из обёрток узлов.
+    pass
 
 
 def _normalize_error(error: Any) -> Optional[Dict[str, Any]]:
@@ -281,9 +283,9 @@ def _merge_result(state: AgentState, result: Dict[str, Any]) -> Dict[str, Any]:
     то, что узел возвращает из функции, поэтому узлы обязаны отдавать все
     затронутые каналы (иначе in-place-мутации теряются между супершагами).
 
-    Канал context сознательно НЕ возвращаем: он мутируется in-place
-    (_set_repository кладёт туда репозиторий), а несериализуемый объект
-    утекал бы в pull-райты чекпоинтера.
+    Канал context сознательно НЕ возвращаем: он мутируется in-place, а
+    несериализуемый объект утекал бы в pull-райты чекпоинтера
+    (см. _set_repository — репозиторий в state не кладём).
     """
     if result.get("components"):
         state.setdefault("components", [])
