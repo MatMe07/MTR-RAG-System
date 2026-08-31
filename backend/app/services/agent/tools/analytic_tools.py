@@ -1,5 +1,6 @@
 # agent/tools/analytic_tools.py
 
+import logging
 from typing import Any, Dict, List
 from collections import defaultdict
 import time
@@ -7,6 +8,8 @@ import time
 from .registry import register_tool
 from .core_tools import _empty_result, _source, _card_component
 from ..core.state import AgentState
+
+log = logging.getLogger("mtr.agent.tools")
 
 
 @register_tool("impact_analyzer", "Анализ влияния изменений на соседние детали")
@@ -109,39 +112,178 @@ def impact_analyzer(state: AgentState) -> Dict[str, Any]:
     return result
 
 
+_URGENCY_ITEM_TYPE = {
+    "задвижка": 3, "арматура": 3, "кран": 3, "клапан": 3,
+    "переход": 2, "отвод": 2, "тройник": 2, "штуцер": 2,
+    "заглушка": 1, "фланец": 1, "прокладка": 1, "труба": 1,
+}
+
+
+_URGENCY_LABELS = {
+    5: "критическая",
+    4: "высокая",
+    3: "средняя",
+    2: "низкая",
+    1: "минимальная",
+}
+
+
+def _urgency_label(score: int) -> str:
+    return _URGENCY_LABELS.get(score, "минимальная")
+
+
+def _urgency_status(qty, score: int) -> str:
+    label = _urgency_label(score)
+    if qty is None or qty == 0:
+        return f"нет на складе — срочность закупки: {label}"
+    if score >= 4:
+        return f"на складе: {qty} — срочность пополнения: {label}"
+    if score >= 2:
+        return f"на складе: {qty} — срочность пополнения: {label}"
+    return f"на складе: {qty}"
+
+
+def _urgency_detail(card: Dict, qty, score: int) -> str:
+    parts = []
+    item_type = card.get("item_type") or ""
+    label = _urgency_label(score)
+    if score >= 4:
+        parts.append(f"критично: {item_type} нужна срочно")
+    elif score >= 2:
+        parts.append(f"рекомендуется закупить: {item_type}")
+    else:
+        parts.append(f"пополнение: {item_type}")
+    if qty is None or qty == 0:
+        parts.append("нет остатков")
+    elif qty < 5:
+        parts.append(f"остаток {qty} — ниже нормы")
+    return "; ".join(parts)
+
+
+def _urgency_reason(card: Dict, qty, base: int, bump: int) -> str:
+    """Человекочитаемая причина расчёта urgency (для логов)."""
+    item_type = card.get("item_type") or "неизвестно"
+    parts = [f"тип={item_type}(база={base})"]
+    if qty is None or qty == 0:
+        parts.append(f"нет на складе(+{bump})")
+    elif bump:
+        parts.append(f"остаток={qty}(+{bump})")
+    else:
+        parts.append(f"остаток={qty}(+0)")
+    return ", ".join(parts)
+
+
+def _build_purchase_recommendation(components: List[Dict]) -> str:
+    """Итоговая сводка по закупке: группы по urgency."""
+    critical, high, medium, low = [], [], [], []
+    for c in components:
+        s = c.get("_urgency_score", 1)
+        if s >= 5:
+            critical.append(c)
+        elif s >= 4:
+            high.append(c)
+        elif s >= 2:
+            medium.append(c)
+        else:
+            low.append(c)
+
+    parts = []
+    if critical:
+        types = sorted(set(c.get("item_type", "?") for c in critical))
+        parts.append(f"{', '.join(types)} — критически срочно ({len(critical)} шт.)")
+    if high:
+        types = sorted(set(c.get("item_type", "?") for c in high))
+        parts.append(f"{', '.join(types)} — срочно ({len(high)} шт.)")
+    if medium:
+        types = sorted(set(c.get("item_type", "?") for c in medium))
+        parts.append(f"{', '.join(types)} — рекомендуется ({len(medium)} шт.)")
+    if low:
+        types = sorted(set(c.get("item_type", "?") for c in low))
+        parts.append(f"{', '.join(types)} — можно позже ({len(low)} шт.)")
+    return "Рекомендация по закупке: " + "; ".join(parts) if parts else ""
+
+
 @register_tool("inventory_calculator", "Расчёт рекомендуемого запаса")
 def inventory_calculator(state: AgentState) -> Dict[str, Any]:
-    """Расчёт рекомендуемого запаса"""
+    """Расчёт рекомендуемого запаса с фильтрацией по наличию и ранжированием по срочности."""
     start = time.time()
     result = _empty_result()
-    
+
     targets = state.get("ksm_targets", [])
-    ctx = state.get("context", {}).get("repository")
-    
-    multiplier = getattr(state["parsed"], "units_count", 1) or 1
-    
+    stock_rows = state.get("stock_rows", [])
+    parsed = state.get("parsed")
+
+    stock_by_ksm = {}
+    for row in stock_rows:
+        ksm = row.get("ksm_code")
+        if ksm:
+            stock_by_ksm[ksm] = row
+
+    multiplier = getattr(parsed, "units_count", 1) or 1
+
+    intents = getattr(parsed, "intents", []) or []
+    on_stock = getattr(parsed, "on_stock", None)
+    out_of_stock_only = (on_stock is False) or ("LIST_OUT_OF_STOCK" in intents)
+
     for target in targets[:20]:
         card = target.get("card")
         if not card:
             continue
-        
+
         ksm = (card.get("codes") or {}).get("ksm_code")
-        qty = ctx.get_stock_quantity(ksm) if ctx else 0
-        recommended = max(1, qty or 0) * multiplier
-        
+
+        stock_info = stock_by_ksm.get(ksm) if ksm else None
+        qty = stock_info.get("quantity") if stock_info else None
+
+        if out_of_stock_only and qty is not None and qty > 0:
+            continue
+
+        if out_of_stock_only:
+            recommended = 0
+        else:
+            recommended = max(1, qty or 0) * multiplier
+
+        item_type = (card.get("item_type") or "").lower()
+        base = _URGENCY_ITEM_TYPE.get(item_type, 1)
+        if qty is None or qty == 0:
+            bump = 2
+        elif qty < 5:
+            bump = 1
+        else:
+            bump = 0
+        urgency = min(base + bump, 5)
+
+        log.info(
+            "[inventory_calculator] urgency=%d для %s: %s",
+            urgency, ksm, _urgency_reason(card, qty, base, bump),
+        )
+
         result["components"].append({
             "ksm_code": ksm,
             "mtr_code": (card.get("codes") or {}).get("mtr_code"),
             "name": card.get("name"),
             "item_type": card.get("item_type"),
             "quantity": recommended,
-            "status": f"рекомендуемый запас (x{multiplier})",
+            "status": _urgency_status(qty, urgency),
+            "detail": _urgency_detail(card, qty, urgency),
             "source_id": card.get("card_id"),
+            "_urgency": urgency,
+            "_urgency_score": urgency,
         })
-    
+
+    result["components"].sort(key=lambda c: c.get("_urgency", 0), reverse=True)
+    for comp in result["components"]:
+        comp.pop("_urgency", None)
+
+    purchase_rec = _build_purchase_recommendation(result["components"])
+
     result["warnings"] = ["Расчёт — черновик: нормы запаса требуют утверждения"]
     result["review"] = True
-    result["text"] = f"Рассчитано {len(result['components'])} позиций"
+    result["text"] = (
+        f"Рассчитано {len(result['components'])} позиций"
+        + (" (только отсутствующие на складе)" if out_of_stock_only else "")
+    )
+    result["purchase_recommendation"] = purchase_rec
     result["duration_ms"] = (time.time() - start) * 1000
     return result
 
