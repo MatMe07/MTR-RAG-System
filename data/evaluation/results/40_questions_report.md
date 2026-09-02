@@ -1,8 +1,8 @@
 # Автопроверка 40 вопросов
 
-- Дата: 2026-08-31T20:41:13.466633+00:00
+- Дата: 2026-09-02T19:22:17.872655+00:00
 - Режим LLM: off
-- tools: 39/40, sources: 39/40, warnings: 40/40, review pass: 40/40
+- tools: 40/40, sources: 39/40, warnings: 40/40, review pass: 40/40
 
 | case | tools | sources | warning | review |
 |---|---|---|---|---|
@@ -14,7 +14,7 @@
 | AQ006 | True | True | True | True |
 | AQ007 | True | True | True | True |
 | AQ008 | True | True | True | True |
-| AQ009 | False | True | True | True |
+| AQ009 | True | True | True | True |
 | AQ010 | True | True | True | True |
 | AQ011 | True | True | True | True |
 | AQ012 | True | True | True | True |

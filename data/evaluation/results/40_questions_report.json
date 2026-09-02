@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-31T20:41:13.466633+00:00",
+  "generated_at": "2026-09-02T19:22:17.872655+00:00",
   "mode": "off",
   "strict": false,
   "min_tools_coverage": 20,
   "summary": {
     "total": 40,
-    "tools_ok": 39,
+    "tools_ok": 40,
     "sources_ok": 39,
     "warnings_ok": 40,
     "review_pass": 40
@@ -222,10 +222,8 @@
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "inventory_calculator"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
