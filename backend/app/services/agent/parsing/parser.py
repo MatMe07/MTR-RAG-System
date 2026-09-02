@@ -387,19 +387,51 @@ class QueryParser:
         filters = {}
         text_lower = text.lower()
 
-        # Количество: больше/более/свыше X
+        # Символьные пороги: "остаток > 50", "< 3", ">= 10", "<= 5"
+        m = re.search(r'(?:остат\w{0,4}\s*)?(?:[>=<]\s*)(\d+)', text_lower)
+        sym = re.search(r'(?P<op>>=?|<=?)\s*(?P<num>\d+)', text_lower)
+        if sym:
+            qty = self._parse_quantity_token(sym.group("num"))
+            if qty is not None:
+                op = sym.group("op")
+                if op.startswith(">"):
+                    filters["quantity_min"] = qty
+                    filters["quantity_min_strict"] = not op.startswith("=")
+                elif op.startswith("<"):
+                    filters["quantity_max"] = qty
+                    filters["quantity_max_strict"] = not op.startswith("=")
+
+        # Количество: больше/более/свыше X  (строго >, X исключается)
         match = re.search(r'(?:больше|более|свыше)\s+([а-яё]+|\d+)', text_lower)
         if match:
             qty = self._parse_quantity_token(match.group(1))
             if qty is not None:
                 filters["quantity_min"] = qty
+                filters["quantity_min_strict"] = True
 
-        # Количество: меньше/менее/не более X
-        match = re.search(r'(?:меньше|менее|не более)\s+([а-яё]+|\d+)', text_lower)
+        # Количество: не менее X  (включительно >=)
+        match = re.search(r'не менее\s+([а-яё]+|\d+)', text_lower)
+        if match:
+            qty = self._parse_quantity_token(match.group(1))
+            if qty is not None:
+                filters["quantity_min"] = qty
+                filters["quantity_min_strict"] = False
+
+        # Количество: меньше/менее X  (строго <, X исключается)
+        match = re.search(r'(?:меньше|менее)\s+([а-яё]+|\d+)', text_lower)
         if match:
             qty = self._parse_quantity_token(match.group(1))
             if qty is not None:
                 filters["quantity_max"] = qty
+                filters["quantity_max_strict"] = True
+
+        # Количество: не более X  (включительно <=)
+        match = re.search(r'не более\s+([а-яё]+|\d+)', text_lower)
+        if match:
+            qty = self._parse_quantity_token(match.group(1))
+            if qty is not None:
+                filters["quantity_max"] = qty
+                filters["quantity_max_strict"] = False
 
         # Safety stock: "один полный комплект должен оставаться на складе"
         match = re.search(r'(один|одну|одна|1|два|две|2|три|3)\s+(?:полный\s+)?комплект\b', text_lower)
