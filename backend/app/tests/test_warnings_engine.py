@@ -41,7 +41,7 @@ class BuildScenarioWarningsTest(unittest.TestCase):
         json_path = (
             Path(__file__).parent.parent
             / "services"
-            / "agents"
+            / "agent"
             / "scenario_warnings.json"
         )
         config = json.loads(json_path.read_text(encoding="utf-8"))
