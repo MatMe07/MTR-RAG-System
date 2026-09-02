@@ -4,10 +4,9 @@ import re
 from typing import Dict, Any, List, Optional, Set
 from functools import lru_cache
 
-from natasha import (
+from mawo_natasha import (
     Segmenter,
     MorphVocab,
-    NewsEmbedding,
     NewsMorphTagger,
     NewsNERTagger,
     Doc
@@ -94,12 +93,11 @@ class NatashaParser:
     }
     
     def __init__(self):
-        # Инициализация Natasha компонентов
+        # Инициализация MAWO (Natasha) компонентов
         self.segmenter = Segmenter()
         self.morph_vocab = MorphVocab()
-        self.emb = NewsEmbedding()
-        self.ner_tagger = NewsNERTagger(self.emb)
-        self.morph_tagger = NewsMorphTagger(self.emb)
+        self.ner_tagger = NewsNERTagger()
+        self.morph_tagger = NewsMorphTagger()
         
         # Fuzzy matcher для улучшенного поиска
         self.fuzzy_matcher = FuzzyMatcher(threshold=75)
@@ -132,7 +130,7 @@ class NatashaParser:
         doc = Doc(text)
         doc.segment(self.segmenter)
         doc.tag_ner(self.ner_tagger)
-        doc.tag_morph(self.morph_tagger)
+        self._apply_morph_markup(doc)
         
         # Инициализация результата
         result = {
@@ -182,6 +180,29 @@ class NatashaParser:
         result["ambiguities"] = self._extract_ambiguities(text, result)
         
         return result
+
+    def _apply_morph_markup(self, doc: Doc) -> None:
+        """
+        Морфологическая разметка токенов документа.
+
+        Полноценный таггер SlovNet имеет метод .map (использует его Doc.tag_morph),
+        но fallback-реализация mawo_slovnet (LocalSlovNetImplementation, когда
+        модели недоступны) такого метода не имеет — поддерживает только __call__.
+        """
+        tagger = self.morph_tagger
+        if hasattr(tagger, "map"):
+            doc.tag_morph(tagger)
+            return
+
+        for sent in doc.sents:
+            words = [token.text for token in sent.tokens]
+            if not words:
+                continue
+            markup = tagger(words)
+            sources = getattr(markup, "tokens", [])
+            for token, source in zip(sent.tokens, sources):
+                token.pos = getattr(source, "pos", None)
+                token.feats = getattr(source, "feats", {})
 
     # =========================================================
     # ИЗВЛЕЧЕНИЕ ОПЕРАЦИЙ

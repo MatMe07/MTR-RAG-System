@@ -8,7 +8,7 @@ import structlog
 
 
 def silence_noisy_loggers() -> None:
-    for name in ("pymorphy2", "pymorphy2.opencorpora_dict", "natasha", "hnswlib"):
+    for name in ("mawo_natasha", "mawo_pymorphy3", "mawo_razdel", "mawo_slovnet", "hnswlib"):
         logging.getLogger(name).setLevel(logging.WARNING)
 
 

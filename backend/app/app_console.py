@@ -19,7 +19,7 @@ logging.basicConfig(
     stream=sys.stdout,
 )
 
-for _name in ("pymorphy2", "pymorphy2.opencorpora_dict", "natasha", "hnswlib"):
+for _name in ("mawo_natasha", "mawo_pymorphy3", "mawo_razdel", "mawo_slovnet", "hnswlib"):
     logging.getLogger(_name).setLevel(logging.WARNING)
 
 from app.models.pydantic.schemas import SearchResponse  # noqa: E402

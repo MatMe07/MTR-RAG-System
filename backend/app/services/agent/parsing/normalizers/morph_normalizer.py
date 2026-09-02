@@ -1,13 +1,13 @@
 # # query_parser/normalizers/morph_normalizer.py
 
-# import pymorphy2
+# import mawo_pymorphy3
 # from typing import List, Optional, Dict
 # from functools import lru_cache
 
 
 # class MorphNormalizer:
 #     def __init__(self):
-#         self.morph = pymorphy2.MorphAnalyzer()
+#         self.morph = mawo_pymorphy3.MorphAnalyzer()
 #         # Кеш с ограничением размера (LRU)
 #         self._cache: Dict[str, str] = {}
 #         self._max_cache_size = 10000

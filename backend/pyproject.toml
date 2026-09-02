@@ -28,9 +28,10 @@ dependencies = [
     "orjson>=3.10.0",
     "langgraph>=0.2.0",
     "langgraph-checkpoint-sqlite>=2.0.0",
-    "natasha>=1.6.0",
-    "pymorphy2>=0.9.1",
-    "pymorphy2-dicts-ru>=2.4",
+    "mawo-natasha>=1.0.3",
+    "mawo-pymorphy3>=1.0.4",
+    "mawo-razdel>=1.0.6",
+    "mawo-slovnet>=1.0.7",
     "rapidfuzz>=3.0.0",
 ]
 
