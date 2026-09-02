@@ -177,6 +177,22 @@ class TestScopeMismatchE2E:
 # Executor auto mode integration
 # ---------------------------------------------------------------------------
 
+class TestAnswerNodeCompleted:
+    """answer_node корректно возвращает completed=True (LAN-фикс completed=False)."""
+
+    @patch("app.services.agent.graph.nodes.build_answer",
+           return_value=AgentAnswer(query="тест", answer="Отлично", mode="deterministic"))
+    def test_answer_node_returns_completed(self, mock_build):
+        from app.services.agent.core.state import create_initial_state
+        from app.services.agent.graph.nodes import answer_node
+        pq = _parsed(query="найди задвижку", item_types=["задвижка"])
+        state = create_initial_state(query="найди задвижку", parsed=pq)
+        state["context"]["intent"] = "search"
+        out = answer_node(state)
+        assert out.get("completed") is True
+        assert out.get("answer") is not None
+
+
 def _graph_result(components, answer_text="Ответ."):
     return {
         "components": components,

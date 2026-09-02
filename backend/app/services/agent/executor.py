@@ -333,7 +333,7 @@ class AgentExecutor:
             "review": result.get("review_required", False),
             "answers": [result.get("context", {}).get("last_text", "")],
             "mode": result.get("context", {}).get("mode", "offline_rules"),
-            "tools_used": list(result.get("results", {}).keys()),
+            "tools_used": list(result.get("context", {}).get("tools_used", [])),
         }
 
         return build_answer(parsed, intent, response)

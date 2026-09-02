@@ -225,8 +225,8 @@ def answer_node(state: AgentState) -> Dict[str, Any]:
     answer = build_answer(state["parsed"], intent, result)
     state["answer"] = answer
     state["completed"] = True
-    
-    return {"answer": answer}
+
+    return {"answer": answer, "completed": True}
 
 
 def _component_key(row: Dict[str, Any]) -> Optional[Any]:
