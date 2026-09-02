@@ -229,6 +229,12 @@ def answer_node(state: AgentState) -> Dict[str, Any]:
     return {"answer": answer, "completed": True}
 
 
+def _is_stock_row(row: Dict[str, Any]) -> bool:
+    """Признак строки склада (stock_query): несёт реальный остаток."""
+    status = str(row.get("status") or "").lower()
+    return "складе" in status
+
+
 def _component_key(row: Dict[str, Any]) -> Optional[Any]:
     """Ключ агрегации: mtr_code/ksm_code либо (name, item_type, status) для бескодовых."""
     for code_key in ("mtr_code", "ksm_code"):
@@ -251,8 +257,13 @@ def _merge_rows(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
         if b.get("status"):
             a["status"] = b["status"]
     qty_b = b.get("quantity")
-    if qty_b not in (None, 0) and a.get("quantity") in (None, 0):
+    stock_b = _is_stock_row(b)
+    if (qty_b is not None
+            and a.get("quantity") in (None, 0)
+            and (qty_b != 0 or stock_b)):
         a["quantity"] = qty_b
+    if stock_b and a.get("detail") is None and b.get("detail"):
+        a["detail"] = b["detail"]
     if a.get("status") != b.get("status") and b.get("status"):
         extra = str(b["status"])
         detail = str(a.get("detail") or "")

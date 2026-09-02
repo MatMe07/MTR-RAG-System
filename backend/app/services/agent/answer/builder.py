@@ -6,6 +6,7 @@ from app.schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
 from .explanation import ExplanationGenerator
 from .warnings import build_scenario_warnings, evaluate_parameter_rules, group_warnings
 from .reviewer import auto_review, _FALLBACK_ANSWER
+from ..tools.stock_filters import passes_stock_filter
 from .status import (
     determine_status,
     build_recommendations,
@@ -121,6 +122,7 @@ class AnswerBuilder:
                 "LIST_OUT_OF_STOCK" in intents
                 or getattr(parsed, "on_stock", None) is False
             )
+        has_stock_filter = _has_stock_filters(parsed)
 
         scored = [
             r for r in rows
@@ -142,6 +144,27 @@ class AnswerBuilder:
                 if not r.get("quantity") or r.get("quantity", 0) == 0
             ]
             rows = verdict_aux + generic_aux[: self.AUX_MAX] + scored[: self.CANDIDATE_TOP_N]
+        elif has_stock_filter:
+            # Порог остатка (quantity_min/max) применяем к ФАКТИЧЕСКОМУ остатку,
+            # который в строках-кандидатах уже проставлен мержем склада.
+            # Строки без известного остатка (quantity=None) — это каталог/вердикты,
+            # их оставляем как вспомогательные; строки с остатком фильтруем по
+            # порогу, а прошедшие сортируем по остатку (убыв.).
+            verdict_aux = [
+                r for r in self._iter_rows(rows)
+                if self._is_analysis_row(r) and (
+                    r.get("quantity") is None
+                    or passes_stock_filter(r.get("quantity"), parsed)
+                )
+            ]
+            candidates = [
+                r for r in self._iter_rows(rows)
+                if not self._is_analysis_row(r)
+                and r.get("quantity") is not None
+                and passes_stock_filter(r.get("quantity"), parsed)
+            ]
+            candidates.sort(key=lambda r: r.get("quantity") or 0, reverse=True)
+            rows = candidates[: self.CANDIDATE_TOP_N] + verdict_aux
         else:
             scored.sort(key=lambda r: r.get("match_percent") or 0.0, reverse=True)
             rows = (
@@ -149,6 +172,8 @@ class AnswerBuilder:
                 + verdict_aux
                 + generic_aux[: self.AUX_MAX]
             )
+
+        rows = self._apply_stock_filter(rows, parsed)
 
         return [
             AgentComponent(
@@ -169,6 +194,28 @@ class AnswerBuilder:
             )
             for r in rows
         ]
+
+    @staticmethod
+    def _iter_rows(rows: List[Dict]) -> List[Dict]:
+        return [r for r in rows if isinstance(r, dict)]
+
+    def _apply_stock_filter(self, rows: List[Dict], parsed: Any) -> List[Dict]:
+        """Финальный фильтр кандидатов по порогам stock_filters (quantity_min/max).
+
+        Аналитические/verdict-строки (sufficiency, inventory, планы) не фильтруются.
+        Кандидаты с quantity=None (поиск по каталогу без склада) — без изменений.
+        """
+        if parsed is None:
+            return rows
+        result = []
+        for r in rows:
+            if self._is_analysis_row(r):
+                result.append(r)
+            else:
+                qty = r.get("quantity")
+                if qty is None or passes_stock_filter(qty, parsed):
+                    result.append(r)
+        return result
 
     @staticmethod
     def _is_analysis_row(row: Dict) -> bool:
@@ -239,6 +286,13 @@ class AnswerBuilder:
 
 
 # Функция-обёртка для обратной совместимости
+def _has_stock_filters(parsed: Any) -> bool:
+    if parsed is None:
+        return False
+    filters = getattr(parsed, "stock_filters", None) or {}
+    return filters.get("quantity_min") is not None or filters.get("quantity_max") is not None
+
+
 def build_answer(parsed: ParsedQuery, intent: str, result: Dict[str, Any]) -> AgentAnswer:
     """Обёртка для сборки ответа"""
     builder = AnswerBuilder()

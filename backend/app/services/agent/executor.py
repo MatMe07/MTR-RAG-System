@@ -334,6 +334,7 @@ class AgentExecutor:
             "answers": [result.get("context", {}).get("last_text", "")],
             "mode": result.get("context", {}).get("mode", "offline_rules"),
             "tools_used": list(result.get("context", {}).get("tools_used", [])),
+            "stock_rows": result.get("stock_rows", []),
         }
 
         return build_answer(parsed, intent, response)

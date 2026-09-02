@@ -7,6 +7,7 @@ import time
 
 from .registry import register_tool
 from .core_tools import _empty_result, _source, _card_component
+from .stock_filters import passes_stock_filter
 from ..core.state import AgentState
 
 log = logging.getLogger("mtr.agent.tools")
@@ -235,6 +236,18 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
         stock_info = stock_by_ksm.get(ksm) if ksm else None
         qty = stock_info.get("quantity") if stock_info else None
 
+        # Если stock_query отфильтровал позицию по порогу остатка —
+        # stock_rows её не содержит, qty=None; при наличии quantity_max
+        # такие позиции тоже пропускаем (они не попали в filtered stock_rows).
+        stock_filters = getattr(parsed, "stock_filters", None) or {}
+        if qty is None and stock_filters.get("quantity_max") is not None:
+            continue
+
+        # Пороги остатка (quantity_min/quantity_max) применяются к ФАКТИЧЕСКОМУ
+        # остатку, а не к рекомендуемому значению.
+        if not passes_stock_filter(qty, parsed):
+            continue
+
         if out_of_stock_only and qty is not None and qty > 0:
             continue
 
@@ -269,6 +282,7 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
             "source_id": card.get("card_id"),
             "_urgency": urgency,
             "_urgency_score": urgency,
+            "_tool": "inventory_calculator",
         })
 
     result["components"].sort(key=lambda c: c.get("_urgency", 0), reverse=True)

@@ -8,6 +8,7 @@ import time
 from .registry import register_tool
 from ..core.state import AgentState
 from ..answer.status import evaluate_candidate, candidate_tz_status
+from .stock_filters import apply_stock_filters, describe_stock_filter
 
 log = logging.getLogger("mtr.agent.tools")
 
@@ -226,7 +227,12 @@ def stock_query(state: AgentState, ctx) -> Dict[str, Any]:
         return result
 
     candidates = state.get("candidates", [])
+    parsed = state.get("parsed")
 
+    # Сначала считаем остаток по всем кандидатам, затем применяем пороги
+    # (quantity_min/quantity_max/on_stock) — см. apply_stock_filters.
+    rows = []
+    skipped = 0
     for item in candidates:
         card = item.get("card")
         if not card:
@@ -241,7 +247,7 @@ def stock_query(state: AgentState, ctx) -> Dict[str, Any]:
             status = "нет на складе"
             result["warnings"].append(f"Для {card.get('name')} нет остатков")
 
-        result["components"].append({
+        rows.append({
             "ksm_code": ksm,
             "mtr_code": (card.get("codes") or {}).get("mtr_code"),
             "name": card.get("name"),
@@ -249,13 +255,31 @@ def stock_query(state: AgentState, ctx) -> Dict[str, Any]:
             "quantity": qty or 0,
             "status": status,
             "source_id": card.get("card_id"),
+            "_tool": "stock_query",
         })
-        result["sources"].append(_source("stock", ksm, f"остаток: {qty or 0}"))
+
+    filtered = apply_stock_filters(rows, parsed)
+    if len(filtered) < len(rows):
+        skipped = len(rows) - len(filtered)
+        result["warnings"].append(
+            f"По порогу остатка отфильтровано позиций: {skipped}"
+        )
+
+    for row in filtered:
+        ksm = row.get("ksm_code")
+        result["components"].append(row)
+        result["sources"].append(_source("stock", ksm, f"остаток: {row.get('quantity')}"))
 
     state["stock_rows"] = result["components"]
-    result["text"] = f"Проверено {len(candidates)} позиций"
+    result["text"] = (
+        f"Проверено {len(candidates)} позиций"
+        + (f"{describe_stock_filter(parsed)}" if describe_stock_filter(parsed) else "")
+    )
     result["duration_ms"] = (time.time() - start) * 1000
-    log.info("[stock_query] Checked %d items in %.0fms", len(candidates), result["duration_ms"])
+    log.info(
+        "[stock_query] Checked %d items (kept %d) in %.0fms",
+        len(candidates), len(result["components"]), result["duration_ms"],
+    )
     return result
 
 
