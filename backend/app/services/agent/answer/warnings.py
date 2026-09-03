@@ -154,13 +154,6 @@ def group_warnings(warnings: List[str]) -> Dict[str, List[str]]:
     return dict(grouped)
 
 
-def _warning_category_priority(category: str) -> int:
-    for i, (name, _) in enumerate(_WARNING_CATEGORIES):
-        if category == name:
-            return i
-    return len(_WARNING_CATEGORIES)
-
-
 def build_required_params_warnings(parsed: ParsedQuery, provider: Any = None) -> List[str]:
     """Предупреждения по обязательным параметрам типа детали (ValidationRule).
 

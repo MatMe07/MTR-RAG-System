@@ -183,10 +183,6 @@ class ClarificationManager:
         with self._lock:
             self._sessions.pop(session_id, None)
 
-    def clear_all(self) -> None:
-        with self._lock:
-            self._sessions.clear()
-
 
 _manager: Optional[ClarificationManager] = None
 _manager_lock = threading.Lock()

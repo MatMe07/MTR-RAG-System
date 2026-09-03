@@ -9,8 +9,6 @@ import logging
 import os
 import sys
 import time
-import uuid
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logging.basicConfig(
@@ -22,50 +20,8 @@ logging.basicConfig(
 for _name in ("mawo_natasha", "mawo_pymorphy3", "mawo_razdel", "mawo_slovnet", "hnswlib"):
     logging.getLogger(_name).setLevel(logging.WARNING)
 
-from app.models.pydantic.schemas import SearchResponse  # noqa: E402
 from app.services.agent.core.config import AgentConfig  # noqa: E402
 from app.services.agent.executor import AgentExecutor  # noqa: E402
-
-
-def run_search(query: str, mode: str) -> SearchResponse:
-    config = AgentConfig(use_llm=(mode in ("llm", "auto")))
-    executor = AgentExecutor(config)
-
-    start = time.time()
-    answer = executor.execute(query, mode=mode)
-    elapsed = (time.time() - start) * 1000
-
-    response = SearchResponse(
-        request_id=str(uuid.uuid4()),
-        query=query,
-        mode=mode,
-        status=answer.status or ("ok" if not answer.human_review_required else "requires_expert"),
-        results=answer.components or [],
-        warnings=answer.warnings or [],
-        recommendations=answer.recommendations or [],
-        requires_expert=answer.human_review_required,
-        expert_review_id=answer.expert_review_id,
-        execution_time_ms=elapsed,
-    )
-
-    try:
-        from app.db.session import SessionLocal
-        from app.services.audit_service import AuditService
-
-        db = SessionLocal()
-        try:
-            AuditService(db=db).log(
-                request_id=response.request_id,
-                user_id=None,
-                action="search",
-                data={"query": query, "mode": mode},
-            )
-        finally:
-            db.close()
-    except Exception:
-        pass
-
-    return response
 
 
 def main() -> None:
@@ -82,12 +38,18 @@ def main() -> None:
     }.get(mode_raw, "deterministic")
     print(f"\n>>> Режим: {mode}\n")
 
-    response = run_search(query, mode)
+    config = AgentConfig(use_llm=(mode in ("llm", "auto")))
+    executor = AgentExecutor(config)
+
+    start = time.time()
+    answer = executor.execute(query, mode=mode)
+    elapsed = (time.time() - start) * 1000
 
     print("\n" + "=" * 72)
-    print(">>> ОТВЕТ (как возвращается):")
-    print(response)
+    print(">>> ОТВЕТ (как возвращает агент):")
+    print(answer.model_dump_json(indent=2))
     print("=" * 72)
+    print(f"\n>>> Время выполнения: {elapsed:.0f} мс")
 
 
 if __name__ == "__main__":

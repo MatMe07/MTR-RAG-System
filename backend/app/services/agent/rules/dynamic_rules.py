@@ -357,11 +357,6 @@ class DynamicRules:
     def get_validation_rule(self, item_type: str) -> Optional[Dict[str, Any]]:
         return self.validation_rule(item_type)
 
-    def contextual_overrides(self) -> List[Dict[str, Any]]:
-        """Контекстные переопределения (ContextualOverride), по приоритету."""
-        self._ensure()
-        return list(self._data.get("overrides") or []) if self._data else []
-
 
 _rules: Optional[DynamicRules] = None
 

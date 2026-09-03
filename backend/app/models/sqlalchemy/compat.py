@@ -1,6 +1,6 @@
 import json
 from sqlalchemy import TypeDecorator, String, Text, Integer, BigInteger
-from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB, ARRAY as PG_ARRAY, UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB, ARRAY as PG_ARRAY
 from app.db.session import _is_sqlite
 
 
@@ -62,14 +62,6 @@ class ARRAYCompat(TypeDecorator):
         if dialect.name == "postgresql":
             return PG_ARRAY(self.item_type or String())
         return Text()
-
-
-def UUID_column(**kwargs):
-    """UUID колонка: native UUID в PostgreSQL, String в SQLite."""
-    from app.db.session import _is_sqlite
-    if _is_sqlite:
-        return String(36, **kwargs)
-    return PG_UUID(as_uuid=True, **kwargs)
 
 
 def PKColType():

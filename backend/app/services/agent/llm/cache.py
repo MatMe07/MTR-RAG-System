@@ -41,10 +41,7 @@ class LLMCache:
     def remove(self, key: str) -> None:
         if key in self._cache:
             del self._cache[key]
-    
-    def size(self) -> int:
-        return len(self._cache)
-    
+
     def keys(self) -> list:
         return list(self._cache.keys())
 
@@ -59,10 +56,3 @@ def get_llm_cache() -> LLMCache:
     if _llm_cache is None:
         _llm_cache = LLMCache()
     return _llm_cache
-
-
-def reset_llm_cache() -> None:
-    """Сброс кеша"""
-    global _llm_cache
-    if _llm_cache:
-        _llm_cache.clear()

@@ -1,8 +1,7 @@
 # agent/llm/client.py
 
-from typing import Optional, Any, Type, Dict
+from typing import Optional, Any, Dict
 import time
-import json
 
 from .cache import get_llm_cache
 from ..core.config import DEFAULT_CONFIG, AgentConfig
@@ -90,66 +89,6 @@ class LLMClient:
             duration = (time.time() - start) * 1000
             self._metrics["errors"] += 1
             raise LLMError(f"LLM ошибка: {e}") from e
-    
-    def structured_invoke(self, prompt: str, schema: Type, use_cache: bool = True) -> Any:
-        """Вызов LLM со структурированным выводом"""
-        cache_key = f"llm_structured:{hash(prompt[:500])}:{schema.__name__}"
-        
-        if use_cache:
-            cached = self.cache.get(cache_key)
-            if cached is not None:
-                self._metrics["cache_hits"] += 1
-                return cached
-        
-        self._metrics["cache_misses"] += 1
-        self._metrics["total_calls"] += 1
-        
-        start = time.time()
-        try:
-            # Пробуем structured output
-            if hasattr(self.client, "with_structured_output"):
-                result = self.client.with_structured_output(schema).invoke(prompt)
-            else:
-                # Fallback: парсим JSON вручную
-                response = self.client.invoke(prompt)
-                content = getattr(response, "content", str(response))
-                # Ищем JSON в ответе
-                import re
-                json_match = re.search(r'\{.*\}', content, re.DOTALL)
-                if json_match:
-                    data = json.loads(json_match.group())
-                    result = schema(**data)
-                else:
-                    result = schema()
-            
-            duration = (time.time() - start) * 1000
-            self._metrics["total_duration_ms"] += duration
-            
-            if use_cache and result:
-                self.cache.set(cache_key, result)
-            
-            return result
-            
-        except TimeoutError as e:
-            duration = (time.time() - start) * 1000
-            self._metrics["errors"] += 1
-            raise LLMTimeoutError(self.config.llm_timeout) from e
-        except Exception as e:
-            duration = (time.time() - start) * 1000
-            self._metrics["errors"] += 1
-            raise LLMError(f"LLM ошибка: {e}") from e
-    
-    def get_metrics(self) -> Dict[str, Any]:
-        """Получение метрик"""
-        total = self._metrics["cache_hits"] + self._metrics["cache_misses"]
-        return {
-            "total_calls": self._metrics["total_calls"],
-            "cache_hits": self._metrics["cache_hits"],
-            "cache_misses": self._metrics["cache_misses"],
-            "cache_hit_rate": self._metrics["cache_hits"] / total if total > 0 else 0,
-            "avg_duration_ms": self._metrics["total_duration_ms"] / self._metrics["total_calls"] if self._metrics["total_calls"] > 0 else 0,
-            "errors": self._metrics["errors"],
-        }
     
     def clear_cache(self) -> None:
         self.cache.clear()

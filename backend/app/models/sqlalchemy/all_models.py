@@ -6,24 +6,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime, timezone
 import uuid
 
-from app.db.session import Base, _is_sqlite
+from app.db.session import Base
 from app.models.sqlalchemy.compat import (
-    JSONBCompat, ARRAYCompat, PKColType,
+    JSONBCompat, PKColType,
 )
 
 
-def _UUID():
-    if _is_sqlite:
-        return String(36)
-    from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-    return PG_UUID(as_uuid=True)
-
-
 JSONCol = JSONBCompat
-
-
-def ARRAYCol(item=None):
-    return ARRAYCompat(item)
 
 
 class User(Base):

@@ -83,10 +83,3 @@ def get_instruments_for_llm() -> List[Dict[str, Any]]:
 
 def get_intent_tools(intent: str) -> List[str]:
     return list(_INTENT_TOOLS.get(intent, []))
-
-
-def clear_registry() -> None:
-    _TOOL_REGISTRY.clear()
-    _TOOL_DESCRIPTIONS.clear()
-    _INSTRUMENTS.clear()
-    _INTENT_TOOLS.clear()

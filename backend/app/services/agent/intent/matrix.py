@@ -152,12 +152,3 @@ BLOCKER_FIELDS = {
     "dn", "pn", "angle", "wall_thickness",
     "medium", "material", "steel_grade", "item_type",
 }
-
-
-def get_intent_requirements(intent: str) -> Dict[str, List[Tuple[str, ...]]]:
-    """Требования интента (required как OR of AND-групп) + optional."""
-    return INTENT_REQUIREMENTS.get(intent, {"required": [], "optional": []})
-
-
-def all_optional_params() -> List[str]:
-    return sorted({p for r in INTENT_REQUIREMENTS.values() for p in r["optional"]})

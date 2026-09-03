@@ -1,0 +1,281 @@
+Запрос: Метод поиска (0 - deterministic, 1 - llm, 2 - auto): 
+>>> Режим: llm
+
+2026-09-03 20:01:13,002 INFO    | mtr.agent.executor               | [Executor] Execute query='Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет' mode=llm request_id=None
+2026-09-03 20:01:13,199 INFO    | mtr.agent.executor               | [Executor] Parsed enriched: status=COMPLETE intents=['FIND_ALTERNATIVE', 'FIND_BY_PARAMS', 'CHECK_STOCK'] missing={'FIND_ALTERNATIVE': [], 'FIND_BY_PARAMS': [], 'CHECK_STOCK': []}
+2026-09-03 20:01:13,351 INFO    | mtr.agent.executor               | [Executor] LLM-agent started: request_id=91fca8fb-bcb4-47bb-a17a-04058fce1240
+🔍 API Key resolved: OK
+🔍 Base URL: https://openrouter.ai/api/v1/
+🔍 Model: nvidia/nemotron-3-super-120b-a12b:free
+2026-09-03 20:01:14,926 INFO    | httpx2                           | HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2026-09-03 20:01:18,569 INFO    | mtr.agent.executor               | [Executor] LLM-agent finished in 5567ms: iterations=3 tools=['search_catalog'] components=0
+
+========================================================================
+>>> ОТВЕТ (как возвращает агент):
+{
+  "query": "Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет",
+  "intent": "replacement",
+  "intent_label": "Подбор замены",
+  "route": "agent",
+  "mode": "llm",
+  "tools_used": [
+    "search_catalog"
+  ],
+  "answer": "Достигнут лимит попыток. Попробуйте детерминированный режим или уточните запрос.",
+  "explanation": null,
+  "components": [],
+  "warnings": [
+    "Инструмент «search_catalog»: 'list' object has no attribute 'get'",
+    "Инструмент «search_catalog» повторялся с одинаковыми параметрами.",
+    "Достигнут лимит попыток. Попробуйте детерминированный режим или уточните запрос.",
+    "Пригодность к H2S нельзя подтверждать только по совпадению DN и PN.",
+    "Синтетическая среда в карточке не является подтверждением пригодности изделия к H2S.",
+    "Наличие позиции на складе не подтверждает ее пригодность для H2S.",
+    "Описание синтетической карточки нельзя выдавать за подтвержденный паспорт изделия.",
+    "Примеры из синтетического каталога используются только для демонстрации.",
+    "Большее значение PN не гарантирует совместимость задвижки с фланцами и соседними деталями.",
+    "Изменение DN является изменением узла и не должно утверждаться автоматически.",
+    "Для типа «задвижка» не указаны обязательные параметры: марка стали. Уточните их для точного подбора."
+  ],
+  "warning_categories": {
+    "Прочее": [
+      "Инструмент «search_catalog»: 'list' object has no attribute 'get'",
+      "Инструмент «search_catalog» повторялся с одинаковыми параметрами.",
+      "Достигнут лимит попыток. Попробуйте детерминированный режим или уточните запрос.",
+      "Большее значение PN не гарантирует совместимость задвижки с фланцами и соседними деталями.",
+      "Изменение DN является изменением узла и не должно утверждаться автоматически.",
+      "Для типа «задвижка» не указаны обязательные параметры: марка стали. Уточните их для точного подбора."
+    ],
+    "Совместимость со средой": [
+      "Пригодность к H2S нельзя подтверждать только по совпадению DN и PN.",
+      "Синтетическая среда в карточке не является подтверждением пригодности изделия к H2S.",
+      "Наличие позиции на складе не подтверждает ее пригодность для H2S."
+    ],
+    "Достоверность данных": [
+      "Описание синтетической карточки нельзя выдавать за подтвержденный паспорт изделия.",
+      "Примеры из синтетического каталога используются только для демонстрации."
+    ]
+  },
+  "purchase_recommendation": null,
+  "sources": [],
+  "missing_parameters": [],
+  "human_review_required": true,
+  "status": "нет данных",
+  "recommendations": [
+    "В каталоге нет подходящих позиций: измените параметры запроса."
+  ],
+  "expert_review_id": null,
+  "parsed_confidence": 0.94,
+  "parsed_query": {
+    "original_query": "Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет",
+    "intents": [
+      "FIND_ALTERNATIVE",
+      "FIND_BY_PARAMS",
+      "CHECK_STOCK"
+    ],
+    "status": "COMPLETE",
+    "missing_params": {
+      "FIND_ALTERNATIVE": [],
+      "FIND_BY_PARAMS": [],
+      "CHECK_STOCK": []
+    },
+    "params": {
+      "item_type": "задвижка",
+      "dn": 150.0,
+      "pn": 40.0,
+      "medium": "H2S",
+      "min_stock": 50,
+      "quantity": 2,
+      "top_n": 5
+    },
+    "operations": [
+      "replace",
+      "inventory",
+      "search"
+    ],
+    "item_types": [
+      "задвижка"
+    ],
+    "component_ids": [],
+    "unit_ids": [],
+    "card": {
+      "card_id": null,
+      "mtr_code": null,
+      "ksm_code": null,
+      "item_type": "задвижка",
+      "subtype": null,
+      "designation": "DN150 PN40 H2S",
+      "name": "задвижка DN150 PN40",
+      "geometry": {
+        "dn": 150.0,
+        "d1": null,
+        "d2": null,
+        "wall_thickness": null,
+        "wall_thickness_2": null,
+        "angle": null,
+        "radius": null
+      },
+      "pressure": {
+        "pn": 40.0,
+        "working_pressure_mpa": 4.0,
+        "test_pressure_mpa": null,
+        "raw_value": "PN40"
+      },
+      "material": {
+        "steel_grade": null,
+        "strength_class": null,
+        "standard": null
+      },
+      "environment": {
+        "medium": "H2S",
+        "h2s_confirmed": true,
+        "co2_confirmed": null,
+        "temperature_min_c": null,
+        "climate_version": null
+      },
+      "coating": null,
+      "normative": {
+        "gost_tu": null,
+        "lnd_sections": []
+      },
+      "extraction": {
+        "confidence": 0.0,
+        "method": "user_query",
+        "missing_fields": [
+          "geometry",
+          "material"
+        ]
+      },
+      "sources": [
+        {
+          "type": "user_query",
+          "file": null,
+          "page": null,
+          "row": null,
+          "fragment": "Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет"
+        }
+      ]
+    },
+    "cards": [
+      {
+        "card_id": null,
+        "mtr_code": null,
+        "ksm_code": null,
+        "item_type": "задвижка",
+        "subtype": null,
+        "designation": "DN150 PN40 H2S",
+        "name": "задвижка DN150 PN40",
+        "geometry": {
+          "dn": 150.0,
+          "d1": null,
+          "d2": null,
+          "wall_thickness": null,
+          "wall_thickness_2": null,
+          "angle": null,
+          "radius": null
+        },
+        "pressure": {
+          "pn": 40.0,
+          "working_pressure_mpa": 4.0,
+          "test_pressure_mpa": null,
+          "raw_value": "PN40"
+        },
+        "material": {
+          "steel_grade": null,
+          "strength_class": null,
+          "standard": null
+        },
+        "environment": {
+          "medium": "H2S",
+          "h2s_confirmed": true,
+          "co2_confirmed": null,
+          "temperature_min_c": null,
+          "climate_version": null
+        },
+        "coating": null,
+        "normative": {
+          "gost_tu": null,
+          "lnd_sections": []
+        },
+        "extraction": {
+          "confidence": 0.0,
+          "method": "user_query",
+          "missing_fields": [
+            "geometry",
+            "material"
+          ]
+        },
+        "sources": [
+          {
+            "type": "user_query",
+            "file": null,
+            "page": null,
+            "row": null,
+            "fragment": "Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет"
+          }
+        ]
+      }
+    ],
+    "technical_filters": {
+      "item_type": "задвижка",
+      "dn": 150.0,
+      "pn": 40.0,
+      "working_pressure_mpa": 4.0,
+      "raw_value": "PN40",
+      "medium": "H2S",
+      "h2s_confirmed": true
+    },
+    "stock_filters": {
+      "stock_category": "main"
+    },
+    "quantity": null,
+    "units_count": null,
+    "length_m": null,
+    "limit": null,
+    "timeframe": null,
+    "urgency": null,
+    "sort_by": null,
+    "on_stock": null,
+    "not_installed": null,
+    "proposed_changes": {},
+    "impact_analysis": {
+      "required_checks": [
+        "проверить совместимость со средой"
+      ]
+    },
+    "unit_context": {
+      "medium": "H2S"
+    },
+    "component_context": {},
+    "references": [],
+    "ambiguities": [],
+    "required_agents": [
+      "inventory",
+      "search"
+    ],
+    "required_capabilities": [
+      "inventory",
+      "replacement_matching",
+      "search"
+    ],
+    "confidence": 0.94,
+    "confidence_details": {
+      "operations": 0.8,
+      "card": 0.8,
+      "ambiguities": 1.0
+    }
+  },
+  "review_verdict": "needs_review",
+  "review_issues": [
+    "Ответ не содержит источников",
+    "Ошибка исполнения: {'code': 'DAL_ERROR', 'message': \"'list' object has no attribute 'get'\", 'details': {'tool': 'search_catalog'}}",
+    "Ошибка исполнения: {'code': 'DAL_ERROR', 'message': \"'list' object has no attribute 'get'\", 'details': {'tool': 'search_catalog'}}"
+  ],
+  "verification_verdict": null,
+  "verification_reasons": [],
+  "mode_refined": null,
+  "llm_refine_failed": null
+}
+========================================================================
+
+>>> Время выполнения: 5571 мс

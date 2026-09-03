@@ -567,111 +567,11 @@ STANDARD_ANGLES: List[int] = [30, 45, 60, 90]
 # 12. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 # =========================================================
 
-def get_item_types() -> List[str]:
-    """Получить список всех типов деталей"""
-    refresh_dictionaries()
-    return list(set(ITEM_TYPE_ALIASES.values()))
-
-
 def get_operations() -> List[str]:
     """Получить список всех операций"""
     refresh_dictionaries()
     return list(set(OPERATION_ALIASES.values()))
 
-
-def get_mediums() -> List[str]:
-    """Получить список всех сред"""
-    refresh_dictionaries()
-    return list(set(MEDIUM_ALIASES.values()))
-
-
-def get_climates() -> List[str]:
-    """Получить список всех климатик"""
-    refresh_dictionaries()
-    return list(set(CLIMATE_ALIASES.values()))
-
-
-def get_steel_grades() -> List[str]:
-    """Получить список всех марок стали"""
-    return STEEL_GRADES.copy()
-
-
-def get_strength_classes() -> List[str]:
-    """Получить список всех классов прочности"""
-    return STRENGTH_CLASSES.copy()
-
-
-def get_aliases_for_item_type(item_type: str) -> List[str]:
-    """Получить алиасы для типа детали"""
-    refresh_dictionaries()
-    return [alias for alias, type_ in ITEM_TYPE_ALIASES.items() if type_ == item_type]
-
-
-def get_aliases_for_operation(operation: str) -> List[str]:
-    """Получить алиасы для операции"""
-    refresh_dictionaries()
-    return [alias for alias, op in OPERATION_ALIASES.items() if op == operation]
-
-
-def get_aliases_for_medium(medium: str) -> List[str]:
-    """Получить алиасы для среды"""
-    refresh_dictionaries()
-    return [alias for alias, med in MEDIUM_ALIASES.items() if med == medium]
-
-
-def get_aliases_for_climate(climate: str) -> List[str]:
-    """Получить алиасы для климатики"""
-    refresh_dictionaries()
-    return [alias for alias, clim in CLIMATE_ALIASES.items() if clim == climate]
-
-
-def is_valid_item_type(item_type: str) -> bool:
-    """Проверка валидности типа детали"""
-    refresh_dictionaries()
-    return item_type in get_item_types()
-
-
-def is_valid_operation(operation: str) -> bool:
-    """Проверка валидности операции"""
-    refresh_dictionaries()
-    return operation in get_operations()
-
-
-def is_valid_medium(medium: str) -> bool:
-    """Проверка валидности среды"""
-    refresh_dictionaries()
-    return medium in get_mediums()
-
-
-def is_valid_climate(climate: str) -> bool:
-    """Проверка валидности климатики"""
-    refresh_dictionaries()
-    return climate in get_climates()
-
-
-def is_valid_steel_grade(steel: str) -> bool:
-    """Проверка валидности марки стали"""
-    return steel in STEEL_GRADES
-
-
-def is_valid_strength_class(strength: str) -> bool:
-    """Проверка валидности класса прочности"""
-    return strength in STRENGTH_CLASSES
-
-
-def is_standard_dn(dn: int) -> bool:
-    """Проверка валидности DN"""
-    return dn in STANDARD_DN
-
-
-def is_standard_pn(pn: int) -> bool:
-    """Проверка валидности PN"""
-    return pn in STANDARD_PN
-
-
-def is_standard_angle(angle: int) -> bool:
-    """Проверка валидности угла"""
-    return angle in STANDARD_ANGLES
 
 # =========================================================
 # 13. КОНСТАНТЫ ДЛЯ НОРМАТИВНЫХ ДОКУМЕНТОВ

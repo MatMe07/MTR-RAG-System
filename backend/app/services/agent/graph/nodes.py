@@ -194,21 +194,6 @@ def duplicates_node(state: AgentState) -> Dict[str, Any]:
     return _merge_result(state, result)
 
 
-def llm_enhance_node(state: AgentState) -> Dict[str, Any]:
-    """Узел для LLM-усиления ответа (если нужно)"""
-    # ✅ LLM получаем через глобальную фабрику
-    from ..llm.client import get_llm_client
-    llm = get_llm_client()
-    
-    if not llm:
-        return {"llm_enhanced": False}
-    
-    # Здесь можно добавить LLM-обработку
-    # Например, улучшить текст ответа
-    
-    return {"llm_enhanced": True}
-
-
 def answer_node(state: AgentState) -> Dict[str, Any]:
     intent = state.get("context", {}).get("intent", "search")
     result = {

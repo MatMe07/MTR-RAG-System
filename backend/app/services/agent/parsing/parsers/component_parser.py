@@ -355,68 +355,6 @@ class ComponentParser:
         }
 
     # =========================================================
-    # МЕТОДЫ ДЛЯ ОТДЕЛЬНЫХ ТИПОВ (для обратной совместимости)
-    # =========================================================
-
-    def parse_component(self, text: str) -> Optional[str]:
-        """
-        Парсинг только COMP-идентификаторов
-        """
-        result = self.parse_all(text)
-        if result.get('component_ids'):
-            return result['component_ids'][0]
-        return None
-
-    def parse_unit(self, text: str) -> Optional[str]:
-        """
-        Парсинг только UNIT-идентификаторов
-        """
-        result = self.parse_all(text)
-        if result.get('unit_ids'):
-            return result['unit_ids'][0]
-        return None
-
-    def parse_ksm(self, text: str) -> Optional[str]:
-        """
-        Парсинг только KSM-идентификаторов
-        """
-        result = self.parse_all(text)
-        if result.get('ksm_codes'):
-            return result['ksm_codes'][0]
-        return None
-
-    def parse_mtr(self, text: str) -> Optional[str]:
-        """
-        Парсинг только MTR-идентификаторов
-        """
-        result = self.parse_all(text)
-        if result.get('mtr_codes'):
-            return result['mtr_codes'][0]
-        return None
-
-    # =========================================================
-    # ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ДЛЯ ОТЛАДКИ
-    # =========================================================
-
-    def get_all_patterns(self) -> Dict[str, List[Tuple[str, str, str, int]]]:
-        """
-        Получить все паттерны для отладки
-        """
-        return self.IDENTIFIER_PATTERNS
-
-    def get_stop_words(self) -> List[str]:
-        """
-        Получить стоп-слова
-        """
-        return list(self.STOP_WORDS)
-
-    def add_stop_word(self, word: str):
-        """
-        Добавить стоп-слово
-        """
-        self.STOP_WORDS.add(word.upper())
-
-    # =========================================================
     # ОЧИСТКА КЕША
     # =========================================================
 

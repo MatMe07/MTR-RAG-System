@@ -7,7 +7,6 @@
 """
 
 import logging
-import time
 import uuid
 from collections import deque
 from dataclasses import dataclass, field
@@ -111,7 +110,3 @@ def get_llm_logger() -> LLMAgentLogger:
 def reset_llm_logger() -> None:
     global _logger
     _logger = None
-
-
-def _now_ms() -> int:
-    return int(time.monotonic() * 1000)

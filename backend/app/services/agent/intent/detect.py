@@ -59,10 +59,6 @@ def _explain_terms(parsed: Any) -> Tuple[str, str]:
 
 
 # ------------------------------------------------------------- детекция
-def _detectors() -> Dict[str, Any]:
-    return {name: fn for name, fn in globals().items() if name.startswith("_det_")}
-
-
 def _det_FIND_BY_CODE(parsed):
     return bool(_codes(parsed) and not _has_op(parsed, "repair", "replace"))
 

@@ -377,13 +377,6 @@ def get_agent_executor(config: Optional[AgentConfig] = None) -> AgentExecutor:
     return _agent_executor
 
 
-def reset_agent_executor() -> None:
-    global _agent_executor
-    if _agent_executor:
-        _agent_executor.clear_cache()
-        _agent_executor = None
-
-
 def run_agent(query: str, parsed: Optional[ParsedQuery] = None) -> AgentAnswer:
     executor = get_agent_executor()
     return executor.execute(query, parsed)

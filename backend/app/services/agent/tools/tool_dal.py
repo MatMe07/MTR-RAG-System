@@ -263,13 +263,6 @@ class ToolDAL:
         comps = self.repo.get_components_by_unit(unit_code)
         return [self._enrich_component(comp) for comp in comps]
 
-    def get_unit(self, unit_code: str) -> Optional[Dict[str, Any]]:
-        graph = self.repo.get_graph()
-        for unit in graph.get("units", []):
-            if unit.get("unit_id") == unit_code:
-                return dict(unit)
-        return None
-
     def get_uninstalled_components(self) -> List[str]:
         installed = self._installed_ksm_set()
         return [

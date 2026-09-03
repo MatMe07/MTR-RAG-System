@@ -15,35 +15,7 @@ from .explanation import build_explanation
 from .status import (
     candidate_tz_status,
     format_sources,
-    STATUS_MATCH,
-    STATUS_ANALOG,
-    STATUS_MISMATCH,
-    STATUS_NOT_FOUND,
-    STATUS_UNCLEAR,
-    STATUS_EXPERT,
 )
-
-SUMMARY_BY_STATUS = {
-    STATUS_MATCH: "Запрос соответствует найденному изделию.",
-    STATUS_ANALOG: "Подобран потенциальный аналог.",
-    STATUS_MISMATCH: "Найдены позиции с расхождениями параметров.",
-    STATUS_NOT_FOUND: "По запросу нет данных в каталоге.",
-    STATUS_UNCLEAR: "Запрос требует уточнения.",
-    STATUS_EXPERT: "Требуется экспертная проверка.",
-}
-
-
-def _exception_empty_report() -> Dict[str, Any]:
-    return {
-        "status": STATUS_EXPERT,
-        "results": [],
-        "warnings": ["Ошибка обработки запроса."],
-        "recommendations": ["Повторите запрос позднее или обратитесь к эксперту."],
-        "requires_expert": True,
-        "expert_review_id": None,
-        "query": "",
-        "mode": "deterministic",
-    }
 
 
 def component_to_tz_result(component: AgentComponent) -> Dict[str, Any]:
@@ -87,12 +59,3 @@ def build_tz_result_items(answer: AgentAnswer) -> List[Dict[str, Any]]:
         for item in items:
             item["sources"] = sources
     return items
-
-
-def build_tz_summary(answer: AgentAnswer) -> str:
-    status = answer.status or STATUS_UNCLEAR
-    summary = SUMMARY_BY_STATUS.get(status, "")
-    if answer.components:
-        best = max(answer.components, key=lambda c: c.match_percent if c.match_percent is not None else 0)
-        summary += f" Лучший кандидат: {best.name or best.ksm_code}."
-    return summary

@@ -41,18 +41,6 @@ class FuzzyMatcher:
         # Сортировка по убыванию score
         return sorted(results, key=lambda x: x[1], reverse=True)
     
-    def match_batch(self, words: List[str], targets: List[str], 
-                    min_score: int = 75) -> Dict[str, List[str]]:
-        """
-        Массовый поиск совпадений
-        Возвращает {word: [matched_targets]}
-        """
-        result = {}
-        for word in words:
-            matches = self.match(word, targets)
-            result[word] = [m[0] for m in matches if m[1] >= min_score]
-        return result
-    
     def clear_cache(self):
         """Очистка кеша"""
         self._cache.clear()

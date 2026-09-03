@@ -143,8 +143,3 @@ def seed_rules_standalone(db_session_factory=None) -> Dict[str, int]:
     """Запуск seed с собственным соединением (для скриптов и тестов)."""
     with _SeedContext(db_session_factory) as db:
         return seed_rules(db)
-
-
-def upsert_synonym(db, group: str, raw: str, norm: Optional[str]) -> None:
-    """Единичный upsert алиаса (используется admin-service добавлять типы)."""
-    _upsert_synonyms(db, group, [(raw, norm or raw)])
