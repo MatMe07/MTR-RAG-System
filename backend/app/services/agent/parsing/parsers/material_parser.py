@@ -1,11 +1,11 @@
 # query_parser/parsers/material_parser.py
 
 import re
-from typing import Dict, Any, Optional, List, Tuple, Set
+from typing import Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from functools import lru_cache
 
-from ..dictionaries import STEEL_GRADES, STRENGTH_CLASSES
+from ..dictionaries import STEEL_GRADES
 from ..normalizers.normalizers import normalize_steel, normalize_strength_class
 from ..utils.fuzzy_utils import FuzzyMatcher
 
@@ -314,43 +314,6 @@ class MaterialParser:
             "strength_class": None,
             "standard": None,
         }
-
-    def is_valid_steel_grade(self, steel_grade: str) -> bool:
-        """
-        Проверка валидности марки стали
-        """
-        return steel_grade.upper() in self.STEEL_GRADES_EXTENDED
-
-    def is_valid_strength_class(self, strength_class: str) -> bool:
-        """
-        Проверка валидности класса прочности
-        """
-        return strength_class.upper() in STRENGTH_CLASSES
-
-    def get_all_steel_grades(self) -> List[str]:
-        """
-        Получить все марки стали
-        """
-        return list(self.STEEL_GRADES_EXTENDED.keys())
-
-    def get_all_strength_classes(self) -> List[str]:
-        """
-        Получить все классы прочности
-        """
-        return STRENGTH_CLASSES.copy()
-
-    def get_steel_grades_by_type(self, steel_type: str) -> List[str]:
-        """
-        Получить марки стали по типу
-        """
-        types = {
-            "carbon": ["20", "45", "40Х"],
-            "low_alloy": ["09Г2С", "09ГСФ", "13ХФА", "12ГС", "17Г1С"],
-            "stainless": ["12Х18Н10Т", "08Х18Н10Т", "03Х17Н14М3"],
-            "heat_resistant": ["15Х5М", "12Х1МФ", "15Х1М1Ф"],
-            "foreign": ["AISI 316L", "AISI 304", "ASTM A105", "API 5L X52"],
-        }
-        return types.get(steel_type, [])
 
     # =========================================================
     # ОЧИСТКА КЕША

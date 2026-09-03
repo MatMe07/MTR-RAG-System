@@ -1,7 +1,7 @@
 # query_parser/parsers/context_parser.py
 
 import re
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from functools import lru_cache
 
@@ -355,49 +355,6 @@ class ContextParser:
             del cleaned['references']
         
         return cleaned
-
-    def parse_references(self, text: str) -> List[ContextReference]:
-        """
-        Парсинг только ссылок
-        """
-        result = self.parse(text)
-        return result.get('references', [])
-
-    def parse_quantity(self, text: str) -> Optional[int]:
-        """
-        Парсинг только количества
-        """
-        result = self.parse(text)
-        return result.get('quantity')
-
-    def parse_length(self, text: str) -> Optional[float]:
-        """
-        Парсинг только длины
-        """
-        result = self.parse(text)
-        return result.get('length_meters')
-
-    # =========================================================
-    # МЕТОДЫ ДЛЯ ОТЛАДКИ
-    # =========================================================
-
-    def get_all_patterns(self) -> Dict[str, List[Tuple[str, str, int, str]]]:
-        """
-        Получить все паттерны для отладки
-        """
-        return {
-            'quantity': self.QUANTITY_PATTERNS,
-            'units_count': self.UNITS_COUNT_PATTERNS,
-            'length': self.LENGTH_PATTERNS,
-            'timeframe': self.TIMEFRAME_PATTERNS,
-            'urgency': self.URGENCY_PATTERNS,
-        }
-
-    def get_num_words(self) -> Dict[str, int]:
-        """
-        Получить словарь числительных
-        """
-        return self.NUM_WORDS.copy()
 
     # =========================================================
     # ОЧИСТКА КЕША

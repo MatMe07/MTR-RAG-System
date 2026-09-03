@@ -1,7 +1,7 @@
 # query_parser/parsers/environment_parser.py
 
 import re
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from functools import lru_cache
 
@@ -379,36 +379,6 @@ class EnvironmentParser:
             "temperature_min_c": None,
             "climate_version": None,
         }
-
-    def is_valid_medium(self, medium: str) -> bool:
-        """
-        Проверка валидности среды
-        """
-        return medium in self.VALID_MEDIUMS
-
-    def is_valid_climate(self, climate: str) -> bool:
-        """
-        Проверка валидности климатики
-        """
-        return climate in self.VALID_CLIMATE_VERSIONS
-
-    def get_all_mediums(self) -> List[str]:
-        """
-        Получить все среды
-        """
-        return self.VALID_MEDIUMS.copy()
-
-    def get_all_climates(self) -> List[str]:
-        """
-        Получить все климатики
-        """
-        return self.VALID_CLIMATE_VERSIONS.copy()
-
-    def get_medium_aliases(self, medium: str) -> List[str]:
-        """
-        Получить алиасы для среды
-        """
-        return [alias for alias, value in MEDIUM_ALIASES.items() if value == medium]
 
     # =========================================================
     # ОЧИСТКА КЕША

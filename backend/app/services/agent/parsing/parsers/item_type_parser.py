@@ -167,12 +167,6 @@ class ItemTypeParser:
         results = self.parse_all(text)
         return results[0] if results else None
 
-    def parse_primary(self, text: str) -> Optional[str]:
-        """
-        Алиас для parse()
-        """
-        return self.parse(text)
-
     def parse_multiple(self, text: str) -> List[str]:
         """
         Алиас для parse_all()
@@ -293,24 +287,6 @@ class ItemTypeParser:
     # МЕТОДЫ ДЛЯ ОТЛАДКИ
     # =========================================================
 
-    def get_all_item_types(self) -> List[str]:
-        """
-        Получить список всех поддерживаемых типов
-        """
-        return list(set(ITEM_TYPE_ALIASES.values()))
-
-    def get_aliases_for_type(self, item_type: str) -> List[str]:
-        """
-        Получить все алиасы для типа
-        """
-        return [alias for alias, type_ in ITEM_TYPE_ALIASES.items() if type_ == item_type]
-
-    def is_valid_type(self, item_type: str) -> bool:
-        """
-        Проверка, является ли строка валидным типом
-        """
-        return item_type in self.get_all_item_types()
-
     # =========================================================
     # ОЧИСТКА КЕША
     # =========================================================
@@ -320,10 +296,4 @@ class ItemTypeParser:
         Очистка кеша
         """
         self._cache.clear()
-        self._subtype_cache.clear()
-
-    def clear_subtype_cache(self):
-        """
-        Очистка кеша подтипов
-        """
         self._subtype_cache.clear()

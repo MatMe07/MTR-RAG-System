@@ -1,7 +1,7 @@
 # query_parser/parsers/pressure_parser.py
 
 import re
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from functools import lru_cache
 
@@ -330,16 +330,6 @@ class PressureParser:
     # =========================================================
     # МЕТОДЫ ДЛЯ ОТЛАДКИ
     # =========================================================
-
-    def get_all_patterns(self) -> Dict[str, List[Tuple[str, str, int, str, bool]]]:
-        """Получить все паттерны для отладки"""
-        return {
-            "pn": self.PN_PATTERNS,
-            "working_pressure": self.WORKING_PRESSURE_PATTERNS,
-            "test_pressure": self.TEST_PRESSURE_PATTERNS,
-            "kgcm2": self.KGCM2_PATTERNS,
-            "bar": self.BAR_PATTERNS,
-        }
 
     def get_pn_to_mpa_mapping(self) -> Dict[int, float]:
         """Получить таблицу соответствия PN и МПа"""

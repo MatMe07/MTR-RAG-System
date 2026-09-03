@@ -312,20 +312,6 @@ class GeometryParser:
     # МЕТОДЫ ДЛЯ ОТЛАДКИ
     # =========================================================
 
-    def get_all_patterns(self) -> Dict[str, List[Tuple[str, List[str], int, str]]]:
-        """Получить все паттерны для отладки"""
-        return {
-            "dn": self.DN_PATTERNS,
-            "transition": self.TRANSITION_PATTERNS,
-            "wall": self.WALL_PATTERNS,
-            "numeric_wall": self.NUMERIC_WALL_PATTERNS,
-            "size_wall": self.SIZE_WALL_PATTERNS,
-            "valve_size": self.VALVE_SIZE_PATTERNS,
-            "angle": self.ANGLE_PATTERNS,
-            "radius": self.RADIUS_PATTERNS,
-            "elbow_special": self.ELBOW_SPECIAL_PATTERNS,
-        }
-
     def get_item_types(self) -> Dict[str, List[str]]:
         """Получить все типы деталей"""
         return self.ITEM_TYPES

@@ -284,12 +284,6 @@ class OperationParser:
             return "unknown"
         return operations[0]
 
-    def parse_primary(self, text: str) -> str:
-        """
-        Алиас для parse()
-        """
-        return self.parse(text)
-
     # =========================================================
     # ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     # =========================================================
