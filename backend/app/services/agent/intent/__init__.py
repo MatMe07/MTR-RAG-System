@@ -8,7 +8,6 @@ from .matrix import (
     INCOMPATIBLE_INTENTS,
     PARAMETER_VALIDATION_RULES,
     BLOCKER_FIELDS,
-    get_intent_requirements,
 )
 from .detect import (
     detect_intents,
@@ -31,7 +30,6 @@ __all__ = [
     "INCOMPATIBLE_INTENTS",
     "PARAMETER_VALIDATION_RULES",
     "BLOCKER_FIELDS",
-    "get_intent_requirements",
     "detect_intents",
     "filter_params_for_intent",
     "missing_required_for_intent",

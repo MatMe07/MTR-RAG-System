@@ -20,10 +20,8 @@ from .status import (
 class AnswerBuilder:
     """Сборщик структурированного ответа"""
 
-    # Сколько топ-кандидатов со скорингом показывать в компонентах ответа
-    CANDIDATE_TOP_N = 10
-    # Лимит бескодовых (граф/склад/план) строк
-    AUX_MAX = 25
+    # Жёсткий кап на «несмысловые» (не защищённые фильтром/вердиктом) строки
+    MAX_COMPONENTS = 10
 
     def __init__(self, generator: Optional[Callable[[Dict[str, Any]], Optional[str]]] = None):
         """generator — LLM-генератор объяснения (5A.3); None → default_generator."""
@@ -143,7 +141,7 @@ class AnswerBuilder:
                 r for r in scored
                 if not r.get("quantity") or r.get("quantity", 0) == 0
             ]
-            rows = verdict_aux + generic_aux[: self.AUX_MAX] + scored[: self.CANDIDATE_TOP_N]
+            rows = scored + verdict_aux + generic_aux
         elif has_stock_filter:
             # Порог остатка (quantity_min/max) применяем к ФАКТИЧЕСКОМУ остатку,
             # который в строках-кандидатах уже проставлен мержем склада.
@@ -164,16 +162,17 @@ class AnswerBuilder:
                 and passes_stock_filter(r.get("quantity"), parsed)
             ]
             candidates.sort(key=lambda r: r.get("quantity") or 0, reverse=True)
-            rows = candidates[: self.CANDIDATE_TOP_N] + verdict_aux
+            rows = candidates + verdict_aux
         else:
             scored.sort(key=lambda r: r.get("match_percent") or 0.0, reverse=True)
             rows = (
-                scored[: self.CANDIDATE_TOP_N]
+                scored
                 + verdict_aux
-                + generic_aux[: self.AUX_MAX]
+                + generic_aux
             )
 
         rows = self._apply_stock_filter(rows, parsed)
+        rows = self._cap_components(rows, parsed)
 
         return [
             AgentComponent(
@@ -216,6 +215,42 @@ class AnswerBuilder:
                 if qty is None or passes_stock_filter(qty, parsed):
                     result.append(r)
         return result
+
+    def _cap_components(self, rows: List[Dict], parsed: Any) -> List[Dict]:
+        """Умный лимит числа компонентов ответа.
+
+        Срезаются только «несмысловые» строки (обычные кандидаты и прочая
+        вспомогательная информация). Защищены от среза:
+          - аналитические вердикты (sufficiency/дефицит/рекомендации),
+          - позиции, отобранные явным фильтром запроса (порог остатка / on_stock):
+            они уже прошли _apply_stock_filter, и их нельзя терять.
+        Порядок: кандидаты (по match_percent убыв.) -> вспомогательные.
+        """
+        if parsed is None:
+            return rows[: self.MAX_COMPONENTS]
+
+        explicit_filter = _has_stock_filters(parsed) or (
+            getattr(parsed, "on_stock", None) is not None
+        ) or ("LIST_OUT_OF_STOCK" in (getattr(parsed, "intents", None) or []))
+
+        protected: List[Dict] = []
+        plain: List[Dict] = []
+
+        for r in self._iter_rows(rows):
+            if self._is_analysis_row(r):
+                protected.append(r)
+            elif explicit_filter and r.get("quantity") is not None:
+                # строка с фактическим остатком, прошедшая явный фильтр запроса
+                protected.append(r)
+            else:
+                plain.append(r)
+
+        # кандидаты (со скорингом) — раньше прочих, по релевантности убыв.
+        plain.sort(key=lambda r: (0 if r.get("match_score") is not None else 1,
+                                  -(r.get("match_score") or 0.0)))
+        plain = plain[: self.MAX_COMPONENTS]
+
+        return plain + protected
 
     @staticmethod
     def _is_analysis_row(row: Dict) -> bool:
