@@ -98,6 +98,20 @@ def _matches(condition: Optional[dict], ctx: dict) -> bool:
     return False
 
 
+_TOIR_DISCLAIMERS = {
+    "Среда с H2S: состав работ и материалы согласует служба ТОиР и эксперт по коррозии.",
+    "Черновик: периодичность и состав работ утверждает служба ТОиР",
+}
+
+
+def filter_by_intent(warnings: List[str], intent: str) -> List[str]:
+    """Отбрасывает предупреждения чернового плана ТОиР, если запрос не про
+    планирование ТОиР (замена/закупка/поиск и т.п.) — там они шумят."""
+    if intent == "maintenance":
+        return warnings
+    return [w for w in warnings if w not in _TOIR_DISCLAIMERS]
+
+
 def build_scenario_warnings(parsed: ParsedQuery, intent: str) -> List[str]:
     """Сбор предупреждений на основе сценариев"""
     warnings = []
@@ -116,7 +130,7 @@ def build_scenario_warnings(parsed: ParsedQuery, intent: str) -> List[str]:
 _WARNING_CATEGORIES = [
     (
         "Совместимость со средой",
-        ("h2s", "co2", "сред", "коррози", "стойкост", "пригодн�", "пригодно"),
+        ("h2s", "co2", "сред", "коррози", "стойкост", "пригодн", "пригодно"),
     ),
     (
         "Достоверность данных",

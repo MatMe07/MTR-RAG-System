@@ -4,7 +4,12 @@ from typing import Any, Callable, Dict, List, Optional
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
 from .explanation import ExplanationGenerator
-from .warnings import build_scenario_warnings, evaluate_parameter_rules, group_warnings
+from .warnings import (
+    build_scenario_warnings,
+    evaluate_parameter_rules,
+    filter_by_intent,
+    group_warnings,
+)
 from .reviewer import auto_review, _FALLBACK_ANSWER
 from ..tools.stock_filters import passes_stock_filter
 from .status import (
@@ -53,9 +58,10 @@ class AnswerBuilder:
             or self._purchase_recommendation(raw_components)
         )
 
-        warnings = list(dict.fromkeys(
-            list(result.get("warnings", [])) + scenario_warnings + rule_warnings
-        ))
+        warnings = list(dict.fromkeys(filter_by_intent(
+            list(result.get("warnings", [])) + scenario_warnings + rule_warnings,
+            intent,
+        )))
         warning_categories = group_warnings(warnings)
         missing = list(dict.fromkeys(result.get("missing", [])))
 
