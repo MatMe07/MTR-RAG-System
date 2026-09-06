@@ -52,12 +52,20 @@
 - [ ] Держать deterministic без поломок
 
 ## Шаг 7 — Локальные дефекты парсера/материала/DN (по кейсам)
-- [ ] AQ007: парсер среды H2S↔CORR (не переопределять явную среду участка)
-- [ ] AQ002/AQ004: жёсткий фильтр steel_grade/medium для H2S
-- [ ] AQ006: переход 219→159 — проверять оба DN (ужесточить tolerance)
+- [x] AQ007: парсер среды H2S↔CORR (не переопределять явную среду участка)
+      Канон CORR в MEDIUM_ALIASES; коррозионн*/агрессивн* → CORR (не H2S);
+      h2s_confirmed не ставится для CORR; medium_match/unit_codes мапят CORR↔corrosive_medium.
+- [x] AQ002/AQ004: жёсткий фильтр steel_grade/medium для H2S
+      h2s_suitability в material_profiles; сталь 20 — incompatible → отсев + warning;
+      при H2S пригодность стали в скоринге даже без марки в запросе (13ХФА > 09Г2С/09ГСФ).
+- [x] AQ006: переход 219→159 — проверять оба DN (ужесточить tolerance)
+      _matches_filters/_match_score учитывают d1/d2 (2%); dn-алиас для переходов.
 - [ ] AQ022/023/024: классификация intent → equipment_guidance
 - [ ] AQ025: правила не требуют параметры уже заданные в карточке
-- [ ] AQ039/040: regulation_lookup — расшифровка найденных/отсутствующих ГОСТ
+- [x] AQ039/040: regulation_lookup — расшифровка найденных/отсутствующих ГОСТ
+      _decode_docs: per-component ГОСТ/ТУ → docs_found (title+scope) / docs_missing;
+      answer содержит «ГОСТ N — описание: область» вместо «Проверено 3 нормативов».
+      (AQ039/040 закрыты; тесты test_phase7_parser_fixes.py: 9 шт.)
 
 ## Шаг 8 — Верификация (обязательно после каждого шага)
 - [ ] Полный pytest (стек 300+)

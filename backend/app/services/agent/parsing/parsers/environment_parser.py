@@ -91,8 +91,8 @@ class EnvironmentParser:
             (r'углекисл(?:ый|ая|ое)', True),
         ],
         "medium": [
-            (r'агрессивн\w*', "H2S"),
-            (r'коррозионн\w*', "H2S"),
+            (r'агрессивн\w*', "CORR"),
+            (r'коррозионн\w*', "CORR"),
             (r'нейтральн\w*', "вода"),
             (r'горюч\w*', "нефть"),
         ],
@@ -102,7 +102,7 @@ class EnvironmentParser:
     VALID_CLIMATE_VERSIONS = ["У", "ХЛ", "УХЛ", "Т", "УХЛ1", "ХЛ1"]
     
     # Список валидных сред
-    VALID_MEDIUMS = ["нефть", "природный газ", "газ", "вода", "H2S", "CO2"]
+    VALID_MEDIUMS = ["нефть", "природный газ", "газ", "вода", "H2S", "CO2", "CORR", "пар", "воздух"]
     
     def __init__(self):
         self.fuzzy_matcher = FuzzyMatcher(threshold=80)
@@ -262,9 +262,11 @@ class EnvironmentParser:
         for pattern, default_value in self.CONTEXT_PATTERNS.get("medium", []):
             if re.search(pattern, text, re.IGNORECASE):
                 result["medium"] = default_value
-                # ✅ Если нашли H2S, устанавливаем флаг
+                # ✅ Только H2S/CO2 дают флаг подтверждения (CORR — нет).
                 if default_value == "H2S":
                     result["h2s_confirmed"] = True
+                elif default_value == "CO2":
+                    result["co2_confirmed"] = True
                 break
 
     def _apply_h2s_co2_confirmation(self, text: str, result: Dict[str, Any]) -> None:

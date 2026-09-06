@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource
 from app.services.agent.intent.matrix import BLOCKER_FIELDS
+from ..medium import medium_match
 
 STATUS_MATCH = "соответствует"
 STATUS_ANALOG = "потенциальный аналог"
@@ -37,6 +38,8 @@ _CRITICAL_WARNING_MARKERS = (
 PARAM_LABELS = {
     "item_type": "тип изделия",
     "dn": "DN",
+    "d1": "DN₁",
+    "d2": "DN₂",
     "pn": "PN",
     "angle": "угол",
     "wall_thickness": "стенка",
@@ -124,7 +127,12 @@ def evaluate_candidate(
         if key in seen_keys:
             continue
         seen_keys.add(key)
-        checks.append((key, want, prop_val(key)))
+        got = prop_val(key)
+        # Переход (AQ006): карточка хранит диаметры в d1/d2 (без dn).
+        # Запрошенный dn (равен большему диаметру) сравниваем с d1 карточки.
+        if got is None and key == "dn" and prop_val("d1") is not None and prop_val("d2") is not None:
+            got = prop_val("d1")
+        checks.append((key, want, got))
 
     for key, want, got in checks:
         label = labels.get(key, key)
@@ -135,9 +143,7 @@ def evaluate_candidate(
         if key == "item_type":
             ok = str(got).strip().lower() == str(want).strip().lower()
         elif key == "medium":
-            w = str(want).strip().lower()
-            g = str(got).strip().lower()
-            ok = w and g and (w == g or w in g or g in w)
+            ok = medium_match(want, got)
         elif isinstance(got, (int, float)):
             if isinstance(want, (int, float)):
                 tol = _numeric_tolerance()

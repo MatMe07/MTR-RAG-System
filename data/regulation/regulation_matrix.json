@@ -250,21 +250,25 @@
     {
       "steel_grade": "20",
       "verification_status": "confirmed_official_scope_limited",
+      "h2s_suitability": "incompatible",
       "comment": "Используется как демонстрационная углеродистая сталь; конкретная применимость подтверждается стандартом, паспортом и проектом."
     },
     {
       "steel_grade": "09Г2С",
       "verification_status": "confirmed_official_scope_limited",
+      "h2s_suitability": "requires_verification",
       "comment": "Используется как демонстрационная низколегированная сталь; конкретная применимость подтверждается стандартом, паспортом и проектом."
     },
     {
       "steel_grade": "13ХФА",
       "verification_status": "requires_internal_document",
+      "h2s_suitability": "suitable",
       "comment": "Не считать автоматически пригодной для H2S: требуется ТУ, паспорт и корпоративный ЛНД."
     },
     {
       "steel_grade": "09ГСФ",
       "verification_status": "requires_internal_document",
+      "h2s_suitability": "requires_verification",
       "comment": "Не считать автоматически взаимозаменяемой с 09Г2С: требуется ТУ, паспорт и решение эксперта."
     }
   ],
