@@ -85,11 +85,18 @@ def _check_intent_mismatch(parsed: Any, components: List[Dict[str, Any]]) -> Opt
 
 
 def _extract_unit(component: Dict[str, Any]) -> Optional[str]:
-    st = component.get("status") or ""
-    if "участок:" in st:
-        return st.split("участок:")[-1].strip().split()[0]
-    if "установлен на unit:" in st:
-        return st.split("unit:")[-1].strip()
+    uid = component.get("unit_id")
+    if uid:
+        return str(uid).strip() or None
+    for field in ("status", "detail"):
+        st = component.get(field) or ""
+        for marker in ("участок:", "установлен на unit:", "установлен на "):
+            idx = st.find(marker)
+            if idx == -1:
+                continue
+            rest = st[idx + len(marker):].strip()
+            if rest:
+                return rest.split()[0]
     return None
 
 

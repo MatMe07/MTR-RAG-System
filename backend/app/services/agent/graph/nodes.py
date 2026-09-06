@@ -231,7 +231,7 @@ def _component_key(row: Dict[str, Any]) -> Optional[Any]:
 
 def _merge_rows(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
     """Слияние двух строк-компонентов одной детали (каталог + правила + склад)."""
-    for k in ("mtr_code", "ksm_code", "name", "item_type"):
+    for k in ("mtr_code", "ksm_code", "name", "item_type", "unit_id"):
         if not a.get(k) and b.get(k):
             a[k] = b[k]
     if b.get("match_score") is not None and a.get("match_score") is None:

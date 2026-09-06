@@ -92,6 +92,8 @@ class AnswerBuilder:
             errors=result.get("errors"),
             recommendations=recommendations,
         )
+        # print(explanation)
+        # return None
 
         return AgentAnswer(
             query=parsed.original_query,
@@ -142,12 +144,15 @@ class AnswerBuilder:
         verdict_aux = [r for r in aux if self._is_analysis_row(r)]
         generic_aux = [r for r in aux if not self._is_analysis_row(r)]
 
+        unit_aux = [r for r in aux if r.get("unit_id")]
+        unit_aux = [r for r in unit_aux if self._matches_geometry(r, parsed)]
+
         if out_of_stock:
             scored = [
                 r for r in scored
                 if not r.get("quantity") or r.get("quantity", 0) == 0
             ]
-            rows = scored + verdict_aux + generic_aux
+            rows = scored + verdict_aux + unit_aux + generic_aux
         elif has_stock_filter:
             # Порог остатка (quantity_min/max) применяем к ФАКТИЧЕСКОМУ остатку,
             # который в строках-кандидатах уже проставлен мержем склада.
@@ -168,12 +173,13 @@ class AnswerBuilder:
                 and passes_stock_filter(r.get("quantity"), parsed)
             ]
             candidates.sort(key=lambda r: r.get("quantity") or 0, reverse=True)
-            rows = candidates + verdict_aux
+            rows = candidates + verdict_aux + unit_aux
         else:
             scored.sort(key=lambda r: r.get("match_percent") or 0.0, reverse=True)
             rows = (
                 scored
                 + verdict_aux
+                + unit_aux
                 + generic_aux
             )
 
@@ -190,6 +196,7 @@ class AnswerBuilder:
                 status=r.get("status"),
                 detail=r.get("detail"),
                 source_id=r.get("source_id"),
+                unit_id=r.get("unit_id"),
                 match_score=r.get("match_score"),
                 match_percent=r.get("match_percent"),
                 tz_status=r.get("tz_status"),
@@ -203,6 +210,34 @@ class AnswerBuilder:
     @staticmethod
     def _iter_rows(rows: List[Dict]) -> List[Dict]:
         return [r for r in rows if isinstance(r, dict)]
+
+    @staticmethod
+    def _matches_geometry(row: Dict, parsed: Any) -> bool:
+        """Проверяет, совпадает ли строка графа с d1/d2 фильтрами запроса.
+
+        Для переходов в name содержатся диаметры (76x4-57x3, 219x8-159x6).
+        Если parsed содержит d1 или d2, строка должна их содержать.
+        """
+        if parsed is None:
+            return True
+        tf = getattr(parsed, "technical_filters", {}) or {}
+        want_d1 = tf.get("d1")
+        want_d2 = tf.get("d2")
+        if not want_d1 and not want_d2:
+            return True
+        import re
+        name = (row.get("name") or "").lower()
+        nums = re.findall(r'\b(\d+)x(\d+)\b', name)
+        if not nums:
+            return True
+        found_any = False
+        for d1_str, d2_str in nums:
+            d1, d2 = float(d1_str), float(d2_str)
+            if want_d1 and abs(d1 - want_d1) <= want_d1 * 0.02:
+                found_any = True
+            if want_d2 and abs(d2 - want_d2) <= want_d2 * 0.02:
+                found_any = True
+        return found_any
 
     def _apply_stock_filter(self, rows: List[Dict], parsed: Any) -> List[Dict]:
         """Финальный фильтр кандидатов по порогам stock_filters (quantity_min/max).
@@ -244,6 +279,8 @@ class AnswerBuilder:
 
         for r in self._iter_rows(rows):
             if self._is_analysis_row(r):
+                protected.append(r)
+            elif r.get("unit_id") and self._matches_geometry(r, parsed):
                 protected.append(r)
             elif explicit_filter and r.get("quantity") is not None:
                 # строка с фактическим остатком, прошедшая явный фильтр запроса

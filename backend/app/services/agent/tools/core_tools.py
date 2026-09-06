@@ -408,6 +408,7 @@ def graph_search(state: AgentState, ctx) -> Dict[str, Any]:
                 "item_type": comp.get("item_type"),
                 "status": f"установлен на {comp.get('unit_id')}",
                 "source_id": comp.get("component_id"),
+                "unit_id": comp.get("unit_id"),
             })
             result["sources"].append(_source("object_graph", comp.get("component_id"), comp.get("unit_id")))
 

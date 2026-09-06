@@ -369,6 +369,7 @@ class AgentComponent(BaseModel):
     status: Optional[str] = Field(None, description="Статус/причина включения в ответ")
     detail: Optional[str] = Field(None, description="Дополнительное объяснение")
     source_id: Optional[str] = Field(None, description="card_id или component_id источника")
+    unit_id: Optional[str] = Field(None, description="Участок установки (например UNIT-SYN-H2S-001)")
     match_score: Optional[float] = Field(None, description="Оценка совпадения 0..1")
     match_percent: Optional[int] = Field(None, description="Оценка совпадения в процентах 0..100")
     tz_status: Optional[str] = Field(None, description="ТЗ-статус кандидата: соответствует | потенциальный аналог | не соответствует")

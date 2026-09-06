@@ -1,19 +1,18 @@
 {
   "summary": {
-    "generated_at": "2026-08-31T20:40:24.202152+00:00",
+    "generated_at": "2026-09-06T15:53:34.273812+00:00",
     "mode": "auto",
     "total": 40,
-    "verdict_pass": 26,
-    "verdict_review": 14,
-    "escaped": 14,
-    "escape_rate_pct": 35.0,
-    "tools_ok": 39,
+    "verdict_pass": 39,
+    "verdict_review": 1,
+    "escaped": 1,
+    "escape_rate_pct": 2.5,
+    "tools_ok": 40,
     "sources_ok": 39,
     "sufficiency_verdict_cases": 1,
-    "avg_duration_ms": 1425.8,
+    "avg_duration_ms": 1538.9,
     "gap_by_type": {
-      "parameter_miss": 11,
-      "intent_mismatch": 7
+      "parameter_miss": 1
     }
   },
   "mode": "auto",
@@ -45,7 +44,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 2133.0
+      "duration_ms": 2020.7
     },
     {
       "case_id": "AQ002",
@@ -74,7 +73,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1441.9
+      "duration_ms": 1307.2
     },
     {
       "case_id": "AQ003",
@@ -102,7 +101,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1134.5
+      "duration_ms": 1814.7
     },
     {
       "case_id": "AQ004",
@@ -131,7 +130,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 989.9
+      "duration_ms": 1217.4
     },
     {
       "case_id": "AQ005",
@@ -160,7 +159,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 977.5
+      "duration_ms": 1391.9
     },
     {
       "case_id": "AQ006",
@@ -189,7 +188,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1730.4
+      "duration_ms": 1384.5
     },
     {
       "case_id": "AQ007",
@@ -218,18 +217,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 941.0
+      "duration_ms": 1233.4
     },
     {
       "case_id": "AQ008",
       "category": "inventory",
       "question": "Покажи все детали для H2S, которых сейчас нет на складе, и расставь их по срочности закупки",
       "intent": "inventory",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[low] parameter_miss: ambiguities: Не удалось определить тип детали"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -248,7 +245,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1739.1
+      "duration_ms": 1808.7
     },
     {
       "case_id": "AQ009",
@@ -265,10 +262,10 @@
       "sufficiency_verdicts": [
         "не хватает: заглушка — потребность 2 шт.; остаток 0 шт.; дефицит 2 шт.",
         "не хватает: задвижка — потребность 2 шт.; остаток 0 шт.; дефицит 2 шт.",
-        "не хватает: отвод — потребность 2 шт.; остаток 0 шт.; дефицит 2 шт.",
+        "хватает: отвод — потребность 2 шт.; остаток 479 шт.",
         "не хватает: переход — потребность 2 шт.; остаток 0 шт.; дефицит 2 шт.",
         "не хватает: тройник — потребность 2 шт.; остаток 0 шт.; дефицит 2 шт.",
-        "хватает: труба — потребность 2 шт.; остаток 1440 шт."
+        "хватает: труба — потребность 2 шт.; остаток 886 шт."
       ],
       "tools": [
         "graph_search",
@@ -278,14 +275,12 @@
         "rules_engine",
         "regulation_lookup"
       ],
-      "tools_ok": false,
-      "missing_tools": [
-        "inventory_calculator"
-      ],
+      "tools_ok": true,
+      "missing_tools": [],
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1744.9
+      "duration_ms": 1819.3
     },
     {
       "case_id": "AQ010",
@@ -312,7 +307,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 839.1
+      "duration_ms": 1111.5
     },
     {
       "case_id": "AQ011",
@@ -340,19 +335,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1706.1
+      "duration_ms": 1879.4
     },
     {
       "case_id": "AQ012",
       "category": "inventory",
       "question": "Посчитай запас деталей для ремонта трех таких же участков как UNIT-SYN-GAS-001, один полный комплект должен всегда оставаться на складе",
       "intent": "inventory",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[high] intent_mismatch: не найдены участки: UNIT-SYN-GAS-001",
-        "[low] parameter_miss: ambiguities: Не удалось определить тип детали"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -371,18 +363,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1571.4
+      "duration_ms": 2037.6
     },
     {
       "case_id": "AQ013",
       "category": "inventory",
       "question": "Найди на складе одинаковые по параметрам детали с разными кодами КСМ и покажи возможные дубли",
       "intent": "inventory",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[low] parameter_miss: ambiguities: Не удалось определить тип детали"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -403,18 +393,16 @@
         "expert_decisions"
       ],
       "warning_ok": true,
-      "duration_ms": 1608.6
+      "duration_ms": 1643.7
     },
     {
       "case_id": "AQ014",
       "category": "inventory",
       "question": "Покажи позиции с остатком больше пятидесяти штук, которые не установлены ни на одном тестовом участке",
       "intent": "inventory",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[low] parameter_miss: ambiguities: Не удалось определить тип детали"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -433,18 +421,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1799.6
+      "duration_ms": 1829.9
     },
     {
       "case_id": "AQ015",
       "category": "inventory",
       "question": "Собери заявку на пополнение склада для участка с CO2, включи только позиции с остатком меньше трех штук",
       "intent": "inventory",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[low] parameter_miss: ambiguities: Не удалось определить тип детали"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -463,19 +449,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 2623.6
+      "duration_ms": 1685.7
     },
     {
       "case_id": "AQ016",
       "category": "toir",
       "question": "Составь план обслуживания участка UNIT-SYN-H2S-001 на следующий месяц и перечисли нужные запчасти",
       "intent": "maintenance",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[high] intent_mismatch: не найдены участки: UNIT-SYN-H2S-001",
-        "[low] parameter_miss: ambiguities: Не удалось определить тип детали"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -494,7 +477,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 2479.5
+      "duration_ms": 2121.3
     },
     {
       "case_id": "AQ017",
@@ -522,7 +505,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 2185.9
+      "duration_ms": 1713.7
     },
     {
       "case_id": "AQ018",
@@ -550,18 +533,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1043.0
+      "duration_ms": 1354.7
     },
     {
       "case_id": "AQ019",
       "category": "toir",
       "question": "Подготовь список деталей и документов для плановой замены задвижки DN200 PN63 на UNIT-SYN-GAS-001",
       "intent": "maintenance",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[high] intent_mismatch: не найдены участки: UNIT-SYN-GAS-001"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -580,18 +561,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1131.1
+      "duration_ms": 1501.9
     },
     {
       "case_id": "AQ020",
       "category": "toir",
       "question": "Выбери пять деталей с самым высоким риском для ремонта коррозионного участка и объясни почему они важны",
       "intent": "maintenance",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[low] parameter_miss: ambiguities: Не удалось определить тип детали"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -610,7 +589,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1729.3
+      "duration_ms": 1954.0
     },
     {
       "case_id": "AQ021",
@@ -636,7 +615,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 590.5
+      "duration_ms": 985.8
     },
     {
       "case_id": "AQ022",
@@ -663,7 +642,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 915.7
+      "duration_ms": 1198.6
     },
     {
       "case_id": "AQ023",
@@ -691,7 +670,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1495.5
+      "duration_ms": 1253.9
     },
     {
       "case_id": "AQ024",
@@ -720,7 +699,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1769.4
+      "duration_ms": 1900.9
     },
     {
       "case_id": "AQ025",
@@ -746,18 +725,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 609.9
+      "duration_ms": 1012.9
     },
     {
       "case_id": "AQ026",
       "category": "object_configuration",
       "question": "Собери список деталей для нового участка DN150 PN40 с газом H2S длиной сто метров",
       "intent": "maintenance",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[low] parameter_miss: ambiguities: Не удалось определить тип детали"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -776,18 +753,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1761.1
+      "duration_ms": 1404.7
     },
     {
       "case_id": "AQ027",
       "category": "object_configuration",
       "question": "Покажи из каких деталей состоит UNIT-SYN-H2S-001 и что стоит до и после задвижки COMP-SYN-010",
       "intent": "inventory",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[med] intent_mismatch: не найдены участки: UNIT-SYN-H2S-001"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -806,7 +781,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1797.9
+      "duration_ms": 1990.3
     },
     {
       "case_id": "AQ028",
@@ -833,19 +808,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 2097.8
+      "duration_ms": 1754.8
     },
     {
       "case_id": "AQ029",
       "category": "object_configuration",
       "question": "Проверь весь участок UNIT-SYN-CO2-001 и покажи какие детали подходят по размерам, но еще не подтверждены для CO2",
       "intent": "inventory",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[med] intent_mismatch: не найдены участки: UNIT-SYN-CO2-001",
-        "[low] parameter_miss: ambiguities: Не удалось определить тип детали"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -864,7 +836,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 2134.5
+      "duration_ms": 1799.6
     },
     {
       "case_id": "AQ030",
@@ -892,7 +864,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1771.6
+      "duration_ms": 1999.1
     },
     {
       "case_id": "AQ031",
@@ -920,7 +892,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1450.9
+      "duration_ms": 1745.0
     },
     {
       "case_id": "AQ032",
@@ -948,7 +920,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1508.5
+      "duration_ms": 1954.6
     },
     {
       "case_id": "AQ033",
@@ -976,7 +948,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1593.7
+      "duration_ms": 1819.6
     },
     {
       "case_id": "AQ034",
@@ -1004,7 +976,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1130.0
+      "duration_ms": 1198.1
     },
     {
       "case_id": "AQ035",
@@ -1032,7 +1004,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1597.2
+      "duration_ms": 1842.3
     },
     {
       "case_id": "AQ036",
@@ -1041,7 +1013,7 @@
       "intent": "impact_analysis",
       "verification_verdict": "review",
       "verification_reasons": [
-        "[low] parameter_miss: ambiguities: В запросе указано несколько значений DN; Обнаружено несколько значений DN"
+        "[low] parameter_miss: ambiguities: В запросе указано несколько значений DN; Обнаружено несколько значений DN; Конфликт интентов: FIND_ALTERNATIVE / REPLACE_WITH_DIFFERENT_SIZE. Уточните, что именно нужно."
       ],
       "escaped": true,
       "mode_refined": "auto",
@@ -1061,18 +1033,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 610.9
+      "duration_ms": 956.4
     },
     {
       "case_id": "AQ037",
       "category": "impact_analysis",
       "question": "Участок UNIT-SYN-GAS-001 переводят с природного газа на H2S, перечисли что нужно перепроверить",
       "intent": "impact_analysis",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[high] intent_mismatch: не найдены участки: UNIT-SYN-GAS-001"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -1090,7 +1060,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 690.9
+      "duration_ms": 971.7
     },
     {
       "case_id": "AQ038",
@@ -1117,19 +1087,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 589.7
+      "duration_ms": 935.9
     },
     {
       "case_id": "AQ039",
       "category": "document_search",
       "question": "Найди паспорта и ТУ для всех деталей участка UNIT-SYN-H2S-001 и покажи чего не хватает",
       "intent": "document_search",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[med] intent_mismatch: не найдены участки: UNIT-SYN-H2S-001",
-        "[low] parameter_miss: ambiguities: Не удалось определить тип детали"
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -1146,7 +1113,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 714.5
+      "duration_ms": 1020.1
     },
     {
       "case_id": "AQ040",
@@ -1172,7 +1139,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 652.7
+      "duration_ms": 982.2
     }
   ]
 }

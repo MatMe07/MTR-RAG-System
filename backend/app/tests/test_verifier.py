@@ -48,6 +48,30 @@ def _comp(item_type=None, quantity=None, status="", detail=""):
     )
 
 
+class ExtractUnitTest(unittest.TestCase):
+    def test_status_installed_on_unit(self):
+        from app.services.agent.verify.verifier import _extract_unit
+        self.assertEqual(_extract_unit({"status": "установлен на UNIT-SYN-H2S-001"}), "UNIT-SYN-H2S-001")
+
+    def test_status_installed_on_unit_lc(self):
+        from app.services.agent.verify.verifier import _extract_unit
+        self.assertEqual(_extract_unit({"status": "установлен на unit: UNIT-SYN-H2S-001"}), "UNIT-SYN-H2S-001")
+
+    def test_status_uchastok(self):
+        from app.services.agent.verify.verifier import _extract_unit
+        self.assertEqual(_extract_unit({"status": "участок: UNIT-SYN-GAS-001"}), "UNIT-SYN-GAS-001")
+
+    def test_status_without_unit(self):
+        from app.services.agent.verify.verifier import _extract_unit
+        self.assertIsNone(_extract_unit({"status": "на складе: 5"}))
+
+    def test_unit_present_in_component(self):
+        parsed = _parsed(unit_ids=["UNIT-SYN-H2S-001"])
+        answer = _answer([_comp(item_type="задвижка", status="установлен на UNIT-SYN-H2S-001")])
+        vr = verify_answer(parsed, answer)
+        self.assertEqual(vr.verdict, "pass")
+
+
 class IntentMismatchTest(unittest.TestCase):
     def test_missing_item_type_review(self):
         parsed = _parsed(item_types=["задвижка", "труба"], intents=["CHECK_SUFFICIENCY"])

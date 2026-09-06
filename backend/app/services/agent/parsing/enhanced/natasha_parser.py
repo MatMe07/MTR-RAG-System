@@ -433,8 +433,13 @@ class NatashaParser:
             ambiguities.append("Обнаружено несколько значений угла")
         
         if not result.get("item_types"):
-            ambiguities.append("Не удалось определить тип детали")
-        
+            _ITEM_HINTS = (
+                r'\b(?:отвод|окш|ог|задвижк[а-я]*|заглушк[а-я]*|переход[а-я]*|'
+                r'тройник[а-я]*|кран[а-я]*|фланец|фланца|фланцев)\b'
+            )
+            if re.search(_ITEM_HINTS, text_lower):
+                ambiguities.append("Не удалось определить тип детали")
+
         return ambiguities
 
     # =========================================================

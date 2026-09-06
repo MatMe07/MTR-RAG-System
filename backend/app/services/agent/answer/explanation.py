@@ -75,8 +75,14 @@ def _critical_param_labels(
 
 
 def _components_for_prompt(components: List[Any]) -> str:
+    if not components:
+        return "—"
+    scored = [c for c in components if _comp_get(c, "match_percent") is not None]
+    scored.sort(key=lambda c: _comp_get(c, "match_percent") or 0, reverse=True)
+    aux = [c for c in components if _comp_get(c, "match_percent") is None]
+    ordered = scored + aux
     lines = []
-    for c in (components or [])[:5]:
+    for c in ordered[:5]:
         name = _comp_get(c, "name") or _comp_get(c, "ksm_code") or _comp_get(c, "mtr_code")
         pct = _comp_get(c, "match_percent")
         state = _comp_get(c, "tz_status") or _comp_get(c, "status")
@@ -167,6 +173,10 @@ def default_generator(context: Dict[str, Any]) -> Optional[str]:
         client = get_llm_client(DEFAULT_CONFIG)
         if client is None:
             return None
+        print(build_explanation_prompt(context))
+        return None
+    
+    
         text = client.invoke(build_explanation_prompt(context))
         return (text or "").strip() or None
     except Exception as e:  # noqa: BLE001

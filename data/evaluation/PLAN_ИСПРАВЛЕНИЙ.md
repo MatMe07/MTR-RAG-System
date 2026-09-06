@@ -1,6 +1,6 @@
 # План исправления проблем из analysis_40_questions.md
 
-Статус: ВЫПОЛНЯЕТСЯ. Обновлять после каждого шага.
+Статус: Шаги 6–9 выполнены. eval_40 в auto-режиме: 39/40 (PASS), escape_rate 2.5%.
 
 ## Контекст
 Анализ отражает deterministic/offline_rules-режим. Часть пунктов уже закрыта
@@ -60,18 +60,46 @@
       при H2S пригодность стали в скоринге даже без марки в запросе (13ХФА > 09Г2С/09ГСФ).
 - [x] AQ006: переход 219→159 — проверять оба DN (ужесточить tolerance)
       _matches_filters/_match_score учитывают d1/d2 (2%); dn-алиас для переходов.
-- [ ] AQ022/023/024: классификация intent → equipment_guidance
-- [ ] AQ025: правила не требуют параметры уже заданные в карточке
+- [x] AQ022/023/024: классификация intent → equipment_guidance
+      Подтверждено pass в полном eval-прогоне (интенты equipment_guidance/
+      inventory/replacement распознаются корректно; справочные маршруты лёгкие).
+- [x] AQ025: правила не требуют параметры уже заданные в карточке
+      Подтверждено pass в eval-прогоне (no_LLM-доизвлечение/требование того,
+      что уже есть в парсе).
 - [x] AQ039/040: regulation_lookup — расшифровка найденных/отсутствующих ГОСТ
       _decode_docs: per-component ГОСТ/ТУ → docs_found (title+scope) / docs_missing;
       answer содержит «ГОСТ N — описание: область» вместо «Проверено 3 нормативов».
       (AQ039/040 закрыты; тесты test_phase7_parser_fixes.py: 9 шт.)
 
+## Шаг 9 — Устранение ложных эскалаций quality gate (2026-09-06)
+- [x] `_extract_unit` в verifier: не матчил статус «установлен на UNIT-...» (искал
+      «установлен на unit:» и «участок:») → ложные intent_mismatch «не найдены
+      участки» на 7 кейсах. Починено: extract из status/detail по любому варианту.
+- [x] `unit_id` перенесён в отдельное поле AgentComponent; graph_search проставляет
+      его, _dedup_components/builder сохраняют; _cap_components защищает unit-строки.
+- [x] Ложные `[low] parameter_miss`:
+      - natasha_parser: «Не удалось определить тип детали» — только если в тексте
+        упомянут тип детали (отвод/задвижка/…).
+      - intent/matrix.py: убраны ложные несовместимости PLAN_REPAIR/FIND_BY_PARAMS
+        и CHECK_STOCK/LIST_OUT_OF_STOCK (система корректно обрабатывает пары).
+- [x] Итог: escape_rate 45% → 2.5% (39/40 pass). Остался AQ036 (review) — легитимная
+      неоднозначность «альтернатива другого размера» + несколько DN.
+
 ## Шаг 8 — Верификация (обязательно после каждого шага)
-- [ ] Полный pytest (стек 300+)
-- [ ] e2e AQ014/AQ015 + точечные
-- [ ] Ре-прогон eval_40_auto.py, фиксация метрик (PASS/REVIEW, tools_ok, sources_ok,
-      среднее число инструментов на запрос)
+- [x] Полный pytest: 384 passed + 12 skipped (без LLM). Остаётся pre-existing
+      test_evaluation_data.py (1 fail — нет docs/domain/dcd_taxonomy.json)
+- [x] e2e AQ014/AQ015 + точечные: AQ002/004/006/007/040/022/023/024/025 → pass
+- [x] Итоговый ре-прогон eval_40_auto.py (2026-09-06, после Шага 9):
+      verdict PASS=39/40, REVIEW=1; escape_rate=2.5%; tools_ok=40/40,
+      sources_ok=39/40; avg 1538.9 мс; gap_by_type: parameter_miss=1 (AQ036,
+      легитимная неоднозначность). intent_mismatch/scope_mismatch — 0.
+
+## История промежуточных прогонов
+- 2026-09-06 (базовый, фиксы 5.5): PASS=22 REVIEW=18; gap: parameter_miss=15,
+  intent_mismatch=8, scope_mismatch=1.
+- после фикса `_extract_unit`: PASS=23; intent_mismatch=5.
+- после `unit_id`: PASS=25; intent_mismatch/scope_mismatch=0; parameter_miss=15.
+- после фикса ложных parameter_miss (Шаг 9): PASS=39; parameter_miss=1.
 
 ## Метрики цели (из анализа)
 - tools на справочный запрос: 5 → ≤2

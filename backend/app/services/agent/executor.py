@@ -107,6 +107,10 @@ class AgentExecutor:
         graph_start = time.time()
         log.info("[Executor] Invoking graph...")
         try:
+            # print(state)
+            # print()
+            # print(config)
+            # return
             result = self.graph.invoke(state, config=config)
         except GraphRecursionError:
             log.warning("[Executor] Recursion limit exceeded (limit=%d) for query=%r",

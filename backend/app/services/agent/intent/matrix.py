@@ -138,8 +138,6 @@ INTENT_REQUIREMENTS: Dict[str, Dict[str, List[Tuple[str, ...]]]] = {
 # ---------------------------------------------------------------- 1H.2
 INCOMPATIBLE_INTENTS: Dict[str, List[str]] = {
     "FIND_ALTERNATIVE": ["REPLACE_WITH_COMPOSITE", "REPLACE_WITH_DIFFERENT_SIZE"],
-    "CHECK_STOCK": ["LIST_OUT_OF_STOCK"],
-    "PLAN_REPAIR": ["FIND_BY_PARAMS"],
 }
 
 # ---------------------------------------------------------------- 1H.3
