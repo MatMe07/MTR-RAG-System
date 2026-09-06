@@ -2,8 +2,8 @@
 
 """Декларативная матрица интентов (Этап 1, §1B–1H).
 
-- INTENT_REQUIREMENTS: обязательные/опциональные параметры 24 интентов
-  (таблица §1C; в тексте плана фигурирует «28», в таблице перечислены 24).
+- INTENT_REQUIREMENTS: обязательные/опциональные параметры 27 интентов
+  (таблица §1C; в тексте плана фигурирует «28» — факт: 27 реализованных).
 - INCOMPATIBLE_INTENTS: несовместимые комбинации (§1H.2).
 - PARAMETER_VALIDATION_RULES: валидация параметров по типу изделия (§1H.3).
 - BLOCKER_FIELDS: критические параметры — единый источник для status/status.py.
@@ -37,6 +37,7 @@ INTENT_ORDER: Tuple[str, ...] = (
     # РЕМОНТ
     "PLAN_REPAIR",
     "BUILD_REPAIR_KIT",
+    "REPAIR_WITH_CHECKS",
     # АНАЛИЗ
     "IMPACT_MEDIUM_CHANGE",
     "IMPACT_DIAMETER_CHANGE",
@@ -83,6 +84,10 @@ INTENT_REQUIREMENTS: Dict[str, Dict[str, List[Tuple[str, ...]]]] = {
     "FIND_UNUSED_STOCK": {"required": [("min_stock",)], "optional": ["unit_id"]},
     "PLAN_REPAIR": {"required": [("component_id",), ("unit_id",)], "optional": ["depth"]},
     "BUILD_REPAIR_KIT": {"required": [("component_id",)], "optional": ["depth"]},
+    "REPAIR_WITH_CHECKS": {
+        "required": [("component_id", "medium"), ("unit_id", "medium")],
+        "optional": ["depth", "item_type"],
+    },
     "FIND_ALTERNATIVE": {
         "required": [("item_type", "dn", "pn")],
         "optional": ["medium", "material"],

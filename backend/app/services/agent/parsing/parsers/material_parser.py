@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 
 from ..dictionaries import STEEL_GRADES
-from ..normalizers.normalizers import normalize_steel, normalize_strength_class
+from ..normalizers.normalizers import normalize_steel, normalize_strength_class, normalize_material
 from ..utils.fuzzy_utils import FuzzyMatcher
 
 
@@ -170,7 +170,11 @@ class MaterialParser:
             # Возвращаем исходную сталь (from)
             result["steel_grade"] = replacement.get("steel_grade_from")
             result["strength_class"] = replacement.get("strength_class_from")
-            
+            if result["steel_grade"]:
+                norm_material = normalize_material(result["steel_grade"])
+                if norm_material:
+                    result["material"] = norm_material
+
             # Сохраняем информацию о замене
             result["_replacement"] = replacement
             return result
@@ -195,6 +199,9 @@ class MaterialParser:
         # 7. Нормализация
         if result.get("steel_grade"):
             result["steel_grade"] = normalize_steel(result["steel_grade"])
+            norm_material = normalize_material(result["steel_grade"])
+            if norm_material:
+                result["material"] = norm_material
         if result.get("strength_class"):
             result["strength_class"] = normalize_strength_class(result["strength_class"])
         

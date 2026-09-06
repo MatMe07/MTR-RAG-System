@@ -70,7 +70,8 @@ def test_llm_registry_descriptors():
 # Карта интентов (3E)
 # ===========================================================================
 def test_intent_map_covers_spec():
-    assert len(INTENT_TOOLS) == 24
+    # Факт: 27 реализованных интентов (см. matrix.py INTENT_ORDER).
+    assert len(INTENT_TOOLS) == 27
     for intent, tools in INTENT_TOOLS.items():
         assert tools, f"intent {intent} без инструментов"
         assert get_intent_tools(intent) == tools

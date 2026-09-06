@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from functools import lru_cache
 
-from ..normalizers.normalizers import normalize_decimal
+from ..normalizers.normalizers import normalize_decimal, normalize_pressure
 from ..utils.fuzzy_utils import FuzzyMatcher
 
 
@@ -219,25 +219,25 @@ class PressureParser:
                     continue
 
     def _apply_kgcm2_patterns(self, text: str, result: Dict[str, Any]) -> None:
-        """Применение паттернов для давления в кгс/см2"""
+        """Применение паттернов для давления в кгс/см2 (→ МПа, §1E.2)"""
         for pattern, field, priority, _ in self.KGCM2_PATTERNS:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 try:
                     value = float(match.group(1).replace(',', '.'))
-                    result[field] = round(value * 0.098, 2)
+                    result[field] = normalize_pressure(value, "кгс/см2")
                     break
                 except ValueError:
                     continue
 
     def _apply_bar_patterns(self, text: str, result: Dict[str, Any]) -> None:
-        """Применение паттернов для давления в барах"""
+        """Применение паттернов для давления в барах (→ МПа, §1E.2)"""
         for pattern, field, priority, _ in self.BAR_PATTERNS:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 try:
                     value = float(match.group(1).replace(',', '.'))
-                    result[field] = round(value * 0.1, 2)
+                    result[field] = normalize_pressure(value, "бар")
                     break
                 except ValueError:
                     continue

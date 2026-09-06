@@ -133,6 +133,36 @@ class DetectIntentsTest(unittest.TestCase):
         parsed = _q(original_query="хватает ли задвижек", item_types=["задвижка"])
         self.assertNotIn("CHECK_SUFFICIENCY", detect_intents(parsed))
 
+    def test_repair_with_checks_detected(self):
+        parsed = _q(
+            original_query="проверь ремонт задвижки на H2S участка UNIT-SYN-01",
+            operations=["repair"],
+            unit_ids=["UNIT-SYN-01"],
+            technical_filters={"medium": "H2S"},
+        )
+        self.assertIn("REPAIR_WITH_CHECKS", detect_intents(parsed))
+
+    def test_repair_with_checks_requires_medium(self):
+        parsed = _q(
+            original_query="план ремонта COMP-SYN-010",
+            operations=["repair"],
+            component_ids=["COMP-SYN-010"],
+        )
+        self.assertNotIn("REPAIR_WITH_CHECKS", detect_intents(parsed))
+
+    def test_repair_with_checks_requirements(self):
+        req = INTENT_REQUIREMENTS["REPAIR_WITH_CHECKS"]
+        required_groups = req["required"]
+        self.assertTrue(any("component_id" in g and "medium" in g for g in required_groups))
+        self.assertIn("REPAIR_WITH_CHECKS", INTENT_ORDER)
+
+    def test_intent_tools_covers_sufficiency_and_add(self):
+        from app.services.agent.tools.instruments import INTENT_TOOLS
+
+        self.assertIn("CHECK_SUFFICIENCY", INTENT_TOOLS)
+        self.assertIn("ADD_COMPONENT", INTENT_TOOLS)
+        self.assertIn("REPAIR_WITH_CHECKS", INTENT_TOOLS)
+
 
 class StatusTest(unittest.TestCase):
     def test_complete(self):
@@ -162,6 +192,55 @@ class StatusTest(unittest.TestCase):
         params = params_from_parsed(p)
         self.assertEqual(params.get("min_stock"), 50)
         self.assertEqual(params.get("quantity"), 2)
+
+
+class EnrichRuntimeTest(unittest.TestCase):
+    """Фаза 1, §1H: конфликты → UNCLEAR, фильтрация params, primary_intent."""
+
+    def test_incompatible_pair_unclear(self):
+        p = _q(
+            original_query="найди и замени на составную",
+            item_types=["отвод"], technical_filters={"dn": 100, "pn": 2.5},
+            proposed_changes={"dn_from": 100.0, "dn_to": 80.0},
+        )
+        p.operations = ["replace"]
+        enrich_parsed(p)
+        self.assertEqual(p.status, PARSED_STATUS_UNCLEAR)
+        self.assertTrue(any("Конфликт интентов" in a for a in p.ambiguities))
+
+    def test_primary_intent_set(self):
+        p = _q(original_query="составь план ремонта COMP-SYN-010",
+               operations=["repair"], component_ids=["COMP-SYN-010"])
+        enrich_parsed(p)
+        self.assertEqual(p.primary_intent, "PLAN_REPAIR")
+        self.assertEqual(p.intents[0], p.primary_intent)
+
+    def test_params_filtered_for_primary(self):
+        p = _q(item_types=["задвижка"], technical_filters={"dn": 150.0})
+        enrich_parsed(p)
+        self.assertEqual(p.primary_intent, "FIND_BY_PARAMS")
+        self.assertNotIn("term", p.params)
+        self.assertIn("item_type", p.params)
+        self.assertIn("dn", p.params)
+
+    def test_clarify_raises_on_conflict(self):
+        from app.services.agent.intent.clarify import (
+            ClarificationManager,
+            RequireClarification,
+        )
+
+        p = _q(
+            original_query="найди и замени на составную",
+            item_types=["отвод"], technical_filters={"dn": 100, "pn": 2.5},
+            proposed_changes={"dn_from": 100.0, "dn_to": 80.0},
+        )
+        p.operations = ["replace"]
+        enrich_parsed(p)
+        mgr = ClarificationManager()
+        with self.assertRaises(RequireClarification) as ctx:
+            mgr.process("s-conf", p, "найди и замени на составную")
+        self.assertEqual(ctx.exception.status, PARSED_STATUS_UNCLEAR)
+        self.assertTrue(ctx.exception.question)
 
 
 class ClarifyTest(unittest.TestCase):

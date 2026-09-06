@@ -47,6 +47,8 @@ ITEM_TYPE_ALIASES: Dict[str, str] = {
     "отводами": "отвод",
     "отводах": "отвод",
     "отвод гнутый": "отвод",
+    "колено": "отвод",
+    "колена": "отвод",
     "ог": "отвод",
     "окш": "отвод",
     "отвод крутоизогнутый": "отвод",
@@ -100,6 +102,8 @@ ITEM_TYPE_ALIASES: Dict[str, str] = {
     "переходах": "переход",
     "переход концентрический": "переход",
     "переход эксцентрический": "переход",
+    "редукция": "переход",
+    "редукцию": "переход",
     "пх": "переход",
     
     # ===== ТРОЙНИКИ =====
@@ -364,6 +368,20 @@ CLIMATE_ALIASES: Dict[str, str] = {
 # 4b. ОБНОВЛЕНИЕ СЛОВАРЕЙ ИЗ БД
 # =========================================================
 
+def _merge_synonym(target: Dict[str, str], raw: str, norm: str) -> None:
+    """Merges a DB synonym, preserving the case of the existing canonical value.
+
+    БД может хранить синонимы в нижнем регистре («h2s»), тогда как канон
+    кода — «H2S». Если Норма отличается от существующей только регистром,
+    берём регистр канона, иначе — значение как в БД.
+    """
+    for existing in target.values():
+        if existing.lower() == norm.lower():
+            norm = existing
+            break
+    target[raw] = norm
+
+
 def refresh_dictionaries(force: bool = False) -> None:
     """Подтягивает алиасы из БД (synonyms) в публичные словари.
     Записи БД добавляются/переопределяют дефолты кода (merge).
@@ -390,9 +408,9 @@ def refresh_dictionaries(force: bool = False) -> None:
             continue
         for rec in records:
             raw = (rec.get("raw") or "").strip().lower()
-            norm = (rec.get("norm") or "").strip().lower()
+            norm = (rec.get("norm") or "").strip()
             if raw and norm:
-                target[raw] = norm
+                _merge_synonym(target, raw, norm)
         # group_keywords (1J/1L): новые слова группы действуют как канон (raw=norm).
         try:
             for keyword in provider.get_keywords(group):

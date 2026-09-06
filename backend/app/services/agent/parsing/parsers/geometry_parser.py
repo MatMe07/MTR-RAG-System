@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass, field
 from functools import lru_cache
 
-from ..normalizers.normalizers import normalize_decimal
+from ..normalizers.normalizers import normalize_decimal, normalize_dn
 from ..utils.fuzzy_utils import FuzzyMatcher
 
 
@@ -134,6 +134,11 @@ class GeometryParser:
             return self._cache[cache_key].copy()
         
         result = self._parse_impl(text)
+
+        # Нормализация DN/d1/d2 к ряду R10 (§1E.1).
+        for key in ("dn", "d1", "d2"):
+            if result.get(key) is not None:
+                result[key] = normalize_dn(result[key])
         
         # Сохраняем в кеш
         self._cache[cache_key] = result.copy()

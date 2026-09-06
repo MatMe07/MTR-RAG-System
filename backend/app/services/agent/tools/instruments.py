@@ -499,10 +499,12 @@ INTENT_TOOLS: Dict[str, List[str]] = {
     "COMPARE_DUPLICATES": ["search_catalog", "check_stock"],
     "CHECK_STOCK": ["check_stock"],
     "CHECK_MINIMUM_STOCK": ["get_unit_structure", "get_low_stock_items"],
+    "CHECK_SUFFICIENCY": ["get_unit_structure", "check_stock"],
     "LIST_OUT_OF_STOCK": ["get_unit_structure", "check_stock"],
     "FIND_UNUSED_STOCK": ["get_unused_stock"],
     "PLAN_REPAIR": ["get_unit_structure", "check_stock", "check_compatibility_batch"],
     "BUILD_REPAIR_KIT": ["get_neighbors", "check_stock", "get_component"],
+    "REPAIR_WITH_CHECKS": ["get_unit_structure", "check_stock", "check_compatibility_batch"],
     "FIND_ALTERNATIVE": ["search_catalog", "check_compatibility"],
     "REPLACE_WITH_COMPOSITE": ["search_catalog", "check_stock", "get_neighbors"],
     "REPLACE_WITH_DIFFERENT_SIZE": ["search_catalog", "check_compatibility"],
@@ -517,6 +519,7 @@ INTENT_TOOLS: Dict[str, List[str]] = {
     "FIND_DOCUMENTS": ["get_component", "search_by_passport"],
     "FIND_STANDARDS": ["search_norms"],
     "GET_UNIT_STRUCTURE": ["get_unit_structure"],
+    "ADD_COMPONENT": ["get_unit_structure", "check_stock", "check_compatibility"],
 }
 
 set_intent_tools(INTENT_TOOLS)
@@ -562,7 +565,8 @@ def _register_all() -> None:
         execute_check_stock,
         required_intents=["CHECK_STOCK", "COMPARE_DUPLICATES", "PLAN_REPAIR",
                           "BUILD_REPAIR_KIT", "REPLACE_WITH_COMPOSITE", "COMPARE_ALTERNATIVES",
-                          "ANALYZE_RISK", "CHECK_MINIMUM_STOCK", "LIST_OUT_OF_STOCK"],
+                          "ANALYZE_RISK", "CHECK_MINIMUM_STOCK", "LIST_OUT_OF_STOCK",
+                          "CHECK_SUFFICIENCY", "REPAIR_WITH_CHECKS", "ADD_COMPONENT"],
     )
     register_instrument(
         "get_low_stock_items",
@@ -588,7 +592,8 @@ def _register_all() -> None:
         execute_get_unit_structure,
         required_intents=["FIND_BY_COMPONENT", "CHECK_MINIMUM_STOCK", "LIST_OUT_OF_STOCK",
                           "PLAN_REPAIR", "IMPACT_MEDIUM_CHANGE", "IMPACT_DIAMETER_CHANGE",
-                          "ANALYZE_RISK", "GET_UNIT_STRUCTURE"],
+                          "ANALYZE_RISK", "GET_UNIT_STRUCTURE", "CHECK_SUFFICIENCY",
+                          "ADD_COMPONENT", "REPAIR_WITH_CHECKS"],
     )
     register_instrument(
         "get_neighbors",
@@ -615,7 +620,7 @@ def _register_all() -> None:
         execute_check_compatibility,
         required_intents=["FIND_ALTERNATIVE", "REPLACE_WITH_DIFFERENT_SIZE", "COMPARE_ALTERNATIVES",
                           "IMPACT_DIAMETER_CHANGE", "IMPACT_MATERIAL_CHANGE", "IMPACT_PRESSURE_CHANGE",
-                          "EXPLAIN_DIFFERENCE"],
+                          "EXPLAIN_DIFFERENCE", "ADD_COMPONENT"],
     )
     register_instrument(
         "check_compatibility_batch",
@@ -623,7 +628,8 @@ def _register_all() -> None:
         CHECK_COMPATIBILITY_BATCH_INPUT,
         {"type": "object"},
         execute_check_compatibility_batch,
-        required_intents=["PLAN_REPAIR", "IMPACT_MEDIUM_CHANGE", "ANALYZE_RISK"],
+        required_intents=["PLAN_REPAIR", "IMPACT_MEDIUM_CHANGE", "ANALYZE_RISK",
+                          "REPAIR_WITH_CHECKS"],
     )
     register_instrument(
         "search_norms",

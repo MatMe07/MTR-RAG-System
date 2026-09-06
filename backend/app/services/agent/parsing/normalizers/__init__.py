@@ -1,20 +1,30 @@
-# # agent/parsing/normalizers/__init__.py
+# agent/parsing/normalizers/__init__.py
 
-# from .morph_normalizer import MorphNormalizer, ParamNormalizer
-# from .normalizers import (
-#     normalize_decimal,
-#     normalize_steel,
-#     normalize_strength_class,
-#     normalize_medium,
-#     normalize_pn_from_text,
-# )
+from .morph_normalizer import MorphNormalizer, ParamNormalizer
+from .normalizers import (
+    normalize_dn,
+    normalize_pressure,
+    normalize_material,
+    normalize_medium,
+    normalize_climate,
+    normalize_item_type,
+    normalize_decimal,
+    normalize_steel,
+    normalize_strength_class,
+    NORMALIZERS,
+)
 
-# __all__ = [
-#     "MorphNormalizer",
-#     "ParamNormalizer",
-#     "normalize_decimal",
-#     "normalize_steel",
-#     "normalize_strength_class",
-#     "normalize_medium",
-#     "normalize_pn_from_text",
-# ]
+__all__ = [
+    "MorphNormalizer",
+    "ParamNormalizer",
+    "normalize_dn",
+    "normalize_pressure",
+    "normalize_material",
+    "normalize_medium",
+    "normalize_climate",
+    "normalize_item_type",
+    "normalize_decimal",
+    "normalize_steel",
+    "normalize_strength_class",
+    "NORMALIZERS",
+]

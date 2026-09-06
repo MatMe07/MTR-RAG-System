@@ -340,6 +340,13 @@ class DynamicRules:
             out = out[: max(0, int(limit))]
         return out
 
+    def get_overrides(self) -> List[Dict[str, Any]]:
+        """Контекстные переопределения (contextual_overrides): trigger → target."""
+        self._ensure()
+        if not self._data:
+            return []
+        return list(self._data.get("overrides") or [])
+
     def get_synonym(self, term: str, group: Optional[str] = None) -> Optional[str]:
         """Каноническая форма термина по таблице synonyms (raw → norm)."""
         self._ensure()

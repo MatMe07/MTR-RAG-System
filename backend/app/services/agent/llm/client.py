@@ -21,6 +21,9 @@ class LLMClient:
             "cache_misses": 0,
             "total_duration_ms": 0.0,
             "errors": 0,
+            "extractor_calls": 0,
+            "extractor_hits": 0,
+            "extractor_errors": 0,
         }
     
     @property
@@ -30,10 +33,13 @@ class LLMClient:
             try:
                 from langchain_openai import ChatOpenAI
                 
-                # Пробуем OpenRouter
                 import os
-                api_key = os.getenv("OPENROUTER_API_KEY") or os.getenv("LLM_API_KEY")
-                base_url = os.getenv("OPENROUTER_BASE_URL") or "https://openrouter.ai/api/v1"
+                api_key = (
+                    self.config.llm_api_key
+                    or os.getenv("OPENROUTER_API_KEY")
+                    or os.getenv("LLM_API_KEY")
+                )
+                base_url = self.config.llm_base_url or "https://openrouter.ai/api/v1"
                 model = os.getenv("LLM_MODEL") or self.config.llm_model
                 print(f"🔍 API Key resolved: {'OK' if api_key else 'MISSING'}")
                 print(f"🔍 Base URL: {base_url}")
@@ -92,6 +98,10 @@ class LLMClient:
     
     def clear_cache(self) -> None:
         self.cache.clear()
+
+    def get_metrics(self) -> Dict[str, Any]:
+        """Копия метрик (включая extractor_calls/hits/errors §1F)."""
+        return dict(self._metrics)
 # ============================================================
 # ГЛОБАЛЬНАЯ ФАБРИКА
 # ============================================================

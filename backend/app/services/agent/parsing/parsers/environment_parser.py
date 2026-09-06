@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 
 from ..dictionaries import MEDIUM_ALIASES, CLIMATE_ALIASES
+from ..normalizers.normalizers import normalize_climate, normalize_medium
 from ..utils.fuzzy_utils import FuzzyMatcher
 
 
@@ -167,7 +168,11 @@ class EnvironmentParser:
         
         # 7. Нормализация климатики
         if result.get("climate_version"):
-            result["climate_version"] = self._normalize_climate(result["climate_version"])
+            result["climate_version"] = normalize_climate(result["climate_version"])
+
+        # 7a. Нормализация среды (алиасы §1E.4 + synonyms БД)
+        if result.get("medium"):
+            result["medium"] = normalize_medium(result["medium"]) or result["medium"]
         
         # 8. Если есть h2s_confirmed, но нет medium - заполняем
         if result.get("h2s_confirmed") and result.get("medium") is None:

@@ -21,7 +21,9 @@ class AgentConfig:
     llm_temperature: float = field(default_factory=lambda: settings.LLM_TEMPERATURE)
     llm_timeout: float = field(default_factory=lambda: settings.LLM_TIMEOUT)
     llm_base_url: str = field(default_factory=lambda: settings.OPENROUTER_BASE_URL)
-    llm_api_key: str = field(default_factory=lambda: settings.OPENROUTER_TOKEN)
+    llm_api_key: str = field(
+        default_factory=lambda: settings.OPENROUTER_TOKEN or settings.OPENROUTER_API_KEY or ""
+    )
 
     # Тулы
     tool_timeout: float = 30.0

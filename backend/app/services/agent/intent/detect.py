@@ -148,6 +148,15 @@ def _det_BUILD_REPAIR_KIT(parsed):
     return "ремкомплект" in _q(parsed)
 
 
+def _det_REPAIR_WITH_CHECKS(parsed):
+    # «Проверить ремонт/замену с учётом среды» (1B.3): контекст ремонта +
+    # цель (component/unit) + известная среда (medium).
+    if not _has_op(parsed, "repair"):
+        return False
+    has_target = bool(getattr(parsed, "component_ids", None)) or bool(getattr(parsed, "unit_ids", None))
+    return has_target and _tf(parsed, "medium") is not None
+
+
 def _det_IMPACT_MEDIUM_CHANGE(parsed):
     return bool(_changes(parsed).get("medium"))
 
@@ -262,6 +271,9 @@ def params_from_parsed(parsed: Any) -> Dict[str, Any]:
     if ch.get("medium"):
         p["new_medium"] = ch["medium"]
 
+    if getattr(parsed, "units_count", None) is not None:
+        p["units_count"] = parsed.units_count
+
     pn_m = _PN_CHANGE_RE.search(parsed.original_query or "")
     if pn_m:
         p["old_pn"] = float(pn_m.group(1))
@@ -339,11 +351,94 @@ def determine_parsed_status(
     return PARSED_STATUS_REQUIRES_EXPERT
 
 
+def _apply_extracted(parsed: Any, data: Dict[str, Any]) -> None:
+    """Применяет доизвлечённые LLM-параметры к ParsedQuery (§1F).
+
+    Мутирует только незаполненные поля; существующие значения не трогает.
+    """
+    tf = dict(getattr(parsed, "technical_filters", None) or {})
+    filter_keys = {"dn", "pn", "angle", "wall_thickness", "medium", "material",
+                   "steel_grade", "climate", "gost_tu", "strength_class", "d1", "d2"}
+    for key, value in data.items():
+        if key in filter_keys:
+            if tf.get(key) is None:
+                tf[key] = value
+        elif key == "item_type":
+            items = list(getattr(parsed, "item_types", None) or [])
+            if not items:
+                items = [value]
+            elif value not in items:
+                items.insert(0, value)
+            object.__setattr__(parsed, "item_types", items)
+            if tf.get("item_type") is None:
+                tf["item_type"] = items[0]
+        elif key == "unit_id":
+            ids = list(getattr(parsed, "unit_ids", None) or [])
+            if value not in ids:
+                ids.append(value)
+                object.__setattr__(parsed, "unit_ids", ids)
+        elif key == "component_id":
+            ids = list(getattr(parsed, "component_ids", None) or [])
+            if value not in ids:
+                ids.append(value)
+                object.__setattr__(parsed, "component_ids", ids)
+        elif key in ("units_count", "quantity"):
+            if getattr(parsed, key, None) is None:
+                object.__setattr__(parsed, key, int(value))
+    object.__setattr__(parsed, "technical_filters", tf)
+
+
+def _llm_extract(parsed: Any, intents: List[str]) -> List[str]:
+    """§1F: LLM-доизвлечение недостающих параметров после rule-парсеров.
+
+    Выполняется один раз (флаг _llm_extracted). Работает в двух случаях:
+    - интент определён, но есть непокрытые required-параметры;
+    - интентов нет, но тип детали есть («отвод» без DN/давления) —
+      доизвлекаем поисковые параметры под FIND_BY_PARAMS.
+
+    parse_safe: не бросает исключений.
+    Возвращает актуальный список интентов (мог измениться после дополнения).
+    """
+    if getattr(parsed, "_llm_extracted", False):
+        return intents
+    primary = intents[0] if intents else None
+    if not primary:
+        if not getattr(parsed, "item_types", None):
+            return intents
+        intent = "FIND_BY_PARAMS"
+        missing = [f for f in ("dn", "pn", "material", "medium", "angle")]
+    else:
+        intent = primary
+        missing = missing_required_for_intent(parsed, primary)
+    if not missing:
+        return intents
+    try:
+        from ..parsing.llm_extractor import get_llm_extractor
+
+        extractor = get_llm_extractor()
+        if not extractor.enabled:
+            return intents
+        object.__setattr__(parsed, "_llm_extracted", True)
+        known = params_from_parsed(parsed)
+        extracted = extractor.extract_missing(intent, parsed.original_query or "", missing, known)
+    except Exception:  # noqa: BLE001 — graceful-fallback обязателен
+        object.__setattr__(parsed, "_llm_extracted", True)
+        return intents
+    if not extracted:
+        return intents
+    _apply_extracted(parsed, extracted)
+    return detect_intents(parsed)
+
+
 def enrich_parsed(parsed: Any) -> Any:
     """Заполняет ParsedQuery.intents/status/missing_params (мутация).
 
-    Если для «по N штук» распознан parsed.quantity, а units_count не задан —
-    проецируем quantity в units_count (потребность N на проверку достаточности).
+    Этап 1, §1H + §1F:
+    - project quantity → units_count (достаточность «по N штук»);
+    - LLM-доизвлечение недостающих параметров после rule-парсеров (§1F);
+    - несовместимая комбинация интентов (§1H.2) → status=UNCLEAR + ambiguity;
+    - params фильтруются по главному интенту (§1H.1);
+    - primary_intent — флаг is_primary для первого (главного) интента (§1B.8).
     """
     uc = getattr(parsed, "units_count", None)
     qty = getattr(parsed, "quantity", None)
@@ -353,12 +448,44 @@ def enrich_parsed(parsed: Any) -> Any:
         except (TypeError, ValueError):
             pass
     intents = detect_intents(parsed)
+
+    # §1F: LLM-доизвлечение недостающих параметров (fallback к regex).
+    intents = _llm_extract(parsed, intents)
+
+    # Классификация по группам (§1A) — данные для диагностики и UI.
+    try:
+        from ..parsing.classifier import get_group_classifier
+
+        groups = get_group_classifier().classify(parsed.original_query or "").get("groups", [])
+    except Exception:  # noqa: BLE001
+        groups = []
+    object.__setattr__(parsed, "groups", groups)
+
+    conflicts = incompatible_detected(intents)
+    if conflicts:
+        message = f"Конфликт интентов: {', '.join(conflicts)}. Уточните, что именно нужно."
+        object.__setattr__(parsed, "intents", intents)
+        object.__setattr__(parsed, "primary_intent", intents[0] if intents else None)
+        object.__setattr__(parsed, "status", PARSED_STATUS_UNCLEAR)
+        object.__setattr__(parsed, "missing_params", {})
+        object.__setattr__(parsed, "params", params_from_parsed(parsed))
+        amb = list(getattr(parsed, "ambiguities", []) or [])
+        if message not in amb:
+            amb.append(message)
+            object.__setattr__(parsed, "ambiguities", amb)
+        return parsed
+
+    primary = intents[0] if intents else None
+    params = params_from_parsed(parsed)
+    if primary:
+        params = filter_params_for_intent(params, primary)
     status = determine_parsed_status(parsed, intents)
     missing_params = {
         it: missing_required_for_intent(parsed, it) for it in intents
     }
     object.__setattr__(parsed, "intents", intents)
+    object.__setattr__(parsed, "primary_intent", primary)
     object.__setattr__(parsed, "status", status)
     object.__setattr__(parsed, "missing_params", missing_params)
-    object.__setattr__(parsed, "params", params_from_parsed(parsed))
+    object.__setattr__(parsed, "params", params)
     return parsed

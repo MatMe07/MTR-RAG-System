@@ -49,8 +49,6 @@ class SearchService:
                 len(getattr(answer, "warnings", []) or []),
             )
 
-            request_id = str(uuid.uuid4())
-
             from app.services.agent.answer.tz_result import build_tz_result_items
             from app.services.agent.answer.status import STATUS_NOT_FOUND, STATUS_UNCLEAR
 

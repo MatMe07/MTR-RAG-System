@@ -52,6 +52,14 @@ _MISSING_LABELS: Dict[str, str] = {
     "to_value": "новое значение",
 }
 
+# Тексты уточнений для несовместимых комбинаций (§1H.2 → маршрут clarify).
+_CONFLICT_QUESTIONS = {
+    "FIND_ALTERNATIVE / REPLACE_WITH_COMPOSITE": "Запрос содержит подбор аналога и замену на составную. Что нужно: аналог или составная замена?",
+    "FIND_ALTERNATIVE / REPLACE_WITH_DIFFERENT_SIZE": "Запрос содержит подбор аналога и замену на другой DN. Что нужно: аналог или смена DN?",
+    "CHECK_STOCK / LIST_OUT_OF_STOCK": "Запрос про наличие и про отсутствие одновременно. Проверить наличие или найти отсутствующие позиции?",
+    "PLAN_REPAIR / FIND_BY_PARAMS": "Запрос содержит и план ремонта, и подбор по параметрам. Составить план или найти деталь?",
+}
+
 
 def _label(key: str) -> str:
     return _MISSING_LABELS.get(key, key)
@@ -81,6 +89,17 @@ def build_question(intent: str, missing: List[str]) -> str:
         + labels[0]
         + ". Уточните значения."
     )
+
+
+def _conflict_question(parsed: Any, primary: str) -> str:
+    """Вопрос для несовместимых интентов (по ambiguity из enrich_parsed)."""
+    for amb in getattr(parsed, "ambiguities", []) or []:
+        if not isinstance(amb, str) or "Конфликт интентов" not in amb:
+            continue
+        for key, q in _CONFLICT_QUESTIONS.items():
+            if key in amb:
+                return q
+    return "Запрос содержит противоречащие действия. Уточните, что именно нужно."
 
 
 class RequireClarification(Exception):
@@ -147,6 +166,24 @@ class ClarificationManager:
         status = determine_parsed_status(parsed, intents)
 
         sess["status"] = status
+
+        # Несовместимая комбинация интентов (§1H.2) — отмечена в enrich_parsed
+        # статусом UNCLEAR: уточняем, не считая это за дефицит параметров.
+        if getattr(parsed, "status", "") == "UNCLEAR":
+            primary = intents[0] if intents else ""
+            conflict_q = _conflict_question(parsed, primary)
+            if sess["turns"] >= self.max_turns:
+                return "expert"
+            sess["turns"] += 1
+            sess["text"] = self.merged_text(session_id, query)
+            raise RequireClarification(
+                session_id=session_id,
+                turn=sess["turns"],
+                intent=primary,
+                missing=[],
+                question=conflict_q,
+                status="UNCLEAR",
+            )
 
         if status == "COMPLETE" and intents:
             sess["text"] = self.merged_text(session_id, query)

@@ -16,6 +16,7 @@ from .ambiguity_detector import AmbiguityDetector
 from .context_extractor import ContextExtractor
 from .confidence_calculator import ConfidenceCalculator
 from .utils.data_utils import clean_technical_filters
+from .normalizers.normalizers import normalize_item_type
 from .dictionaries import refresh_dictionaries
 
 
@@ -76,6 +77,7 @@ class QueryParser:
         # 2. Парсинг сущностей
         # =========================================================
         item_types = self._safe_parse(self.item_type_parser.parse_multiple, text) or []
+        item_types = [normalize_item_type(t) or t for t in item_types]
         geometry = self._safe_parse(self.geometry_parser.parse, text) or {}
         pressure = self._safe_parse(self.pressure_parser.parse, text) or {}
         material = self._safe_parse(self.material_parser.parse, text) or {}

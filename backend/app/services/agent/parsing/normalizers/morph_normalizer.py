@@ -1,80 +1,81 @@
-# # query_parser/normalizers/morph_normalizer.py
+# agent/parsing/normalizers/morph_normalizer.py
 
-# import mawo_pymorphy3
-# from typing import List, Optional, Dict
-# from functools import lru_cache
+"""Морфологическая нормализация (pymorphy2) — возрождённый модуль (Этап 1, §1E).
 
+Используется нормализаторами параметров и LLM-доизвлечением: приводит формы
+слов к лемме («стали» → «сталь»), что повышает точность словарных матчей.
+"""
 
-# class MorphNormalizer:
-#     def __init__(self):
-#         self.morph = mawo_pymorphy3.MorphAnalyzer()
-#         # Кеш с ограничением размера (LRU)
-#         self._cache: Dict[str, str] = {}
-#         self._max_cache_size = 10000
-    
-#     @lru_cache(maxsize=10000)
-#     def normalize(self, word: str) -> str:
-#         """Нормализация слова с кешированием"""
-#         if word in self._cache:
-#             return self._cache[word]
-        
-#         try:
-#             parsed = self.morph.parse(word)[0]
-#             normalized = parsed.normal_form
-#             self._cache[word] = normalized
-#             return normalized
-#         except Exception:
-#             return word.lower()
-    
-#     def normalize_text(self, text: str) -> str:
-#         """Нормализация всего текста"""
-#         words = text.split()
-#         return " ".join(self.normalize(w) for w in words)
-    
-#     def lemmatize_words(self, text: str) -> List[str]:
-#         """Лемматизация слов"""
-#         words = text.split()
-#         return [self.normalize(w) for w in words]
-    
-#     def clear_cache(self):
-#         """Очистка кеша"""
-#         self._cache.clear()
-#         self.normalize.cache_clear()  # Очищаем LRU кеш
+from functools import lru_cache
+from typing import Dict, List, Optional
+
+try:
+    import pymorphy2
+
+    _MORPH = pymorphy2.MorphAnalyzer()
+except Exception:  # noqa: BLE001  (офлайн-окружение без словарей)
+    _MORPH = None
 
 
-# class ParamNormalizer:
-#     """Нормализация параметров (статический класс)"""
-    
-#     @staticmethod
-#     def normalize_diameter(value: str) -> float:
-#         """Нормализация диаметра"""
-#         return float(value.replace(',', '.'))
-    
-#     @staticmethod
-#     def normalize_pressure(value: str) -> float:
-#         """PN40 -> 4.0, PN160 -> 16.0"""
-#         num = float(value)
-#         if num >= 10:
-#             return num / 10.0
-#         return num
-    
-#     @staticmethod
-#     def normalize_steel_grade(value: str) -> str:
-#         """09г2с -> 09Г2С"""
-#         return value.upper()
-    
-#     @staticmethod
-#     def normalize_medium(value: str) -> str:
-#         """Нормализация среды"""
-#         mapping = {
-#             "сероводород": "H2S",
-#             "сероводородная среда": "H2S",
-#             "h2s": "H2S",
-#             "углекислый газ": "CO2",
-#             "co2": "CO2",
-#             "природный газ": "природный газ",
-#             "газ": "газ",
-#             "нефть": "нефть",
-#             "вода": "вода",
-#         }
-#         return mapping.get(value.lower(), value)
+class MorphNormalizer:
+    """Лемматизация слов и текста с LRU-кешем."""
+
+    def __init__(self):
+        self._cache: Dict[str, str] = {}
+
+    @lru_cache(maxsize=10000)
+    def normalize(self, word: str) -> str:
+        """Нормальная форма слова (лемма)."""
+        if word in self._cache:
+            return self._cache[word]
+        if _MORPH is None:
+            return word.lower()
+        try:
+            parsed = _MORPH.parse(word.strip().lower())[0]
+            normalized = parsed.normal_form or word.lower()
+        except Exception:  # noqa: BLE001
+            normalized = word.lower()
+        self._cache[word] = normalized
+        return normalized
+
+    def normalize_text(self, text: str) -> str:
+        """Лемматизация всего текста (порядок слов сохраняется)."""
+        return " ".join(self.normalize(w) for w in (text or "").split())
+
+    def lemmatize_words(self, text: str) -> List[str]:
+        """Лемматизация слов в список."""
+        return [self.normalize(w) for w in (text or "").split()]
+
+    def clear_cache(self):
+        self._cache.clear()
+        self.normalize.cache_clear()  # type: ignore[attr-defined]
+
+
+class ParamNormalizer:
+    """Нормализация параметров (статический класс) — обёртка над normalizers."""
+
+    @staticmethod
+    def normalize_diameter(value: str) -> float:
+        from .normalizers import normalize_decimal
+
+        return normalize_decimal(value)
+
+    @staticmethod
+    def normalize_pressure(value: str) -> float:
+        """PN40 → 4.0 (доизвлечённое давление трактуем как МПа по §1E.2)."""
+        from .normalizers import normalize_pressure
+
+        out = normalize_pressure(value, None)
+        return out if out is not None else 0.0
+
+    @staticmethod
+    def normalize_steel_grade(value: str) -> str:
+        from .normalizers import normalize_steel
+
+        return normalize_steel(value)
+
+    @staticmethod
+    def normalize_medium(value: str) -> str:
+        from .normalizers import normalize_medium
+
+        return normalize_medium(value) or value

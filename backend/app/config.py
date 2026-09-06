@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     LLM_TIMEOUT: int = 120
     OPENROUTER_BASE_URL: str = ""
     OPENROUTER_TOKEN: str = ""
+    OPENROUTER_API_KEY: Optional[str] = None
     LOG_LEVEL: str = "INFO"
     AGENT_LLM_MODE: str = "on"
     AGENT_STORAGE: str = "db"

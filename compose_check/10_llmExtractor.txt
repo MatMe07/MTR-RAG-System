@@ -1,0 +1,11 @@
+enabled: True
+--- нужен отвод 159 для сероводородной среды
+🔍 API Key resolved: OK
+🔍 Base URL: https://openrouter.ai/api/v1/
+🔍 Model: nvidia/nemotron-3-super-120b-a12b:free
+{'dn': 159.0, 'medium': 'H2S'}
+--- задвижка клиновая 300х16 сталь 09г2с
+{'dn': 300, 'pn': 16.0, 'material': '09Г2С', 'item_type': 'задвижка'}
+--- хватит ли 5 труб дн200 на участке У-1
+{'unit_id': 'У-1'}
+metrics: {'total_calls': 3, 'cache_hits': 0, 'cache_misses': 3, 'total_duration_ms': 8665.610313415527, 'errors': 0, 'extractor_calls': 3, 'extractor_hits': 0, 'extractor_errors': 0}

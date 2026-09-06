@@ -191,24 +191,6 @@ class ParsedQuery(BaseModel):
     # ===== Исходный запрос =====
     original_query: str = Field(..., description="Исходный текст запроса")
 
-    # ===== Интентный слой (1D): заполняется detect.enrich_parsed() =====
-    intents: List[str] = Field(
-        default_factory=list,
-        description="Определённые интенты (см. intent.matrix, до 24)",
-    )
-    status: str = Field(
-        default="",
-        description="Статус разбора: COMPLETE / PARTIAL / UNCLEAR / REQUIRES_EXPERT",
-    )
-    missing_params: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Интент → недостающие обязательные параметры",
-    )
-    params: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Плоские извлечённые параметры (для filter_params_for_intent)",
-    )
-    
     # ===== Операции (что нужно сделать) =====
     operations: List[str] = Field(
         default_factory=list,
@@ -330,6 +312,15 @@ class ParsedQuery(BaseModel):
     params: Dict[str, Any] = Field(
         default_factory=dict,
         description="Объединённые параметры запроса (filter_params_for_intent)"
+    )
+    primary_intent: Optional[str] = Field(
+        default=None,
+        description="Главный интент (первый в intents, флаг is_primary §1B.8)"
+    )
+    groups: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Классификация по группам (classifier.GroupClassifier): "
+                    "[{'group': 'СКЛАД', 'score': 3, 'confidence': 0.9, 'matched': [...]}]"
     )
 
 
