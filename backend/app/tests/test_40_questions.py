@@ -61,7 +61,7 @@ def _run_case(case):
         "review_verdict": answer.review_verdict,
         "review_issues": answer.review_issues,
         "human_review_required": answer.human_review_required,
-        "answer_non_empty": bool(answer.answer and answer.answer.strip()),
+        "answer_non_empty": bool(answer.explanation and answer.explanation.strip()),
     }
 
 

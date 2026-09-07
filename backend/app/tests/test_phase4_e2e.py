@@ -60,7 +60,7 @@ def test_deterministic_mode_20_queries(query):
     assert answer.mode
     assert isinstance(answer.components, list)
     assert answer.status
-    assert answer.answer is not None
+    assert answer.explanation is not None
 
 
 @pytest.mark.parametrize("query", E2E_QUERIES)

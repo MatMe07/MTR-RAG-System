@@ -292,7 +292,7 @@ class ExplanationGeneratorLlmTest(unittest.TestCase):
         self.assertEqual(answer.status, STATUS_UNCLEAR)
         self.assertEqual(answer.explanation, "Инженерное объяснение")
 
-    def test_builder_wiring_no_explanation_on_header(self):
+    def test_builder_wiring_template_explanation_on_header(self):
         result = {
             "components": [{"match_score": 0.96, "match_percent": 96, "name": "Задвижка"}],
             "warnings": [],
@@ -306,7 +306,9 @@ class ExplanationGeneratorLlmTest(unittest.TestCase):
             _parsed(query="Найди задвижку DN150"), "search", result
         )
         self.assertEqual(answer.status, STATUS_MATCH)
-        self.assertIsNone(answer.explanation)
+        # LLM не сработал (нет триггера), но шаблон 5A.3 даёт текст
+        self.assertTrue(answer.explanation)
+        self.assertIn("Совпали все критические параметры", answer.explanation)
 
 
 class SourceFormatterTest(unittest.TestCase):

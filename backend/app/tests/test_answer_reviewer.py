@@ -32,12 +32,15 @@ def test_complete_answer_reviewed_pass():
     assert answer.review_issues == []
 
 
-def test_empty_answer_needs_review():
+def test_empty_answer_builds_template_text_no_review():
     result = _full_result()
     result["answers"] = [""]
     answer = build_answer(_parsed(), "search", result)
-    assert answer.review_verdict == "needs_review"
-    assert any("не собран" in issue for issue in answer.review_issues)
+    # Текстовый ответ убран (поле `answer`), объяснение собирается
+    # шаблоном 5A.3 из компонентов — текст присутствует, ревью проходит.
+    assert answer.explanation
+    assert answer.review_verdict == "pass"
+    assert answer.review_issues == []
 
 
 def test_no_tools_needs_review():

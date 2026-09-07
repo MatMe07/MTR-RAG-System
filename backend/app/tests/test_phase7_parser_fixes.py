@@ -119,12 +119,13 @@ class AQ039_040_RegulationDecodeTest(unittest.TestCase):
             "и что каждый из них подтверждает", mode="auto")
 
     def test_gost_decoded_not_just_count(self):
-        self.assertNotIn("Проверено 3 нормативов", self.aq040.answer)
-        self.assertIn("ГОСТ", self.aq040.answer)
+        text = self.aq040.explanation or ""
+        self.assertNotIn("Проверено 3 нормативов", text)
+        self.assertIn("ГОСТ", text)
         # декодированный ГОСТ несёт и номер, и краткое описание
         self.assertTrue(
             any("—" in line and "ГОСТ" in line
-                for line in self.aq040.answer.splitlines()),
+                for line in text.splitlines()),
             "ответ должен содержать расшифровку «ГОСТ N — описание»")
 
 
@@ -140,7 +141,7 @@ class AQ036ExplicitDnReplacementTest(unittest.TestCase):
             mode="auto")
 
     def test_no_multiple_dn_ambiguity(self):
-        text = self.answer.answer + "\n" + (self.answer.explanation or "")
+        text = self.answer.explanation or ""
         for line in text.splitlines():
             self.assertNotIn(
                 "несколько значений DN", line,

@@ -223,10 +223,10 @@ class AgentExecutor:
             answer.human_review_required = True
             return False
 
-        if refined.answer_text:
-            answer.answer = refined.answer_text
-        if refined.explanation:
-            answer.explanation = refined.explanation
+        if refined.answer_text or refined.explanation:
+            answer.explanation = "\n\n".join(
+                p for p in (refined.answer_text, refined.explanation) if p
+            )
         for rec in refined.extra_recommendations:
             if rec and rec not in answer.recommendations:
                 answer.recommendations.append(rec)
@@ -336,6 +336,7 @@ class AgentExecutor:
             "missing": result.get("missing", []),
             "review": result.get("review_required", False),
             "answers": [result.get("context", {}).get("last_text", "")],
+            "normative_detail": result.get("normative_detail", ""),
             "mode": result.get("context", {}).get("mode", "offline_rules"),
             "tools_used": list(result.get("context", {}).get("tools_used", [])),
             "stock_rows": result.get("stock_rows", []),

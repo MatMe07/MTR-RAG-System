@@ -55,8 +55,7 @@ def _answer(components=None, answer_text="", explanation="", recommendations=Non
             warnings=None) -> AgentAnswer:
     return AgentAnswer(
         query="тест",
-        answer=answer_text,
-        explanation=explanation,
+        explanation=explanation or (answer_text or None),
         recommendations=recommendations or [],
         components=components or [],
         sources=[],
@@ -181,7 +180,7 @@ class TestAnswerNodeCompleted:
     """answer_node корректно возвращает completed=True (LAN-фикс completed=False)."""
 
     @patch("app.services.agent.graph.nodes.build_answer",
-           return_value=AgentAnswer(query="тест", answer="Отлично", mode="deterministic"))
+           return_value=AgentAnswer(query="тест", explanation="Отлично", mode="deterministic"))
     def test_answer_node_returns_completed(self, mock_build):
         from app.services.agent.core.state import create_initial_state
         from app.services.agent.graph.nodes import answer_node
@@ -275,7 +274,7 @@ class TestExecutorAutoE2E:
 
         assert answer.verification_verdict == "review"
         assert answer.mode_refined == "auto_llm_refine"
-        assert "Не хватает" in answer.answer
+        assert "Не хватает" in (answer.explanation or "")
         assert fake_llm.calls, "refine должен был вызвать LLM"
 
     @patch("app.services.agent.executor.get_graph")

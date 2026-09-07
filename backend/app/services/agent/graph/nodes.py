@@ -202,6 +202,7 @@ def answer_node(state: AgentState) -> Dict[str, Any]:
         "warnings": state.get("warnings", []),
         "missing": state.get("missing", []),
         "review": state.get("review_required", False),
+        "normative_detail": state.get("normative_detail", ""),
         "answers": [state.get("context", {}).get("last_text", "")],
         "mode": state.get("context", {}).get("mode", "offline_rules"),
         "tools_used": state.get("context", {}).get("tools_used", []),
@@ -297,6 +298,8 @@ def _merge_result(state: AgentState, result: Dict[str, Any]) -> Dict[str, Any]:
         state["review_required"] = True
     if result.get("text"):
         state.setdefault("context", {})["last_text"] = result["text"]
+    if result.get("normative_detail"):
+        state["normative_detail"] = result["normative_detail"]
     if result.get("_tool_name"):
         state.setdefault("context", {}).setdefault("tools_used", []).append(result["_tool_name"])
 
@@ -305,6 +308,7 @@ def _merge_result(state: AgentState, result: Dict[str, Any]) -> Dict[str, Any]:
         "sources": state.get("sources", []),
         "warnings": state.get("warnings", []),
         "missing": state.get("missing", []),
+        "normative_detail": state.get("normative_detail", ""),
         "review_required": state.get("review_required", False),
     }
 

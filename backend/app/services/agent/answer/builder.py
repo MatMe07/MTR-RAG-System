@@ -3,14 +3,14 @@
 from typing import Any, Callable, Dict, List, Optional
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
-from .explanation import ExplanationGenerator
+from .explanation import ExplanationGenerator, build_explanation
 from .warnings import (
     build_scenario_warnings,
     evaluate_parameter_rules,
     filter_by_intent,
     group_warnings,
 )
-from .reviewer import auto_review, _FALLBACK_ANSWER
+from .reviewer import auto_review
 from ..tools.stock_filters import passes_stock_filter
 from .status import (
     determine_status,
@@ -38,14 +38,6 @@ class AnswerBuilder:
         intent: str,
         result: Dict[str, Any]
     ) -> AgentAnswer:
-        answers = [a for a in (result.get("answers") or []) if a]
-        head_answer = result.get("answer")
-        if head_answer and head_answer not in answers:
-            answers.insert(0, head_answer)
-        if not answers:
-            answers.append(_FALLBACK_ANSWER)
-        answer_text = "\n".join(answers)
-
         scenario_warnings = build_scenario_warnings(parsed, intent)
         rule_warnings, rule_recommendations = evaluate_parameter_rules(parsed)
 
@@ -74,9 +66,8 @@ class AnswerBuilder:
             intent=intent,
         )
         review = bool(result.get("review")) or status == STATUS_EXPERT
-        verdict, review_issues = auto_review(result, tools_used, sources, answer_text)
-        recommendations = build_recommendations(status, warnings, missing) + rule_recommendations
         mode = result.get("mode", "offline_rules")
+        recommendations = build_recommendations(status, warnings, missing) + rule_recommendations
         if mode != "llm" and status in (STATUS_UNCLEAR, STATUS_EXPERT):
             recommendations.append(
                 "Не удалось однозначно обработать запрос. Попробовать LLM-режим?"
@@ -92,8 +83,17 @@ class AnswerBuilder:
             errors=result.get("errors"),
             recommendations=recommendations,
         )
-        # print(explanation)
-        # return None
+        # LLM/refine final text (head_answer) — осмысленный пользовательский
+        # текст; подставляем его в explanation, если генератор его не дал.
+        head_answer = (result.get("answer") or "").strip()
+        if not explanation and head_answer:
+            explanation = head_answer
+        if not explanation:
+            explanation = result.get("normative_detail") or ""
+        if not explanation:
+            explanation = self._template_explanation(status, components) or ""
+
+        verdict, review_issues = auto_review(result, tools_used, sources, explanation or "")
 
         return AgentAnswer(
             query=parsed.original_query,
@@ -102,7 +102,6 @@ class AnswerBuilder:
             route="agent",
             mode=result.get("mode", "offline_rules"),
             tools_used=tools_used,
-            answer=answer_text,
             explanation=explanation,
             components=components,
             warnings=warnings,
@@ -347,6 +346,33 @@ class AnswerBuilder:
             if isinstance(r, dict)
         ]
     
+    def _template_explanation(self, status: str, components: List) -> Optional[str]:
+        """Шаблонное объяснение для штатных ответов (ЭТАП 5, 5A.3 template).
+
+        Страховка, когда LLM-генератор не активирован. Если есть кандидаты —
+        по лучшему из них (build_explanation по статусу и параметрам), иначе
+        чистая строка по статусу.
+        """
+        scored = sorted(
+            (c for c in components if c.match_percent is not None),
+            key=lambda c: c.match_percent or 0,
+            reverse=True,
+        )
+        top = scored[0] if scored else (components[0] if components else None)
+        if top is not None:
+            text = build_explanation(
+                status,
+                matched=top.matched_params or [],
+                mismatched=top.mismatched_params or [],
+                missing=top.missing_params or [],
+            )
+        else:
+            text = build_explanation(status)
+        if scored:
+            count = len(scored)
+            return f"Найдено {count} подходящих позиций. {text}"
+        return text or None
+
     def _intent_label(self, intent: str) -> str:
         labels = {
             "search": "Поиск по каталогу",

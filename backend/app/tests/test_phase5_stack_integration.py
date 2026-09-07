@@ -201,7 +201,7 @@ def test_e2e_deterministic_on_stack(repo):
     for query in ["подбери отвод 90 на DN159", "найди задвижку DN100"]:
         answer = AgentExecutor().execute(query, mode="deterministic")
         assert answer.status, "детерминированный режим должен вернуть status"
-        assert answer.answer is not None
+        assert answer.explanation is not None
 
 
 def teardown_module(module):

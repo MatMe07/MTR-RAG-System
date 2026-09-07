@@ -19,7 +19,8 @@ class AgentState(TypedDict, total=False):
     errors: List[str]
     missing: List[str]
     results: Dict[str, Any]
-    
+    normative_detail: str
+
     context: Dict[str, Any]  # Только простые типы
     review_required: bool
     completed: bool
@@ -48,6 +49,7 @@ def create_initial_state(
         "errors": [],
         "missing": [],
         "results": {},
+        "normative_detail": "",
         "review_required": False,
         "completed": False,
         "current_node": "",

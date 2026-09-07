@@ -386,7 +386,6 @@ class AgentAnswer(BaseModel):
     route: Optional[str] = Field(None, description="ordinary | agent | clarification")
     mode: Optional[str] = Field(None, description="Режим исполнения")
     tools_used: List[str] = Field(default_factory=list, description="Запущенные тулы")
-    answer: str = Field(default="", description="Текстовый ответ пользователю")
     explanation: Optional[str] = Field(
         None,
         description="Холистическое объяснение ответа (5A.3): LLM-генеративное для UNCLEAR/EXPERT/«объясни»",

@@ -223,7 +223,7 @@ def _check_empty_or_expert_silent(
 def verify_answer(parsed: Any, answer: Any) -> VerificationResult:
     """Основная функция quality gate. Принимает ParsedQuery + AgentAnswer."""
     components = [c.model_dump() if hasattr(c, "model_dump") else dict(c) for c in (answer.components or [])]
-    answer_text = getattr(answer, "answer", "") or ""
+    answer_text = getattr(answer, "explanation", "") or ""
     warnings = list(getattr(answer, "warnings", []) or [])
 
     gaps: List[Gap] = []

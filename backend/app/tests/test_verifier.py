@@ -31,7 +31,7 @@ def _answer(components=None, answer_text="", warnings=None, status=""):
     return AgentAnswer(
         query="тест",
         components=components or [],
-        answer=answer_text,
+        explanation=answer_text if answer_text else None,
         warnings=warnings or [],
     )
 

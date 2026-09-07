@@ -73,12 +73,12 @@ def test_empty_answers_use_fallback_text():
         "answers": [""],
         "mode": "offline_rules",
     })
-    assert answer.answer
-    assert "недостаточно данных" in answer.answer
+    assert answer.explanation
+    assert "недостаточно данных" not in (answer.explanation or "")
 
 
 def test_answer_text_prioritized_over_answers():
-    # Результат LLM-агента: final_answer в "answer" — должен попасть в ответ.
+    # Результат LLM-агента: final_answer в "answer" — должен попасть в explanation.
     parsed = _parsed()
     answer = build_answer(parsed, "search", {
         "components": [],
@@ -88,7 +88,7 @@ def test_answer_text_prioritized_over_answers():
         "answer": "Отвод DN159 найден",
         "mode": "llm",
     })
-    assert answer.answer == "Отвод DN159 найден"
+    assert answer.explanation == "Отвод DN159 найден"
 
 
 def test_expert_status_suggests_llm_mode():
@@ -130,7 +130,7 @@ def test_executor_llm_mode_uses_llm_agent():
     answer = executor.execute("отвод 90 DN159", parsed=_parsed(), mode="llm")
 
     assert answer.mode == "llm"
-    assert answer.answer == "Отвод DN159 найден"
+    assert answer.explanation == "Отвод DN159 найден"
     assert answer.components, "LLM-агент должен найти компоненты"
 
 

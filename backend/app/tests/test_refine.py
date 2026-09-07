@@ -23,7 +23,7 @@ def _answer():
     return AgentAnswer(
         query="хватает ли по 2 штуки",
         components=[AgentComponent(name="задвижка", item_type="задвижка", quantity=1)],
-        answer="Список позиций",
+        explanation="Список позиций",
         warnings=["Расчёт — черновик"],
     )
 
