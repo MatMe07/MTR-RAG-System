@@ -16,6 +16,7 @@ from .ambiguity_detector import AmbiguityDetector
 from .context_extractor import ContextExtractor
 from .confidence_calculator import ConfidenceCalculator
 from .utils.data_utils import clean_technical_filters
+from .utils.replacement_utils import has_explicit_dn_replacement
 from .normalizers.normalizers import normalize_item_type
 from .dictionaries import refresh_dictionaries
 
@@ -1009,7 +1010,7 @@ class QueryParser:
 
         # Дополнительные проверки
         dns = re.findall(r"\b(?:dn|ду)\s*(\d+(?:[.,]\d+)?)", text.lower())
-        if len(set(dns)) > 1:
+        if len(set(dns)) > 1 and not has_explicit_dn_replacement(text):
             ambiguities.append("В запросе указано несколько значений DN")
 
         pns = re.findall(r"\bpn\s*(\d+(?:[.,]\d+)?)", text.lower())

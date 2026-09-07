@@ -13,6 +13,7 @@ from mawo_natasha import (
 )
 
 from ..dictionaries import ITEM_TYPE_ALIASES, OPERATION_ALIASES
+from ..utils.replacement_utils import has_explicit_dn_replacement
 from ..utils.fuzzy_utils import FuzzyMatcher
 
 
@@ -258,16 +259,18 @@ class NatashaParser:
             if re.search(rf"(?<![а-яёa-z]){re.escape(alias)}(?![а-яёa-z])", text_lower):
                 item_types.add(normalized)
         
-        # 3. Через fuzzy-поиск (для опечаток)
+        # 3. Через fuzzy-поиск (для опечаток в базовых типах; полнота по БД
+        #    достигается точным совпадением выше, а широкий fuzzy по алиасам БД
+        #    даёт ложные типа («проверить» → «просвет»)).
         words = re.findall(r"[а-яёa-z]+", text_lower)
         for word in words:
             if len(word) < 4:
                 continue
-            for alias, normalized in ITEM_TYPE_ALIASES.items():
-                if len(alias) < 4:
+            for keyword in self.ITEM_TYPE_KEYWORDS:
+                if len(keyword) < 4:
                     continue
-                if self.fuzzy_matcher.match(word, [alias]):
-                    item_types.add(normalized)
+                if self.fuzzy_matcher.match(word, [keyword]):
+                    item_types.add(keyword)
                     break
         
         return list(item_types)
@@ -425,7 +428,7 @@ class NatashaParser:
         text_lower = text.lower()
         
         dns = re.findall(r'\b(?:dn|ду)\s*[:]?\s*(\d+)', text_lower)
-        if len(set(dns)) > 1:
+        if len(set(dns)) > 1 and not has_explicit_dn_replacement(text):
             ambiguities.append("Обнаружено несколько значений DN")
         
         angles = re.findall(r'\b(30|45|60|90)\s*°?', text_lower)

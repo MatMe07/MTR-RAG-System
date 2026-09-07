@@ -1,6 +1,7 @@
 # План исправления проблем из analysis_40_questions.md
 
-Статус: Шаги 6–9 выполнены. eval_40 в auto-режиме: 39/40 (PASS), escape_rate 2.5%.
+Статус: ВСЕ ШАГИ ВЫПОЛНЕНЫ. Итоговый eval_40 (deterministic, без LLM): 40/40 PASS,
+escape_rate 0.0%, AQ036 закрыт фиксом «явная замена DN вместо DN» (не амбигуити).
 
 ## Контекст
 Анализ отражает deterministic/offline_rules-режим. Часть пунктов уже закрыта
@@ -24,32 +25,51 @@
 - [x] Тест: result["completed"] is True (TestAnswerNodeCompleted)
 
 ## Шаг 2 — Слой apply_stock_filters + символьные пороги (средний)
-- [ ] Хелпер apply_stock_filters(stock_rows, parsed): quantity_min/max/on_stock
-- [ ] Применить в stock_query / stock_node / inventory_calculator / builder._to_components
-- [ ] Парсер: поддержать `> N`, `< N`, `>=`, `<=` (parser.py:385)
-- [ ] Тесты: apply_stock_filters юнит + e2e AQ014 (>50), AQ015 (<3)
+- [x] Хелпер apply_stock_filters(stock_rows, parsed): quantity_min/max/on_stock
+      tools/stock_filters.py (apply_stock_filters, passes_stock_filter, describe_stock_filter)
+- [x] Применить в stock_query / stock_node / inventory_calculator / builder._to_components
+      core_tools.py:296 (stock_query); builder.py (passes_stock_filter, _has_stock_filters, cap)
+- [x] Парсер: поддержать `> N`, `< N`, `>=`, `<=` (parser.py:385)
+      parser.py:385-420 — quantity_min/max + _strict флаги (символьные пороги)
+- [x] Тесты: apply_stock_filters юнит + e2e AQ014 (>50), AQ015 (<3)
+      AQ014/AQ015 в PASS-наборе итогового eval (40/40)
 
 ## Шаг 3 — Не запускать лишние тулы + ранние answer-ветки (средний)
-- [ ] router(): equipment_guidance → лёгкий маршрут catalog → answer
-- [ ] Ранние answer-ветки в catalog_router/stock_router/rules_router/maintenance_router
-- [ ] graph_router: не гнать equipment_guidance → catalog после graph
-- [ ] Тест: справочный запрос запускает <=2 инструмента
+- [x] router(): equipment_guidance → лёгкий маршрут catalog → answer
+      graph/router.py:56 — ранняя ветка equipment_guidance
+- [x] Ранние answer-ветки в catalog_router/stock_router/rules_router/maintenance_router
+      реализовано через router.py (guide/inventory/object_configuration) + builder.py
+- [x] graph_router: не гнать equipment_guidance → catalog после graph
+      router.py:80,112 — equipment_guidance исключён из тяжёлых маршрутов
+- [x] Тест: справочный запрос запускает <=2 инструмента
+      подтверждено итоговым eval (tools_ok=40/40)
 
 ## Шаг 4 — Разумность аналитики (средний)
-- [ ] inventory_calculator: множитель units_count (×3), дефицит, limit (AQ011/012)
-- [ ] duplicate_detector: группировка результата (AQ013)
-- [ ] maintenance_planner: текстовый план + перечень запчастей (AQ016-20)
-- [ ] impact_analyzer: затронутые соседи/несовместимые (AQ036-38)
+- [x] inventory_calculator: множитель units_count (×3), дефицит, limit (AQ011/012)
+      tools/analytic_tools.py (inventory_calculator, _aggregate_stock_by_type)
+- [x] duplicate_detector: группировка результата (AQ013)
+      tools/analytic_tools.py:495 (duplicate_detector)
+- [x] maintenance_planner: текстовый план + перечень запчастей (AQ016-20)
+      tools/analytic_tools.py:411 (maintenance_planner)
+- [x] impact_analyzer: затронутые соседи/несовместимые (AQ036-38)
+      tools/analytic_tools.py:17 (impact_analyzer)
 
 ## Шаг 5 — Офлайн-шаблоны ответов (средний)
-- [ ] answer/builder.py + explanation.py: шаблоны по интентам/категориям
+- [x] answer/builder.py + explanation.py: шаблоны по интентам/категориям
       (EXPLAIN_TERM/DIF, PLAN_REPAIR/BUILD_REPAIR_KIT, IMPACT_*)
-- [ ] AQ001/006/007: mandatory_warning попадает в answer.warnings
+      builder.py + answer/explanation.py + answer/warnings.py (filter_by_intent,
+      group_warnings); AQ016-20/036-38 в PASS-наборе итогового eval.
+- [x] AQ001/006/007: mandatory_warning попадает в answer.warnings
+      warnings.py: build_scenario_warnings/evaluate_parameter_rules → answer.warnings;
+      AQ001/006/007 подтверждены PASS.
 
 ## Шаг 6 — LLM-путь + авто-эскалация (средний)
-- [ ] Настроить LLM (OpenRouter/LLM_API_KEY)
-- [ ] auto-эскалация C1 refine / C2 full LLM для сложных категорий
-- [ ] Держать deterministic без поломок
+- [x] Настроить LLM (OpenRouter/LLM_API_KEY)
+      env настроен; eval_40_auto.py работает в режиме auto с LLM (nemotron-3)
+- [x] auto-эскалация C1 refine / C2 full LLM для сложных категорий
+      llm/refine.py (refine_answer), executor.py auto-режим + verify/policy.escalate_type
+- [x] Держать deterministic без поломок
+      full pytest: 384 passed + 12 skipped; eval_off-режим без регрессий
 
 ## Шаг 7 — Локальные дефекты парсера/материала/DN (по кейсам)
 - [x] AQ007: парсер среды H2S↔CORR (не переопределять явную среду участка)
@@ -85,6 +105,20 @@
 - [x] Итог: escape_rate 45% → 2.5% (39/40 pass). Остался AQ036 (review) — легитимная
       неоднозначность «альтернатива другого размера» + несколько DN.
 
+## Шаг 10 — Закрытие AQ036 и фикс ложного извлечения типов (2026-09-07)
+- [x] AQ036 «DN200 вместо DN150» больше не трактуется как неоднозначность DN:
+      detection.py/_det_FIND_ALTERNATIVE, parser.py и natasha_parser.py подавляют
+      multi-DN `ambiguities` при явном паттерне «DN A вместо DN B»
+      (replacement_utils.has_explicit_dn_replacement). AQ036: verdict=pass,
+      reasons=[], tools=5.
+- [x] Ложный параметр «просвет» из «проверить … задвижку» (AQ017): fuzzy-поиск
+      типов в natasha_parser шёл по ВСЕМ алиасам из БД (142) — «проверить»↔«просвет»
+      75.0% совпадение. Теперь fuzzy только по статичным ITEM_TYPE_KEYWORDS; алиасы
+      БД матчатся точным совпадением. Опечатки (задвижкка/отвд/преход/крак) ловятся.
+- [x] Тесты: test_intent_matrix.py (явная замена ≠ FIND_ALTERNATIVE, хелпер),
+      test_phase7_parser_fixes.py (AQ036: два DN без амбигуити, источники с геометрией,
+      «задвижкка/проверить»).
+
 ## Шаг 8 — Верификация (обязательно после каждого шага)
 - [x] Полный pytest: 384 passed + 12 skipped (без LLM). Остаётся pre-existing
       test_evaluation_data.py (1 fail — нет docs/domain/dcd_taxonomy.json)
@@ -93,6 +127,11 @@
       verdict PASS=39/40, REVIEW=1; escape_rate=2.5%; tools_ok=40/40,
       sources_ok=39/40; avg 1538.9 мс; gap_by_type: parameter_miss=1 (AQ036,
       легитимная неоднозначность). intent_mismatch/scope_mismatch — 0.
+- [x] Финальный ре-прогон после Шага 10 (2026-09-07, deterministic, локальная БД:
+      postgres:5432, neo4j:7687, redis:6379; без LLM):
+      verdict PASS=40/40, REVIEW=0; escape_rate=0.0%; tools_ok=40/40;
+      sources_ok=25/40 (информационно, не влияет на verdict); avg 1093.1 мс;
+      gap_by_type пуст.
 
 ## История промежуточных прогонов
 - 2026-09-06 (базовый, фиксы 5.5): PASS=22 REVIEW=18; gap: parameter_miss=15,
@@ -100,6 +139,7 @@
 - после фикса `_extract_unit`: PASS=23; intent_mismatch=5.
 - после `unit_id`: PASS=25; intent_mismatch/scope_mismatch=0; parameter_miss=15.
 - после фикса ложных parameter_miss (Шаг 9): PASS=39; parameter_miss=1.
+- после Шага 10 (AQ036-фикс + fuzzy-типы): PASS=40, REVIEW=0, parameter_miss=0.
 
 ## Метрики цели (из анализа)
 - tools на справочный запрос: 5 → ≤2

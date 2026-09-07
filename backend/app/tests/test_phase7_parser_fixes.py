@@ -128,5 +128,37 @@ class AQ039_040_RegulationDecodeTest(unittest.TestCase):
             "ответ должен содержать расшифровку «ГОСТ N — описание»")
 
 
+class AQ036ExplicitDnReplacementTest(unittest.TestCase):
+    """«DN200 вместо DN150» — явная замена размера, а не неоднозначность."""
+
+    @classmethod
+    def setUpClass(cls):
+        ex = AgentExecutor(AgentConfig(use_llm=False, storage="json"))
+        cls.answer = ex.execute(
+            "Хотим поставить задвижку DN200 вместо DN150, "
+            "покажи какие соседние детали придется заменить или проверить",
+            mode="auto")
+
+    def test_no_multiple_dn_ambiguity(self):
+        text = self.answer.answer + "\n" + (self.answer.explanation or "")
+        for line in text.splitlines():
+            self.assertNotIn(
+                "несколько значений DN", line,
+                "замена DN без неоднозначности, но эмитится DN-амбигуити")
+            self.assertNotIn(
+                "Конфликт интентов", line,
+                "замена «X вместо Y» не должна давать конфликт FIND_ALTERNATIVE")
+        pq = self.answer.parsed_query
+        self.assertIsNotNone(pq, "нет parsed_query")
+        self.assertNotEqual(pq.status, "UNCLEAR",
+                            "явная замена DN не должна быть UNCLEAR")
+        self.assertEqual(pq.ambiguities, [],
+                         "явная замена DN не должна эмитить неоднозначности")
+
+    def test_sources_include_geometry(self):
+        self.assertTrue(self.answer.components,
+                        "ожидался подбор деталей/влияние на соседние")
+
+
 if __name__ == "__main__":
     unittest.main()

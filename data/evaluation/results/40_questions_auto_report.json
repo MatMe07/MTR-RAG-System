@@ -1,19 +1,17 @@
 {
   "summary": {
-    "generated_at": "2026-09-06T15:53:34.273812+00:00",
+    "generated_at": "2026-09-07T17:00:19.251763+00:00",
     "mode": "auto",
     "total": 40,
-    "verdict_pass": 39,
-    "verdict_review": 1,
-    "escaped": 1,
-    "escape_rate_pct": 2.5,
+    "verdict_pass": 40,
+    "verdict_review": 0,
+    "escaped": 0,
+    "escape_rate_pct": 0.0,
     "tools_ok": 40,
-    "sources_ok": 39,
+    "sources_ok": 25,
     "sufficiency_verdict_cases": 1,
-    "avg_duration_ms": 1538.9,
-    "gap_by_type": {
-      "parameter_miss": 1
-    }
+    "avg_duration_ms": 1093.1,
+    "gap_by_type": {}
   },
   "mode": "auto",
   "cases": [
@@ -41,10 +39,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
-      "warning_ok": true,
-      "duration_ms": 2020.7
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
+      "warning_ok": false,
+      "duration_ms": 1633.9
     },
     {
       "case_id": "AQ002",
@@ -70,10 +70,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
-      "warning_ok": true,
-      "duration_ms": 1307.2
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
+      "warning_ok": false,
+      "duration_ms": 1017.0
     },
     {
       "case_id": "AQ003",
@@ -101,7 +103,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1814.7
+      "duration_ms": 1316.5
     },
     {
       "case_id": "AQ004",
@@ -127,10 +129,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
-      "duration_ms": 1217.4
+      "duration_ms": 941.4
     },
     {
       "case_id": "AQ005",
@@ -156,10 +160,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
-      "duration_ms": 1391.9
+      "duration_ms": 1194.8
     },
     {
       "case_id": "AQ006",
@@ -185,10 +191,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
-      "duration_ms": 1384.5
+      "duration_ms": 1207.3
     },
     {
       "case_id": "AQ007",
@@ -214,10 +222,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
-      "duration_ms": 1233.4
+      "duration_ms": 1011.8
     },
     {
       "case_id": "AQ008",
@@ -245,7 +255,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1808.7
+      "duration_ms": 1018.0
     },
     {
       "case_id": "AQ009",
@@ -279,8 +289,8 @@
       "missing_tools": [],
       "sources_ok": true,
       "missing_sources": [],
-      "warning_ok": true,
-      "duration_ms": 1819.3
+      "warning_ok": false,
+      "duration_ms": 1072.1
     },
     {
       "case_id": "AQ010",
@@ -307,7 +317,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1111.5
+      "duration_ms": 966.0
     },
     {
       "case_id": "AQ011",
@@ -335,7 +345,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1879.4
+      "duration_ms": 1069.6
     },
     {
       "case_id": "AQ012",
@@ -363,7 +373,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 2037.6
+      "duration_ms": 992.4
     },
     {
       "case_id": "AQ013",
@@ -393,7 +403,7 @@
         "expert_decisions"
       ],
       "warning_ok": true,
-      "duration_ms": 1643.7
+      "duration_ms": 987.3
     },
     {
       "case_id": "AQ014",
@@ -421,7 +431,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1829.9
+      "duration_ms": 1022.7
     },
     {
       "case_id": "AQ015",
@@ -449,7 +459,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1685.7
+      "duration_ms": 1068.5
     },
     {
       "case_id": "AQ016",
@@ -477,7 +487,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 2121.3
+      "duration_ms": 1092.2
     },
     {
       "case_id": "AQ017",
@@ -505,7 +515,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1713.7
+      "duration_ms": 1060.2
     },
     {
       "case_id": "AQ018",
@@ -533,7 +543,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1354.7
+      "duration_ms": 1009.1
     },
     {
       "case_id": "AQ019",
@@ -561,7 +571,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1501.9
+      "duration_ms": 958.9
     },
     {
       "case_id": "AQ020",
@@ -589,7 +599,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1954.0
+      "duration_ms": 1210.8
     },
     {
       "case_id": "AQ021",
@@ -612,10 +622,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
-      "warning_ok": true,
-      "duration_ms": 985.8
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
+      "warning_ok": false,
+      "duration_ms": 1279.5
     },
     {
       "case_id": "AQ022",
@@ -639,10 +651,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
-      "duration_ms": 1198.6
+      "duration_ms": 1328.6
     },
     {
       "case_id": "AQ023",
@@ -667,10 +681,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
-      "duration_ms": 1253.9
+      "duration_ms": 1088.8
     },
     {
       "case_id": "AQ024",
@@ -696,10 +712,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
-      "warning_ok": true,
-      "duration_ms": 1900.9
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
+      "warning_ok": false,
+      "duration_ms": 1204.7
     },
     {
       "case_id": "AQ025",
@@ -722,10 +740,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
-      "duration_ms": 1012.9
+      "duration_ms": 867.8
     },
     {
       "case_id": "AQ026",
@@ -750,10 +770,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
-      "duration_ms": 1404.7
+      "duration_ms": 1049.3
     },
     {
       "case_id": "AQ027",
@@ -781,7 +803,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1990.3
+      "duration_ms": 1016.3
     },
     {
       "case_id": "AQ028",
@@ -808,7 +830,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1754.8
+      "duration_ms": 1106.5
     },
     {
       "case_id": "AQ029",
@@ -836,7 +858,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1799.6
+      "duration_ms": 1083.6
     },
     {
       "case_id": "AQ030",
@@ -864,7 +886,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1999.1
+      "duration_ms": 1179.9
     },
     {
       "case_id": "AQ031",
@@ -892,7 +914,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1745.0
+      "duration_ms": 1041.3
     },
     {
       "case_id": "AQ032",
@@ -920,7 +942,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1954.6
+      "duration_ms": 1155.6
     },
     {
       "case_id": "AQ033",
@@ -948,7 +970,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1819.6
+      "duration_ms": 1050.3
     },
     {
       "case_id": "AQ034",
@@ -976,7 +998,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1198.1
+      "duration_ms": 1055.7
     },
     {
       "case_id": "AQ035",
@@ -1004,18 +1026,16 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1842.3
+      "duration_ms": 1082.8
     },
     {
       "case_id": "AQ036",
       "category": "impact_analysis",
       "question": "Хотим поставить задвижку DN200 вместо DN150, покажи какие соседние детали придется заменить или проверить",
       "intent": "impact_analysis",
-      "verification_verdict": "review",
-      "verification_reasons": [
-        "[low] parameter_miss: ambiguities: В запросе указано несколько значений DN; Обнаружено несколько значений DN; Конфликт интентов: FIND_ALTERNATIVE / REPLACE_WITH_DIFFERENT_SIZE. Уточните, что именно нужно."
-      ],
-      "escaped": true,
+      "verification_verdict": "pass",
+      "verification_reasons": [],
+      "escaped": false,
       "mode_refined": "auto",
       "llm_refine_failed": null,
       "human_review_required": true,
@@ -1033,7 +1053,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 956.4
+      "duration_ms": 1129.7
     },
     {
       "case_id": "AQ037",
@@ -1060,7 +1080,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 971.7
+      "duration_ms": 852.4
     },
     {
       "case_id": "AQ038",
@@ -1084,10 +1104,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
-      "duration_ms": 935.9
+      "duration_ms": 1256.2
     },
     {
       "case_id": "AQ039",
@@ -1113,7 +1135,7 @@
       "sources_ok": true,
       "missing_sources": [],
       "warning_ok": true,
-      "duration_ms": 1020.1
+      "duration_ms": 884.7
     },
     {
       "case_id": "AQ040",
@@ -1136,10 +1158,12 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "standard"
+      ],
       "warning_ok": true,
-      "duration_ms": 982.2
+      "duration_ms": 1161.1
     }
   ]
 }

@@ -121,6 +121,28 @@ class DetectIntentsTest(unittest.TestCase):
         reasons = incompatible_detected(detect_intents(parsed))
         self.assertTrue(any("FIND_ALTERNATIVE" in r or "REPLACE" in r for r in reasons))
 
+    def test_explicit_dn_replacement_not_alternative(self):
+        parsed = _q(
+            original_query="Хотим поставить задвижку DN200 вместо DN150",
+            operations=["replace"],
+            item_types=["задвижка"],
+            proposed_changes={"dn_from": 150.0, "dn_to": 200.0},
+        )
+        intents = detect_intents(parsed)
+        self.assertIn("REPLACE_WITH_DIFFERENT_SIZE", intents)
+        self.assertNotIn("FIND_ALTERNATIVE", intents)
+        self.assertEqual(incompatible_detected(intents), [])
+
+    def test_replacement_helper(self):
+        from app.services.agent.parsing.utils.replacement_utils import (
+            has_explicit_dn_replacement,
+        )
+
+        self.assertTrue(has_explicit_dn_replacement("задвижку DN200 вместо DN150"))
+        self.assertTrue(has_explicit_dn_replacement("поставить Ду200 на Ду150"))
+        self.assertFalse(has_explicit_dn_replacement("найди аналог задвижки DN150"))
+        self.assertFalse(has_explicit_dn_replacement(None))
+
     def test_check_sufficiency_detected(self):
         parsed = _q(
             original_query="хватает ли по две штуки задвижек",

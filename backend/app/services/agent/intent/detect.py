@@ -10,6 +10,7 @@ import re
 from typing import Any, Dict, List, Tuple
 
 from .matrix import INTENT_ORDER, INTENT_REQUIREMENTS, INCOMPATIBLE_INTENTS
+from ..parsing.utils.replacement_utils import has_explicit_dn_replacement
 
 PARSED_STATUS_COMPLETE = "COMPLETE"
 PARSED_STATUS_PARTIAL = "PARTIAL"
@@ -78,6 +79,8 @@ def _det_COMPARE_DUPLICATES(parsed):
 
 
 def _det_FIND_ALTERNATIVE(parsed):
+    if has_explicit_dn_replacement(parsed.original_query or ""):
+        return False
     return _has_op(parsed, "replace") and bool(getattr(parsed, "item_types", None)) and (
         _tf(parsed, "dn") is not None or _tf(parsed, "pn") is not None
     )
