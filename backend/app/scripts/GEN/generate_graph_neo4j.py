@@ -6,10 +6,13 @@ from neo4j import GraphDatabase
 from typing import List, Dict, Optional
 from pathlib import Path
 
+from app.scripts.seed_stack import GRAPH_SCHEMA_STATEMENTS, _object_graph_aliases
+
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_GOLDEN = REPO_ROOT / "data" / "catalog" / "regulated_mtr_catalog_1000.csv"
 DEFAULT_ASSERTIONS = REPO_ROOT / "data" / "catalog" / "templates_from_llm.json"
+DEFAULT_OBJECT_GRAPH = REPO_ROOT / "data" / "graph" / "gas_pipeline_object.json"
 
 # ---------- 1. Загрузка данных ----------
 mtr_df = pd.read_csv(DEFAULT_GOLDEN, delimiter=';')  # ваш файл с 1000 строк
@@ -29,6 +32,8 @@ def clear_graph(tx):
 def create_constraints(tx):
     tx.run("CREATE CONSTRAINT IF NOT EXISTS FOR (c:Component) REQUIRE c.ksm_code IS UNIQUE")
     tx.run("CREATE CONSTRAINT IF NOT EXISTS FOR (u:Unit) REQUIRE u.unit_code IS UNIQUE")
+    for stmt in GRAPH_SCHEMA_STATEMENTS:
+        tx.run(stmt)
 
 # ---------- 2. Улучшенный подбор деталей (с запасными вариантами) ----------
 def pick_component(item_type: str, dn_target: int, pn_target: float, medium: str, h2s_required: bool = False):
@@ -220,6 +225,17 @@ def load_to_neo4j(edges):
                             MATCH (c:Component {ksm_code: $ksm})
                             CREATE (c)-[:BELONGS_TO]->(u)
                         """, unit=unit, ksm=ksm)
+
+        with open(DEFAULT_OBJECT_GRAPH, encoding='utf-8') as f:
+            object_graph = json.load(f)
+        for a in _object_graph_aliases(object_graph):
+            session.run(
+                "MERGE (a:ComponentAlias {comp_id: $comp_id}) "
+                "SET a.ksm_code = $ksm_code, a.unit_code = $unit_code",
+                comp_id=a['comp_id'],
+                ksm_code=a['ksm_code'],
+                unit_code=a.get('unit_code'),
+            )
 
 # ---------- 6. Запуск ----------
 if __name__ == "__main__":

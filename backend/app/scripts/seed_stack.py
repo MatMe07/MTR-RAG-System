@@ -36,6 +36,33 @@ def _load_json(rel: str) -> Dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+# Схема Neo4j по спекам (docs/plans/Этап 1.1.md, раздел 2):
+# узел ComponentAlias (COMP-SYN-XXX -> KSM) + индексы Component.item_type/dn.
+GRAPH_SCHEMA_STATEMENTS = [
+    "CREATE CONSTRAINT IF NOT EXISTS FOR (a:ComponentAlias) REQUIRE a.comp_id IS UNIQUE",
+    "CREATE INDEX IF NOT EXISTS FOR (c:Component) ON (c.item_type)",
+    "CREATE INDEX IF NOT EXISTS FOR (c:Component) ON (c.dn)",
+]
+
+
+def _object_graph_aliases(graph: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Маппинг installed-component id (COMP-SYN-XXX) на KSM и участок для узлов ComponentAlias."""
+    aliases = []
+    for c in graph.get("components", []):
+        comp_id = c.get("component_id")
+        ksm_code = c.get("ksm_code")
+        if not comp_id or not ksm_code:
+            continue
+        aliases.append(
+            {
+                "comp_id": comp_id,
+                "ksm_code": ksm_code,
+                "unit_code": c.get("unit_id"),
+            }
+        )
+    return aliases
+
+
 # ==================================================================== GRAPH
 def seed_graph() -> int:
     graph = _load_json("data/graph/gas_pipeline_object.json")
@@ -50,6 +77,16 @@ def seed_graph() -> int:
     driver = GraphDatabase.driver(settings.NEO4J_URI, auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD))
     with driver.session() as session:
         session.run("MATCH (n) DETACH DELETE n")
+        for stmt in GRAPH_SCHEMA_STATEMENTS:
+            session.run(stmt)
+        for a in _object_graph_aliases(graph):
+            session.run(
+                "MERGE (a:ComponentAlias {comp_id: $comp_id}) "
+                "SET a.ksm_code = $ksm_code, a.unit_code = $unit_code",
+                comp_id=a["comp_id"],
+                ksm_code=a["ksm_code"],
+                unit_code=a.get("unit_code"),
+            )
         for u in units:
             session.run(
                 "MERGE (u:Unit {unit_id: $unit_id}) "
