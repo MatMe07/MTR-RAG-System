@@ -66,7 +66,7 @@ def _answer(components=None, answer_text="", explanation="", recommendations=Non
 
 
 class _FakeLLM:
-    """LLM-заглушка: возвращает JSON с улучшенным текстом."""
+    """LLM-заглушка для C1: возвращает JSON дооформления (refine-формат)."""
     def __init__(self, refined_text="Уточнённый ответ"):
         self._refined_text = refined_text
         self.calls = []
@@ -80,6 +80,32 @@ class _FakeLLM:
             "extra_recommendations": ["доп рекомендация от LLM"],
             "confidence_gate": "pass",
         }, ensure_ascii=False)
+
+
+class _ActionLLM:
+    """LLM-заглушка для C2: возвращает действие finish (action-формат LLMAgent)."""
+    def __init__(self, final_answer="Полный ответ от LLM"):
+        self._final_answer = final_answer
+        self.calls = []
+
+    def invoke(self, prompt):
+        self.calls.append(prompt)
+        import json
+        return json.dumps({
+            "action": "finish",
+            "final_answer": self._final_answer,
+        }, ensure_ascii=False)
+
+
+class _BrokenLLM:
+    """LLM-заглушка, которая падает на первом вызове (для C2-fallback)."""
+    def __init__(self, exc=None):
+        self._exc = exc or RuntimeError("LLM недоступен")
+        self.calls = []
+
+    def invoke(self, prompt):
+        self.calls.append(prompt)
+        raise self._exc
 
 
 # ---------------------------------------------------------------------------
@@ -103,7 +129,7 @@ class TestSufficiencyVerifierE2E:
         vr = verify_answer(parsed, answer)
         assert vr.verdict == "review"
         assert any(g.type == "quantity_unmet" for g in vr.gaps)
-        assert escalate_type(vr.gaps) == "refine"
+        assert escalate_type(vr.gaps) == "full_llm"
 
     def test_sufficiency_with_verdict_passes(self):
         parsed = _parsed(
@@ -255,8 +281,8 @@ class TestExecutorAutoE2E:
         assert fake_llm.calls == []
 
     @patch("app.services.agent.executor.get_graph")
-    def test_auto_review_applies_refine_with_llm(self, mock_get_graph):
-        """REVIEW + LLM доступен → refine применяется (mode_refined=auto_llm_refine)."""
+    def test_auto_c2_full_llm_applies(self, mock_get_graph):
+        """C2: quantity_unmet HIGH → полный перезапуск LLMAgent (mode_refined=auto_llm_full)."""
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = _graph_result(
             [_comp("Задвижка DN100", item_type="задвижка", quantity=0,
@@ -264,7 +290,7 @@ class TestExecutorAutoE2E:
             answer_text="Задвижка: отсутствует.")
         mock_get_graph.return_value = mock_graph
 
-        fake_llm = _FakeLLM(refined_text="Не хватает 2 шт. задвижек.")
+        fake_llm = _ActionLLM(final_answer="Не хватает 2 шт. задвижек.")
         executor = self._make_executor(fake_llm)
         parsed = _parsed(query="хватает ли задвижек по две штуки",
                          item_types=["задвижка"], units_count=2,
@@ -273,13 +299,56 @@ class TestExecutorAutoE2E:
             "хватает ли задвижек по две штуки", parsed=parsed, mode="auto")
 
         assert answer.verification_verdict == "review"
-        assert answer.mode_refined == "auto_llm_refine"
+        assert answer.mode == "auto"
+        assert answer.mode_refined == "auto_llm_full"
         assert "Не хватает" in (answer.explanation or "")
-        assert fake_llm.calls, "refine должен был вызвать LLM"
+        assert fake_llm.calls, "C2 должен был вызвать LLM"
+
+    @patch("app.services.agent.executor.get_graph")
+    def test_auto_c1_refine_applies_for_med_gap(self, mock_get_graph):
+        """C1: scope_mismatch MED → дооформление (mode_refined=auto_llm_refine)."""
+        mock_graph = MagicMock()
+        mock_graph.invoke.return_value = _graph_result(
+            [_comp("Задвижка DN100", item_type="задвижка", quantity=5)],
+            answer_text="Найдена задвижка.")
+        mock_get_graph.return_value = mock_graph
+
+        fake_llm = _FakeLLM(refined_text="Найдены все запрошенные типы.")
+        executor = self._make_executor(fake_llm)
+        parsed = _parsed(query="найди трубы и задвижки",
+                         item_types=["труба", "задвижка"],
+                         intents=["FIND_BY_PARAMS"])
+        answer = executor.execute("найди трубы и задвижки", parsed=parsed, mode="auto")
+
+        assert answer.verification_verdict == "review"
+        assert answer.mode_refined == "auto_llm_refine"
+        assert "Найдены" in (answer.explanation or "")
+        assert fake_llm.calls, "C1 должен был вызвать LLM"
+
+    @patch("app.services.agent.executor.get_graph")
+    def test_auto_c2_llm_failure_falls_back(self, mock_get_graph):
+        """C2: LLM падает → fallback на deterministic review, human_review_required=True."""
+        mock_graph = MagicMock()
+        mock_graph.invoke.return_value = _graph_result(
+            [_comp("Задвижка DN100", item_type="задвижка", quantity=0,
+                   status="отсутствует")],
+            answer_text="Задвижка: отсутствует.")
+        mock_get_graph.return_value = mock_graph
+
+        executor = self._make_executor(_BrokenLLM())
+        parsed = _parsed(query="хватает ли задвижек по две штуки",
+                         item_types=["задвижка"], units_count=2,
+                         intents=["CHECK_SUFFICIENCY"])
+        answer = executor.execute(
+            "хватает ли задвижек по две штуки", parsed=parsed, mode="auto")
+
+        assert answer.verification_verdict == "review"
+        assert answer.human_review_required is True
+        assert answer.mode_refined == "auto"  # C2 упал, остался deterministic-ответ
 
     @patch("app.services.agent.executor.get_graph")
     def test_auto_review_no_llm_marks_human_review(self, mock_get_graph):
-        """REVIEW + LLM недоступен → human_review_required=True, LLM не падает."""
+        """C2 выбран, но LLM недоступен → human_review_required=True, LLM не падает."""
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = _graph_result(
             [_comp("Задвижка DN100", item_type="задвижка", quantity=0,

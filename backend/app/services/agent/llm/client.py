@@ -24,6 +24,9 @@ class LLMClient:
             "extractor_calls": 0,
             "extractor_hits": 0,
             "extractor_errors": 0,
+            "total_tokens": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
         }
     
     @property
@@ -63,7 +66,7 @@ class LLMClient:
     
     def invoke(self, prompt: str, use_cache: bool = True) -> str:
         """Вызов LLM с кешированием"""
-        cache_key = f"llm:{hash(prompt[:500])}"
+        cache_key = f"llm:{hash(prompt[:])}"
         
         if use_cache:
             cached = self.cache.get(cache_key)
@@ -81,6 +84,7 @@ class LLMClient:
             
             duration = (time.time() - start) * 1000
             self._metrics["total_duration_ms"] += duration
+            self._metrics.update(self._consume_usage(response))
             
             if use_cache and content:
                 self.cache.set(cache_key, content)
@@ -100,8 +104,24 @@ class LLMClient:
         self.cache.clear()
 
     def get_metrics(self) -> Dict[str, Any]:
-        """Копия метрик (включая extractor_calls/hits/errors §1F)."""
+        """Копия метрик (включая extractor_calls/hits/errors §1F и токены)."""
         return dict(self._metrics)
+
+    @staticmethod
+    def _consume_usage(response: Any) -> Dict[str, int]:
+        """Извлекает статистику токенов (token_usage/usage) из ответа LLM."""
+        try:
+            meta = getattr(response, "response_metadata", None) or {}
+        except Exception:  # noqa: BLE001  (некоторые провайдеры кидают в геттерах)
+            meta = {}
+        usage = meta.get("token_usage") or meta.get("usage") or {}
+        if not isinstance(usage, dict):
+            return {}
+        return {
+            "total_tokens": int(usage.get("total_tokens", 0) or 0),
+            "prompt_tokens": int(usage.get("prompt_tokens", 0) or 0),
+            "completion_tokens": int(usage.get("completion_tokens", 0) or 0),
+        }
 # ============================================================
 # ГЛОБАЛЬНАЯ ФАБРИКА
 # ============================================================

@@ -9,8 +9,21 @@ from app.services.agent.verify.verifier import Gap
 
 
 class PolicyTest(unittest.TestCase):
-    def test_should_full_llm_always_false_v1(self):
+    def test_should_full_llm_true_c2_for_high_in_set(self):
         gaps = [Gap(type="quantity_unmet", detail="x", severity="high")]
+        self.assertTrue(should_full_llm(gaps))
+
+    def test_should_full_llm_true_for_intent_mismatch_high(self):
+        gaps = [Gap(type="intent_mismatch", detail="x", severity="high")]
+        self.assertTrue(should_full_llm(gaps))
+
+    def test_should_full_llm_false_for_med_in_set(self):
+        gaps = [Gap(type="scope_mismatch", detail="x", severity="med")]
+        self.assertFalse(should_full_llm(gaps))
+
+    def test_should_full_llm_false_for_high_outside_set(self):
+        # zero_stock_missing нет в FULL_LLM_TYPES → только C1
+        gaps = [Gap(type="zero_stock_missing", detail="x", severity="high")]
         self.assertFalse(should_full_llm(gaps))
 
     def test_should_refine_positive(self):
@@ -26,6 +39,10 @@ class PolicyTest(unittest.TestCase):
     def test_escalate_type_refine(self):
         gaps = [Gap(type="scope_mismatch", detail="x", severity="med")]
         self.assertEqual(escalate_type(gaps), "refine")
+
+    def test_escalate_type_full_llm(self):
+        gaps = [Gap(type="quantity_unmet", detail="x", severity="high")]
+        self.assertEqual(escalate_type(gaps), "full_llm")
 
 
 if __name__ == "__main__":

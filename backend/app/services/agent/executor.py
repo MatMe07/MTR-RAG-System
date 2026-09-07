@@ -157,7 +157,7 @@ class AgentExecutor:
         start: float,
         request_id: Optional[str] = None,
     ) -> AgentAnswer:
-        """Режим 3 (auto): deterministic → quality gate → при необходимости LLM-refine (С1)."""
+        """Режим 3 (auto): deterministic → quality gate → C1 (refine) | C2 (полный LLM)."""
         self._auto_start = start
         if parsed is None:
             parsed = self._parse_query(query)
@@ -184,17 +184,22 @@ class AgentExecutor:
 
         escalation = escalate_type(verification.gaps)
         log.info(
-            "[Executor][auto] verdict=%s reasons=%s escalation=%s mode_used=%s",
+            "[Executor][auto] verdict=%s reasons=%s escalation=%s",
             verification.verdict,
             verification.reasons,
             escalation,
-            "refine" if escalation == "refine" else "none",
         )
 
         if escalation == "none":
-            log.info("[Executor][auto] escalation 'none' (C2 deferred), returning review answer")
+            log.info("[Executor][auto] escalation 'none', returning review answer")
             answer.human_review_required = True
             return answer
+
+        tokens_before = self._llm_tokens_used()
+
+        if escalation == "full_llm":
+            return self._auto_full_llm(query, parsed, start, request_id,
+                                       answer, verification, tokens_before)
 
         if self.llm is None:
             log.warning(
@@ -207,9 +212,62 @@ class AgentExecutor:
             return answer
 
         refined = self._apply_refine(query, answer, verification.gaps)
+        answer.llm_tokens_used = self._llm_tokens_used() - tokens_before
         self._log_escalation(query, request_id, mode_used="refine" if refined else "refine_failed",
-                             gaps=verification.gaps, verdict=verification.verdict)
+                             gaps=verification.gaps, verdict=verification.verdict,
+                             llm_tokens_used=answer.llm_tokens_used)
         return answer
+
+    def _auto_full_llm(self, query, parsed, start, request_id, answer, verification,
+                       tokens_before: int) -> AgentAnswer:
+        """C2: полный перезапуск LLMAgent; результат полностью заменяет answer."""
+        if self.llm is None:
+            log.warning(
+                "[Executor][auto] C2 запрошен, но LLM недоступен. "
+                "Помечаем ответ как требующий проверки (fallback deterministic)."
+            )
+            answer.human_review_required = True
+            self._log_escalation(query, request_id, mode_used="full_llm_skipped_no_llm",
+                                 gaps=verification.gaps, verdict=verification.verdict)
+            return answer
+
+        try:
+            llm_answer = self._execute_llm(query, parsed, start, request_id=request_id)
+        except Exception as e:  # noqa: BLE001
+            log.warning("[Executor][auto] C2 full-LLM failed: %s", e)
+            answer.human_review_required = True
+            self._log_escalation(query, request_id, mode_used="full_llm_failed",
+                                 gaps=verification.gaps, verdict=verification.verdict,
+                                 llm_tokens_used=self._llm_tokens_used() - tokens_before)
+            return answer
+
+        llm_answer.mode = "auto"
+        llm_answer.mode_refined = "auto_llm_full"
+        llm_answer.verification_verdict = verification.verdict
+        llm_answer.verification_reasons = list(verification.reasons)
+        llm_answer.human_review_required = (
+            llm_answer.human_review_required or answer.human_review_required
+        )
+        llm_answer.llm_tokens_used = self._llm_tokens_used() - tokens_before
+
+        self._log_escalation(query, request_id, mode_used="full_llm",
+                             gaps=verification.gaps, verdict=verification.verdict,
+                             llm_tokens_used=llm_answer.llm_tokens_used)
+        log.info(
+            "[Executor][auto] C2 applied: components=%d tokens=%s",
+            len(llm_answer.components or []), llm_answer.llm_tokens_used,
+        )
+        return llm_answer
+
+    def _llm_tokens_used(self) -> int:
+        """Суммарные токены LLMClient на текущий момент (0 для заглушек/None)."""
+        llm = getattr(self, "_llm", None)
+        if llm is not None and hasattr(llm, "get_metrics"):
+            try:
+                return int(llm.get_metrics().get("total_tokens", 0) or 0)
+            except Exception:  # noqa: BLE001
+                return 0
+        return 0
 
     def _apply_refine(self, query: str, answer: AgentAnswer, gaps: List) -> bool:
         """Выполняет LLM-дооформление (С1). Возвращает True если успешно."""
@@ -241,13 +299,14 @@ class AgentExecutor:
         )
         return True
 
-    def _log_escalation(self, query, request_id, mode_used, gaps, verdict) -> None:
+    def _log_escalation(self, query, request_id, mode_used, gaps, verdict,
+                        llm_tokens_used=None) -> None:
         """Фиксирует эскалацию в БД (auto_mode_escalations) и лог."""
         gap_types = [g.type for g in gaps]
         log.info(
             "[Executor][auto] escalation recorded: request_id=%s mode_used=%s verdict=%s "
-            "gaps=%s",
-            request_id, mode_used, verdict, gap_types,
+            "gaps=%s tokens=%s",
+            request_id, mode_used, verdict, gap_types, llm_tokens_used,
         )
         try:
             from app.db.session import SessionLocal
@@ -263,7 +322,7 @@ class AgentExecutor:
                     verdict=verdict,
                     duration_ms=int((time.time() - self._auto_start) * 1000)
                     if getattr(self, "_auto_start", None) else None,
-                    llm_tokens_used=None,
+                    llm_tokens_used=llm_tokens_used,
                 )
                 db.add(entry)
                 db.commit()
@@ -345,6 +404,8 @@ class AgentExecutor:
         return build_answer(parsed, intent, response)
 
     def get_status(self) -> Dict[str, Any]:
+        from .verify.policy import FULL_LLM_TYPES
+
         return {
             "config": {
                 "use_llm": self.config.use_llm,
@@ -354,6 +415,10 @@ class AgentExecutor:
             "repository": getattr(self.repository, "kind", "unknown"),
             "tools_available": len(self._get_available_tools()),
             "llm_available": self.llm is not None,
+            "verify": {
+                "auto_verify": self.config.auto_verify,
+                "full_llm_types": sorted(FULL_LLM_TYPES),
+            },
         }
 
     def _get_available_tools(self) -> list:

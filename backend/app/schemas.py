@@ -420,10 +420,13 @@ class AgentAnswer(BaseModel):
         default_factory=list, description="Причины вердикта quality gate"
     )
     mode_refined: Optional[str] = Field(
-        None, description="Фактический подрежим auto: auto | auto_llm_refine | None"
+        None, description="Фактический подрежим auto: auto | auto_llm_refine | auto_llm_full | None"
     )
     llm_refine_failed: Optional[bool] = Field(
         None, description="True если LLM-doоформление не помогло (still_unclear)"
+    )
+    llm_tokens_used: Optional[int] = Field(
+        None, description="Потрачено токенов на LLM-эскалацию (C1/C2) в рамках запроса"
     )
 
 

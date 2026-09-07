@@ -1,8 +1,8 @@
 # agent/verify/policy.py
-"""Политика эскалации: C1 (refine) vs skip.
+"""Политика эскалации: C1 (refine) vs C2 (полный LLM-перезапуск).
 
-В v1 реализован только C1 (один LLM-вызов для дооформления).
-C2 (полный перезапуск LLMAgent) отложен на будущее.
+C1 — один LLM-вызов для дооформления текстовой части.
+C2 — полный перезапуск LLMAgent (см. §4 Авто-режим/C2).
 """
 
 from __future__ import annotations
@@ -18,14 +18,16 @@ FULL_LLM_TYPES = {"intent_mismatch", "quantity_unmet", "scope_mismatch"}
 
 
 def should_full_llm(gaps: List[Gap]) -> bool:
-    """Определяет, нужен ли полный LLM-перезапуск (C2).
+    """Нужен ли полный LLM-перезапуск (C2).
 
-    В v1 всегда возвращает False — только C1 (refine).
+    C2, если среди gaps есть тип из FULL_LLM_TYPES с severity == high
+    (интерпретация количественных требований / отсутствие охвата скоупа).
+    Иначе — только C1 (дооформление).
     """
     for gap in gaps:
         if gap.type in FULL_LLM_TYPES and gap.severity == "high":
-            log.info("[Policy] Would escalate to C2 for gap=%s (deferred in v1)", gap.type)
-            return False
+            log.info("[Policy] Escalating to C2 for gap=%s", gap.type)
+            return True
 
     return False
 
@@ -36,7 +38,7 @@ def should_refine(gaps: List[Gap]) -> bool:
 
 
 def escalate_type(gaps: List[Gap]) -> str:
-    """Тип эскалации: 'none' | 'refine' | 'full_llm' (full_llm отложен)."""
+    """Тип эскалации: 'none' | 'refine' | 'full_llm'."""
     if not gaps:
         return "none"
     if should_full_llm(gaps):
