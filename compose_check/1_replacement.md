@@ -1,33 +1,33 @@
 Запрос: Метод поиска (0 - deterministic, 1 - llm, 2 - auto): 
 >>> Режим: auto
 
-2026-09-06 19:25:13,797 INFO    | mtr.agent.executor               | [Executor] Execute query='Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе' mode=auto request_id=None
-2026-09-06 19:25:13,797 INFO    | mtr.agent.executor               | [Executor] No parsed query, running HybridParser...
-2026-09-06 19:25:14,022 INFO    | mtr.agent.executor               | [Executor] Parsed: confidence=0.97 operations=['replace', 'inventory', 'check', 'search'] item_types=['отвод'] technical_filters={'item_type': 'отвод', 'dn': 426.0, 'wall_thickness': 10.0, 'angle': 90.0, 'medium': 'H2S', 'h2s_confirmed': True} ambiguities=[] (225ms)
-2026-09-06 19:25:14,035 INFO    | mtr.agent.executor               | [Executor] Parsed enriched: status=COMPLETE intents=['FIND_BY_PARAMS', 'FIND_ALTERNATIVE', 'CHECK_STOCK'] missing={'FIND_BY_PARAMS': [], 'FIND_ALTERNATIVE': ['pn'], 'CHECK_STOCK': []}
-2026-09-06 19:25:14,042 INFO    | mtr.agent.executor               | [Executor] Intent resolved: replacement
-2026-09-06 19:25:14,042 INFO    | mtr.agent.executor               | [Executor] Invoking graph...
-2026-09-06 19:25:14,241 INFO    | mtr.repository                   | DbRepository: loaded 1000 MTR items from DB
-2026-09-06 19:25:14,256 INFO    | mtr.repository                   | DbRepository: loaded 1000 CandidateItems for stock lookup
-2026-09-06 19:25:14,307 INFO    | mtr.repository                   | DbRepository: catalog built with 1000 cards
-2026-09-06 19:25:14,603 INFO    | mtr.agent.tools                  | [graph_search] Found 12 components, 12 targets in 294ms
-2026-09-06 19:25:14,604 INFO    | mtr.agent.tools                  | [catalog_search] Loaded 1000 cards from repository
-2026-09-06 19:25:14,618 INFO    | mtr.agent.tools                  | [catalog_search] Found 11 candidates (from 1000 cards) in 14ms
-2026-09-06 19:25:14,679 INFO    | mtr.agent.tools                  | [stock_query] Checked 11 items (kept 11) in 60ms
-2026-09-06 19:25:14,682 INFO    | mtr.agent.tools                  | [rules_engine] Scored 11 candidates in 0ms
-2026-09-06 19:25:14,686 INFO    | mtr.agent.tools                  | [regulation_lookup] Checked 1 regulations in 3ms
+2026-09-09 15:48:13,016 INFO    | mtr.agent.executor               | [Executor] Execute query='Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет' mode=auto request_id=None
+2026-09-09 15:48:13,017 INFO    | mtr.agent.executor               | [Executor] No parsed query, running HybridParser...
+2026-09-09 15:48:13,299 INFO    | mtr.agent.executor               | [Executor] Parsed: confidence=0.94 operations=['replace', 'inventory', 'search'] item_types=['задвижка'] technical_filters={'item_type': 'задвижка', 'dn': 150, 'pn': 40.0, 'working_pressure_mpa': 4.0, 'raw_value': 'PN40', 'medium': 'H2S', 'h2s_confirmed': True} ambiguities=[] (282ms)
+2026-09-09 15:48:13,313 INFO    | mtr.agent.executor               | [Executor] Parsed enriched: status=COMPLETE intents=['FIND_ALTERNATIVE', 'FIND_BY_PARAMS', 'CHECK_STOCK'] missing={'FIND_ALTERNATIVE': [], 'FIND_BY_PARAMS': [], 'CHECK_STOCK': []}
+2026-09-09 15:48:13,322 INFO    | mtr.agent.executor               | [Executor] Intent resolved: replacement
+2026-09-09 15:48:13,322 INFO    | mtr.agent.executor               | [Executor] Invoking graph...
+2026-09-09 15:48:13,553 INFO    | mtr.repository                   | DbRepository: loaded 1000 MTR items from DB
+2026-09-09 15:48:13,571 INFO    | mtr.repository                   | DbRepository: loaded 1000 CandidateItems for stock lookup
+2026-09-09 15:48:13,624 INFO    | mtr.repository                   | DbRepository: catalog built with 1000 cards
+2026-09-09 15:48:13,875 INFO    | mtr.agent.tools                  | [graph_search] Found 12 components, 12 targets in 250ms
+2026-09-09 15:48:13,876 INFO    | mtr.agent.tools                  | [catalog_search] Loaded 1000 cards from repository
+2026-09-09 15:48:13,890 INFO    | mtr.agent.tools                  | [catalog_search] Found 9 candidates (from 1000 cards) in 14ms
+2026-09-09 15:48:13,923 INFO    | mtr.agent.tools                  | [stock_query] Checked 9 items (kept 9) in 32ms
+2026-09-09 15:48:13,926 INFO    | mtr.agent.tools                  | [rules_engine] Scored 9 candidates in 0ms
+2026-09-09 15:48:13,930 INFO    | mtr.agent.tools                  | [regulation_lookup] Checked 1 regulations in 3ms
 Ты — технический эксперт по МТР. На основе следующих данных составь понятное объяснение для инженера.
 
-Критические параметры (нельзя менять, они должны совпадать): ['среда', 'марка стали']
-Запрос: Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе
+Критические параметры (нельзя менять, они должны совпадать): ['DN', 'PN', 'среда', 'марка стали']
+Запрос: Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет
 Найденные детали:
-- ОКШ 90-426x10 13ХФА: 100% (соответствует)
-- ОКШ 90-426x10 13ХФА: 100% (соответствует)
-- ОКШ 90-426x10 13ХФА: 100% (соответствует)
-- ОКШ 90-426x10 13ХФА: 100% (соответствует)
-- ОКШ 90-426x10 09ГСФ: 83% (потенциальный аналог)
-Результаты проверок: Совпало: тип изделия, DN, стенка, угол, среда
-Предупреждения: ['Соответствие H2S, CO2, коррозионной среде и наличие покрытия нельзя подтверждать только геометрическим ГОСТом: нужны паспорт, ТУ, проектная документация и/или внутренний ЛНД.', 'Для типа «отвод» не указаны обязательные параметры: марка стали. Уточните их для точного подбора.']
+- Задвижка клиновая DN150 PN40: 80% (потенциальный аналог)
+- Задвижка шиберная DN150 PN40: 80% (потенциальный аналог)
+- Задвижка шиберная DN150 PN40: 80% (потенциальный аналог)
+- Задвижка шиберная DN150 PN40: 60% (не соответствует)
+- Задвижка шиберная DN150 PN40: 60% (не соответствует)
+Результаты проверок: Совпало: тип изделия, DN, PN, среда
+Предупреждения: ['Соответствие H2S, CO2, коррозионной среде и наличие покрытия нельзя подтверждать только геометрическим ГОСТом: нужны паспорт, ТУ, проектная документация и/или внутренний ЛНД.', 'Пригодность к H2S нельзя подтверждать только по совпадению DN и PN.', 'Большее значение PN не гарантирует совместимость задвижки с фланцами и соседними деталями.', 'Изменение DN является изменением узла и не должно утверждаться автоматически.', 'Для типа «задвижка» не указаны обязательные параметры: марка стали. Уточните их для точного подбора.']
 Ошибки: —
 
 Твой ответ должен быть:
@@ -38,15 +38,19 @@
 5. Если хотя бы один критический параметр не совпал — явно указать это.
 
 Ответ:
-2026-09-06 19:25:14,693 INFO    | mtr.agent.executor               | [Executor] Graph finished in 651ms: components=27 sources=85 warnings=3 tools_used=['graph_search', 'catalog_search', 'stock_query', 'impact_analyzer', 'maintenance_planner', 'rules_engine', 'regulation_lookup'] completed=True
-2026-09-06 19:25:14,693 INFO    | mtr.agent.executor               | [Executor] Answer found in state, returning directly
-2026-09-06 19:25:14,724 INFO    | mtr.agent.verify                 | [Verifier] verdict=pass gaps=0 max_severity=none reasons=[]
-2026-09-06 19:25:14,724 INFO    | mtr.agent.executor               | [Executor][auto] verdict=pass, no LLM escalation needed
+🔍 API Key resolved: OK
+🔍 Base URL: https://openrouter.ai/api/v1/
+🔍 Model: nvidia/nemotron-3-super-120b-a12b:free
+2026-09-09 15:48:16,167 INFO    | httpx2                           | HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2026-09-09 15:48:22,620 INFO    | mtr.agent.executor               | [Executor] Graph finished in 9298ms: components=25 sources=79 warnings=3 tools_used=['graph_search', 'catalog_search', 'stock_query', 'impact_analyzer', 'maintenance_planner', 'rules_engine', 'regulation_lookup'] completed=True
+2026-09-09 15:48:22,620 INFO    | mtr.agent.executor               | [Executor] Answer found in state, returning directly
+2026-09-09 15:48:22,663 INFO    | mtr.agent.verify                 | [Verifier] verdict=pass gaps=0 max_severity=none reasons=[]
+2026-09-09 15:48:22,663 INFO    | mtr.agent.executor               | [Executor][auto] verdict=pass, no LLM escalation needed
 
 ========================================================================
 >>> ОТВЕТ (как возвращает агент):
 {
-  "query": "Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе",
+  "query": "Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет",
   "intent": "replacement",
   "intent_label": "Подбор замены",
   "route": "agent",
@@ -60,9 +64,212 @@
     "rules_engine",
     "regulation_lookup"
   ],
-  "answer": "• ГОСТ 17375-2001 — Детали трубопроводов. Отводы крутоизогнутые типа 3D. Конструкция: Бесшовные приварные отводы из углеродистой и низколегированной стали типа 3D с R=1,5 DN; область применения определяется совместно с ГОСТ 17380-2001.\n• ГОСТ 17375-2001 — Детали трубопроводов. Отводы крутоизогнутые типа 3D. Конструкция: Бесшовные приварные отводы из углеродистой и низколегированной стали типа 3D с R=1,5 DN; область применения определяется совместно с ГОСТ 17380-2001.\n• ГОСТ 17375-2001 — Детали трубопроводов. Отводы крутоизогнутые типа 3D. Конструкция: Бесшовные приварные отводы из углеродистой и низколегированной стали типа 3D с R=1,5 DN; область применения определяется совместно с ГОСТ 17380-2001.",
-  "explanation": null,
+  "explanation": "Рекомендую рассмотреть клиновую или шиберную задвижку DN150 PN40 из найденных вариантов как геометрический аналог. Перед установкой необходимо уточнить марку стали и получить паспорт/ТУ, подтверждающие стойкость к H₂S и коррозионной среде. Основные риски — невозможность гарантировать устойчивость к сероводороду только по совпадению DN и PN, а также возможная несовместимость фланцев из‑за различий в PN или отсутствия защитного покрытия. Поскольку критический параметр «марка стали» не подтверждён, замену можно утверждать только после предоставления соответствующей документации.",
   "components": [
+    {
+      "mtr_code": "MTR-SYN-REG-000615",
+      "ksm_code": "KSM-SYN-REG-000615",
+      "name": "Задвижка клиновая DN150 PN40",
+      "item_type": "задвижка",
+      "quantity": 77.0,
+      "status": "совпадает по параметрам",
+      "detail": "на складе: 77.0; оценка правил",
+      "source_id": "MTR-SYN-REG-000615",
+      "unit_id": null,
+      "match_score": 0.8,
+      "match_percent": 80,
+      "tz_status": "потенциальный аналог",
+      "matched_params": [
+        "тип изделия",
+        "DN",
+        "PN",
+        "среда"
+      ],
+      "mismatched_params": [],
+      "missing_params": []
+    },
+    {
+      "mtr_code": "MTR-SYN-REG-000673",
+      "ksm_code": "KSM-SYN-REG-000673",
+      "name": "Задвижка шиберная DN150 PN40",
+      "item_type": "задвижка",
+      "quantity": 78.0,
+      "status": "совпадает по параметрам",
+      "detail": "на складе: 78.0; оценка правил",
+      "source_id": "MTR-SYN-REG-000673",
+      "unit_id": null,
+      "match_score": 0.8,
+      "match_percent": 80,
+      "tz_status": "потенциальный аналог",
+      "matched_params": [
+        "тип изделия",
+        "DN",
+        "PN",
+        "среда"
+      ],
+      "mismatched_params": [],
+      "missing_params": []
+    },
+    {
+      "mtr_code": "MTR-SYN-REG-000686",
+      "ksm_code": "KSM-SYN-REG-000686",
+      "name": "Задвижка шиберная DN150 PN40",
+      "item_type": "задвижка",
+      "quantity": 80.0,
+      "status": "совпадает по параметрам",
+      "detail": "на складе: 80.0; оценка правил",
+      "source_id": "MTR-SYN-REG-000686",
+      "unit_id": null,
+      "match_score": 0.8,
+      "match_percent": 80,
+      "tz_status": "потенциальный аналог",
+      "matched_params": [
+        "тип изделия",
+        "DN",
+        "PN",
+        "среда"
+      ],
+      "mismatched_params": [],
+      "missing_params": []
+    },
+    {
+      "mtr_code": "MTR-SYN-REG-000648",
+      "ksm_code": "KSM-SYN-REG-000648",
+      "name": "Задвижка шиберная DN150 PN40",
+      "item_type": "задвижка",
+      "quantity": 64.0,
+      "status": "совпадает по параметрам",
+      "detail": "на складе: 64.0; оценка правил",
+      "source_id": "MTR-SYN-REG-000648",
+      "unit_id": null,
+      "match_score": 0.6,
+      "match_percent": 60,
+      "tz_status": "не соответствует",
+      "matched_params": [
+        "тип изделия",
+        "DN",
+        "PN"
+      ],
+      "mismatched_params": [
+        "среда"
+      ],
+      "missing_params": []
+    },
+    {
+      "mtr_code": "MTR-SYN-REG-000692",
+      "ksm_code": "KSM-SYN-REG-000692",
+      "name": "Задвижка шиберная DN150 PN40",
+      "item_type": "задвижка",
+      "quantity": 15.0,
+      "status": "совпадает по параметрам",
+      "detail": "на складе: 15.0; оценка правил",
+      "source_id": "MTR-SYN-REG-000692",
+      "unit_id": null,
+      "match_score": 0.6,
+      "match_percent": 60,
+      "tz_status": "не соответствует",
+      "matched_params": [
+        "тип изделия",
+        "DN",
+        "PN"
+      ],
+      "mismatched_params": [
+        "среда"
+      ],
+      "missing_params": []
+    },
+    {
+      "mtr_code": "MTR-SYN-REG-000706",
+      "ksm_code": "KSM-SYN-REG-000706",
+      "name": "Задвижка шиберная DN150 PN40",
+      "item_type": "задвижка",
+      "quantity": 24.0,
+      "status": "совпадает по параметрам",
+      "detail": "на складе: 24.0; оценка правил",
+      "source_id": "MTR-SYN-REG-000706",
+      "unit_id": null,
+      "match_score": 0.6,
+      "match_percent": 60,
+      "tz_status": "не соответствует",
+      "matched_params": [
+        "тип изделия",
+        "DN",
+        "PN"
+      ],
+      "mismatched_params": [
+        "среда"
+      ],
+      "missing_params": []
+    },
+    {
+      "mtr_code": "MTR-SYN-REG-000716",
+      "ksm_code": "KSM-SYN-REG-000716",
+      "name": "Задвижка клиновая DN150 PN40",
+      "item_type": "задвижка",
+      "quantity": 65.0,
+      "status": "совпадает по параметрам",
+      "detail": "на складе: 65.0; оценка правил",
+      "source_id": "MTR-SYN-REG-000716",
+      "unit_id": null,
+      "match_score": 0.6,
+      "match_percent": 60,
+      "tz_status": "не соответствует",
+      "matched_params": [
+        "тип изделия",
+        "DN",
+        "PN"
+      ],
+      "mismatched_params": [
+        "среда"
+      ],
+      "missing_params": []
+    },
+    {
+      "mtr_code": "MTR-SYN-REG-000729",
+      "ksm_code": "KSM-SYN-REG-000729",
+      "name": "Задвижка шиберная DN150 PN40",
+      "item_type": "задвижка",
+      "quantity": 65.0,
+      "status": "совпадает по параметрам",
+      "detail": "на складе: 65.0; оценка правил",
+      "source_id": "MTR-SYN-REG-000729",
+      "unit_id": null,
+      "match_score": 0.6,
+      "match_percent": 60,
+      "tz_status": "не соответствует",
+      "matched_params": [
+        "тип изделия",
+        "DN",
+        "PN"
+      ],
+      "mismatched_params": [
+        "среда"
+      ],
+      "missing_params": []
+    },
+    {
+      "mtr_code": "MTR-SYN-REG-000732",
+      "ksm_code": "KSM-SYN-REG-000732",
+      "name": "Задвижка шиберная DN150 PN40",
+      "item_type": "задвижка",
+      "quantity": 26.0,
+      "status": "совпадает по параметрам",
+      "detail": "на складе: 26.0; оценка правил",
+      "source_id": "MTR-SYN-REG-000732",
+      "unit_id": null,
+      "match_score": 0.6,
+      "match_percent": 60,
+      "tz_status": "не соответствует",
+      "matched_params": [
+        "тип изделия",
+        "DN",
+        "PN"
+      ],
+      "mismatched_params": [
+        "среда"
+      ],
+      "missing_params": []
+    },
     {
       "mtr_code": null,
       "ksm_code": null,
@@ -78,314 +285,6 @@
       "tz_status": null,
       "matched_params": [],
       "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": null,
-      "ksm_code": null,
-      "name": "материал деталей",
-      "item_type": null,
-      "quantity": null,
-      "status": "затронуто",
-      "detail": "соседний узел при замене",
-      "source_id": null,
-      "unit_id": null,
-      "match_score": null,
-      "match_percent": null,
-      "tz_status": null,
-      "matched_params": [],
-      "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": null,
-      "ksm_code": null,
-      "name": "уплотнения",
-      "item_type": null,
-      "quantity": null,
-      "status": "затронуто",
-      "detail": "соседний узел при замене",
-      "source_id": null,
-      "unit_id": null,
-      "match_score": null,
-      "match_percent": null,
-      "tz_status": null,
-      "matched_params": [],
-      "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": null,
-      "ksm_code": null,
-      "name": "Расходные материалы",
-      "item_type": null,
-      "quantity": null,
-      "status": "комплект",
-      "detail": "прокладки, крепёж, материалы по регламенту ТОиР",
-      "source_id": null,
-      "unit_id": null,
-      "match_score": null,
-      "match_percent": null,
-      "tz_status": null,
-      "matched_params": [],
-      "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000231",
-      "ksm_code": "KSM-SYN-REG-000231",
-      "name": "ОКШ 90-426x10 13ХФА",
-      "item_type": "отвод",
-      "quantity": 65.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 65.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000231",
-      "unit_id": null,
-      "match_score": 1.0,
-      "match_percent": 100,
-      "tz_status": "соответствует",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол",
-        "среда"
-      ],
-      "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000249",
-      "ksm_code": "KSM-SYN-REG-000249",
-      "name": "ОКШ 90-426x10 13ХФА",
-      "item_type": "отвод",
-      "quantity": 58.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 58.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000249",
-      "unit_id": null,
-      "match_score": 1.0,
-      "match_percent": 100,
-      "tz_status": "соответствует",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол",
-        "среда"
-      ],
-      "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000330",
-      "ksm_code": "KSM-SYN-REG-000330",
-      "name": "ОКШ 90-426x10 13ХФА",
-      "item_type": "отвод",
-      "quantity": 52.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 52.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000330",
-      "unit_id": null,
-      "match_score": 1.0,
-      "match_percent": 100,
-      "tz_status": "соответствует",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол",
-        "среда"
-      ],
-      "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000372",
-      "ksm_code": "KSM-SYN-REG-000372",
-      "name": "ОКШ 90-426x10 13ХФА",
-      "item_type": "отвод",
-      "quantity": 26.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 26.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000372",
-      "unit_id": null,
-      "match_score": 1.0,
-      "match_percent": 100,
-      "tz_status": "соответствует",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол",
-        "среда"
-      ],
-      "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000323",
-      "ksm_code": "KSM-SYN-REG-000323",
-      "name": "ОКШ 90-426x10 09ГСФ",
-      "item_type": "отвод",
-      "quantity": 71.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 71.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000323",
-      "unit_id": null,
-      "match_score": 0.8333333333333334,
-      "match_percent": 83,
-      "tz_status": "потенциальный аналог",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол",
-        "среда"
-      ],
-      "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000358",
-      "ksm_code": "KSM-SYN-REG-000358",
-      "name": "ОКШ 90-426x10 09Г2С",
-      "item_type": "отвод",
-      "quantity": 68.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 68.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000358",
-      "unit_id": null,
-      "match_score": 0.8333333333333334,
-      "match_percent": 83,
-      "tz_status": "потенциальный аналог",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол",
-        "среда"
-      ],
-      "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000404",
-      "ksm_code": "KSM-SYN-REG-000404",
-      "name": "ОКШ 90-426x10 13ХФА",
-      "item_type": "отвод",
-      "quantity": 18.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 18.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000404",
-      "unit_id": null,
-      "match_score": 0.8333333333333334,
-      "match_percent": 83,
-      "tz_status": "потенциальный аналог",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол"
-      ],
-      "mismatched_params": [
-        "среда"
-      ],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000430",
-      "ksm_code": "KSM-SYN-REG-000430",
-      "name": "ОКШ 90-426x10 09ГСФ",
-      "item_type": "отвод",
-      "quantity": 35.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 35.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000430",
-      "unit_id": null,
-      "match_score": 0.8333333333333334,
-      "match_percent": 83,
-      "tz_status": "потенциальный аналог",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол",
-        "среда"
-      ],
-      "mismatched_params": [],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000287",
-      "ksm_code": "KSM-SYN-REG-000287",
-      "name": "ОКШ 90-426x10 09ГСФ",
-      "item_type": "отвод",
-      "quantity": 7.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 7.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000287",
-      "unit_id": null,
-      "match_score": 0.6666666666666666,
-      "match_percent": 67,
-      "tz_status": "не соответствует",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол"
-      ],
-      "mismatched_params": [
-        "среда"
-      ],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000354",
-      "ksm_code": "KSM-SYN-REG-000354",
-      "name": "ОКШ 90-426x10 09ГСФ",
-      "item_type": "отвод",
-      "quantity": 51.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 51.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000354",
-      "unit_id": null,
-      "match_score": 0.6666666666666666,
-      "match_percent": 67,
-      "tz_status": "не соответствует",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол"
-      ],
-      "mismatched_params": [
-        "среда"
-      ],
-      "missing_params": []
-    },
-    {
-      "mtr_code": "MTR-SYN-REG-000405",
-      "ksm_code": "KSM-SYN-REG-000405",
-      "name": "ОКШ 90-426x10 09Г2С",
-      "item_type": "отвод",
-      "quantity": 38.0,
-      "status": "совпадает по параметрам",
-      "detail": "на складе: 38.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000405",
-      "unit_id": null,
-      "match_score": 0.6666666666666666,
-      "match_percent": 67,
-      "tz_status": "не соответствует",
-      "matched_params": [
-        "тип изделия",
-        "DN",
-        "стенка",
-        "угол"
-      ],
-      "mismatched_params": [
-        "среда"
-      ],
       "missing_params": []
     },
     {
@@ -799,14 +698,20 @@
   ],
   "warnings": [
     "Соответствие H2S, CO2, коррозионной среде и наличие покрытия нельзя подтверждать только геометрическим ГОСТом: нужны паспорт, ТУ, проектная документация и/или внутренний ЛНД.",
-    "Для типа «отвод» не указаны обязательные параметры: марка стали. Уточните их для точного подбора."
+    "Пригодность к H2S нельзя подтверждать только по совпадению DN и PN.",
+    "Большее значение PN не гарантирует совместимость задвижки с фланцами и соседними деталями.",
+    "Изменение DN является изменением узла и не должно утверждаться автоматически.",
+    "Для типа «задвижка» не указаны обязательные параметры: марка стали. Уточните их для точного подбора."
   ],
   "warning_categories": {
     "Совместимость со средой": [
-      "Соответствие H2S, CO2, коррозионной среде и наличие покрытия нельзя подтверждать только геометрическим ГОСТом: нужны паспорт, ТУ, проектная документация и/или внутренний ЛНД."
+      "Соответствие H2S, CO2, коррозионной среде и наличие покрытия нельзя подтверждать только геометрическим ГОСТом: нужны паспорт, ТУ, проектная документация и/или внутренний ЛНД.",
+      "Пригодность к H2S нельзя подтверждать только по совпадению DN и PN."
     ],
     "Прочее": [
-      "Для типа «отвод» не указаны обязательные параметры: марка стали. Уточните их для точного подбора."
+      "Большее значение PN не гарантирует совместимость задвижки с фланцами и соседними деталями.",
+      "Изменение DN является изменением узла и не должно утверждаться автоматически.",
+      "Для типа «задвижка» не указаны обязательные параметры: марка стали. Уточните их для точного подбора."
     ]
   },
   "purchase_recommendation": null,
@@ -958,168 +863,138 @@
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000231",
-      "fragment": "ОКШ 90-426x10 13ХФА"
+      "id": "MTR-SYN-REG-000615",
+      "fragment": "Задвижка клиновая DN150 PN40"
     },
     {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000231",
+      "id": "MTR-SYN-REG-000615",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000249",
-      "fragment": "ОКШ 90-426x10 13ХФА"
+      "id": "MTR-SYN-REG-000673",
+      "fragment": "Задвижка шиберная DN150 PN40"
     },
     {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000249",
+      "id": "MTR-SYN-REG-000673",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000330",
-      "fragment": "ОКШ 90-426x10 13ХФА"
+      "id": "MTR-SYN-REG-000686",
+      "fragment": "Задвижка шиберная DN150 PN40"
     },
     {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000330",
+      "id": "MTR-SYN-REG-000686",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000372",
-      "fragment": "ОКШ 90-426x10 13ХФА"
+      "id": "MTR-SYN-REG-000648",
+      "fragment": "Задвижка шиберная DN150 PN40"
     },
     {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000372",
+      "id": "MTR-SYN-REG-000648",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000323",
-      "fragment": "ОКШ 90-426x10 09ГСФ"
+      "id": "MTR-SYN-REG-000692",
+      "fragment": "Задвижка шиберная DN150 PN40"
     },
     {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000323",
+      "id": "MTR-SYN-REG-000692",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000358",
-      "fragment": "ОКШ 90-426x10 09Г2С"
+      "id": "MTR-SYN-REG-000706",
+      "fragment": "Задвижка шиберная DN150 PN40"
     },
     {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000358",
+      "id": "MTR-SYN-REG-000706",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000404",
-      "fragment": "ОКШ 90-426x10 13ХФА"
+      "id": "MTR-SYN-REG-000716",
+      "fragment": "Задвижка клиновая DN150 PN40"
     },
     {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000404",
+      "id": "MTR-SYN-REG-000716",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000430",
-      "fragment": "ОКШ 90-426x10 09ГСФ"
+      "id": "MTR-SYN-REG-000729",
+      "fragment": "Задвижка шиберная DN150 PN40"
     },
     {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000430",
+      "id": "MTR-SYN-REG-000729",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000287",
-      "fragment": "ОКШ 90-426x10 09ГСФ"
+      "id": "MTR-SYN-REG-000732",
+      "fragment": "Задвижка шиберная DN150 PN40"
     },
     {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000287",
-      "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
-    },
-    {
-      "kind": "catalog",
-      "id": "MTR-SYN-REG-000354",
-      "fragment": "ОКШ 90-426x10 09ГСФ"
-    },
-    {
-      "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000354",
-      "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
-    },
-    {
-      "kind": "catalog",
-      "id": "MTR-SYN-REG-000405",
-      "fragment": "ОКШ 90-426x10 09Г2С"
-    },
-    {
-      "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000405",
+      "id": "MTR-SYN-REG-000732",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "stock",
-      "id": "KSM-SYN-REG-000231",
+      "id": "KSM-SYN-REG-000615",
+      "fragment": "остаток: 77.0"
+    },
+    {
+      "kind": "stock",
+      "id": "KSM-SYN-REG-000673",
+      "fragment": "остаток: 78.0"
+    },
+    {
+      "kind": "stock",
+      "id": "KSM-SYN-REG-000686",
+      "fragment": "остаток: 80.0"
+    },
+    {
+      "kind": "stock",
+      "id": "KSM-SYN-REG-000648",
+      "fragment": "остаток: 64.0"
+    },
+    {
+      "kind": "stock",
+      "id": "KSM-SYN-REG-000692",
+      "fragment": "остаток: 15.0"
+    },
+    {
+      "kind": "stock",
+      "id": "KSM-SYN-REG-000706",
+      "fragment": "остаток: 24.0"
+    },
+    {
+      "kind": "stock",
+      "id": "KSM-SYN-REG-000716",
       "fragment": "остаток: 65.0"
     },
     {
       "kind": "stock",
-      "id": "KSM-SYN-REG-000249",
-      "fragment": "остаток: 58.0"
+      "id": "KSM-SYN-REG-000729",
+      "fragment": "остаток: 65.0"
     },
     {
       "kind": "stock",
-      "id": "KSM-SYN-REG-000330",
-      "fragment": "остаток: 52.0"
-    },
-    {
-      "kind": "stock",
-      "id": "KSM-SYN-REG-000372",
+      "id": "KSM-SYN-REG-000732",
       "fragment": "остаток: 26.0"
-    },
-    {
-      "kind": "stock",
-      "id": "KSM-SYN-REG-000323",
-      "fragment": "остаток: 71.0"
-    },
-    {
-      "kind": "stock",
-      "id": "KSM-SYN-REG-000358",
-      "fragment": "остаток: 68.0"
-    },
-    {
-      "kind": "stock",
-      "id": "KSM-SYN-REG-000404",
-      "fragment": "остаток: 18.0"
-    },
-    {
-      "kind": "stock",
-      "id": "KSM-SYN-REG-000430",
-      "fragment": "остаток: 35.0"
-    },
-    {
-      "kind": "stock",
-      "id": "KSM-SYN-REG-000287",
-      "fragment": "остаток: 7.0"
-    },
-    {
-      "kind": "stock",
-      "id": "KSM-SYN-REG-000354",
-      "fragment": "остаток: 51.0"
-    },
-    {
-      "kind": "stock",
-      "id": "KSM-SYN-REG-000405",
-      "fragment": "остаток: 38.0"
     },
     {
       "kind": "project_documentation",
@@ -1244,18 +1119,17 @@
     "Требуется экспертная проверка: критические параметры не подтверждены.",
     "Не удалось однозначно обработать запрос. Попробовать LLM-режим?"
   ],
-  "expert_review_id": "req-2026-09-06-8dca",
-  "parsed_confidence": 0.97,
+  "expert_review_id": "req-2026-09-09-36fb",
+  "parsed_confidence": 0.94,
   "parsed_query": {
-    "original_query": "Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе",
+    "original_query": "Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет",
     "operations": [
       "replace",
       "inventory",
-      "check",
       "search"
     ],
     "item_types": [
-      "отвод"
+      "задвижка"
     ],
     "component_ids": [],
     "unit_ids": [],
@@ -1263,24 +1137,24 @@
       "card_id": null,
       "mtr_code": null,
       "ksm_code": null,
-      "item_type": "отвод",
+      "item_type": "задвижка",
       "subtype": null,
-      "designation": "DN426 δ10 90° H2S",
-      "name": "отвод 90° DN426",
+      "designation": "DN150 PN40 H2S",
+      "name": "задвижка DN150 PN40",
       "geometry": {
-        "dn": 426.0,
+        "dn": 150.0,
         "d1": null,
         "d2": null,
-        "wall_thickness": 10.0,
+        "wall_thickness": null,
         "wall_thickness_2": null,
-        "angle": 90.0,
+        "angle": null,
         "radius": null
       },
       "pressure": {
-        "pn": null,
-        "working_pressure_mpa": null,
+        "pn": 40.0,
+        "working_pressure_mpa": 4.0,
         "test_pressure_mpa": null,
-        "raw_value": null
+        "raw_value": "PN40"
       },
       "material": {
         "steel_grade": null,
@@ -1303,6 +1177,7 @@
         "confidence": 0.0,
         "method": "user_query",
         "missing_fields": [
+          "geometry",
           "material"
         ]
       },
@@ -1312,7 +1187,7 @@
           "file": null,
           "page": null,
           "row": null,
-          "fragment": "Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе"
+          "fragment": "Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет"
         }
       ]
     },
@@ -1321,24 +1196,24 @@
         "card_id": null,
         "mtr_code": null,
         "ksm_code": null,
-        "item_type": "отвод",
+        "item_type": "задвижка",
         "subtype": null,
-        "designation": "DN426 δ10 90° H2S",
-        "name": "отвод 90° DN426",
+        "designation": "DN150 PN40 H2S",
+        "name": "задвижка DN150 PN40",
         "geometry": {
-          "dn": 426.0,
+          "dn": 150.0,
           "d1": null,
           "d2": null,
-          "wall_thickness": 10.0,
+          "wall_thickness": null,
           "wall_thickness_2": null,
-          "angle": 90.0,
+          "angle": null,
           "radius": null
         },
         "pressure": {
-          "pn": null,
-          "working_pressure_mpa": null,
+          "pn": 40.0,
+          "working_pressure_mpa": 4.0,
           "test_pressure_mpa": null,
-          "raw_value": null
+          "raw_value": "PN40"
         },
         "material": {
           "steel_grade": null,
@@ -1361,6 +1236,7 @@
           "confidence": 0.0,
           "method": "user_query",
           "missing_fields": [
+            "geometry",
             "material"
           ]
         },
@@ -1370,16 +1246,17 @@
             "file": null,
             "page": null,
             "row": null,
-            "fragment": "Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе"
+            "fragment": "Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет"
           }
         ]
       }
     ],
     "technical_filters": {
-      "item_type": "отвод",
-      "dn": 426.0,
-      "wall_thickness": 10.0,
-      "angle": 90.0,
+      "item_type": "задвижка",
+      "dn": 150,
+      "pn": 40.0,
+      "working_pressure_mpa": 4.0,
+      "raw_value": "PN40",
       "medium": "H2S",
       "h2s_confirmed": true
     },
@@ -1393,7 +1270,7 @@
     "timeframe": null,
     "urgency": null,
     "sort_by": null,
-    "on_stock": true,
+    "on_stock": null,
     "not_installed": null,
     "proposed_changes": {},
     "impact_analysis": {
@@ -1409,69 +1286,62 @@
     "ambiguities": [],
     "required_agents": [
       "inventory",
-      "rules",
       "search"
     ],
     "required_capabilities": [
-      "compatibility_check",
       "inventory",
       "replacement_matching",
       "search"
     ],
-    "confidence": 0.97,
+    "confidence": 0.94,
     "confidence_details": {
-      "operations": 1.0,
-      "card": 0.9,
+      "operations": 0.8,
+      "card": 0.8,
       "ambiguities": 1.0
     },
     "intents": [
-      "FIND_BY_PARAMS",
       "FIND_ALTERNATIVE",
+      "FIND_BY_PARAMS",
       "CHECK_STOCK"
     ],
     "status": "COMPLETE",
     "missing_params": {
+      "FIND_ALTERNATIVE": [],
       "FIND_BY_PARAMS": [],
-      "FIND_ALTERNATIVE": [
-        "pn"
-      ],
       "CHECK_STOCK": []
     },
     "params": {
-      "item_type": "отвод",
-      "dn": 426.0,
-      "angle": 90.0,
+      "item_type": "задвижка",
+      "dn": 150,
+      "pn": 40.0,
       "medium": "H2S"
     },
-    "primary_intent": "FIND_BY_PARAMS",
+    "primary_intent": "FIND_ALTERNATIVE",
     "groups": [
       {
         "group": "ПОИСК",
-        "score": 2,
+        "score": 1,
         "confidence": 0.5,
         "matched": [
-          "покажи",
-          "какой"
+          "найди"
         ]
       },
       {
         "group": "СКЛАД",
         "score": 1,
-        "confidence": 0.25,
+        "confidence": 0.5,
         "matched": [
           "склад"
         ]
       },
       {
-        "group": "ЗАМЕНА",
-        "score": 1,
-        "confidence": 0.25,
-        "matched": [
-          "аналог"
-        ]
+        "group": "РЕМОНТ",
+        "score": 0,
+        "confidence": 0.0,
+        "matched": []
       },
       {
-        "group": "РЕМОНТ",
+        "group": "ЗАМЕНА",
         "score": 0,
         "confidence": 0.0,
         "matched": []
@@ -1501,8 +1371,9 @@
   "verification_verdict": "pass",
   "verification_reasons": [],
   "mode_refined": "auto",
-  "llm_refine_failed": null
+  "llm_refine_failed": null,
+  "llm_tokens_used": null
 }
 ========================================================================
 
->>> Время выполнения: 927 мс
+>>> Время выполнения: 9647 мс
