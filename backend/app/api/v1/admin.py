@@ -155,6 +155,9 @@ def delete_dict_entry(
 
 # ── Validation Rules ─────────────────────────────────────────────────
 
+# Регистрируется ДО GET /validation-rules: иначе Starlette может сматчить
+# reload-массив как {item_type} (по паттерну PUT/DELETE маршрутов).
+
 class ValidationRuleCreate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -164,6 +167,22 @@ class ValidationRuleCreate(BaseModel):
     optional_params: list[str] = []
     logical_conditions: dict | None = None
     is_active: bool = True
+
+
+@router.post("/validation-rules/reload")
+def reload_validation_rules(
+    current_user: dict = Depends(require_role(UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    try:
+        svc = _get_admin_service(db, current_user)
+        return svc.reload_validation_rules(current_user)
+    except AppException:
+        raise
+    except Exception as e:
+        from app.core.exceptions import InternalError
+
+        raise InternalError(f"Failed to reload validation rules: {e}")
 
 
 @router.get("/validation-rules")

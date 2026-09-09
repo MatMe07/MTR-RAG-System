@@ -67,3 +67,28 @@ def test_reload_returns_ok(admin_client):
     assert body["status"] == "ok"
     assert "catalog_repository" in body["reloaded"]
     assert "dictionaries" in body["reloaded"]
+
+
+def test_validation_rules_reload_route_registered():
+    """POST /validation-rules/reload зарегистрирован раньше GET /validation-rules."""
+    reload_idx = None
+    list_idx = None
+    for i, route in enumerate(admin_module.router.routes):
+        path = getattr(route, "path", "")
+        methods = getattr(route, "methods", set()) or set()
+        if path == "/validation-rules/reload":
+            reload_idx = i
+        if path == "/validation-rules" and "GET" in methods:
+            list_idx = i
+    assert reload_idx is not None, "reload маршрут не зарегистрирован"
+    assert list_idx is not None, "GET /validation-rules маршрут не зарегистрирован"
+    assert reload_idx < list_idx, "reload затенён списком validation-rules"
+
+
+def test_validation_rules_reload_returns_ok(admin_client):
+    """POST /admin/validation-rules/reload → 200 {status: ok, reloaded: [validation_rules]}."""
+    r = admin_client.post("/api/v1/admin/validation-rules/reload")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["status"] == "ok"
+    assert "validation_rules" in body["reloaded"]

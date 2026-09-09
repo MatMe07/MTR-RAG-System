@@ -86,6 +86,40 @@ def test_import_catalog_errors_on_invalid_rows(db):
     assert len(result["errors"]) == 2
 
 
+def test_import_catalog_suggests_draft_validation_rules(db):
+    from app.services.import_service import ImportService
+    from app.models.sqlalchemy.all_models import ValidationRule
+
+    svc = ImportService(db)
+    result = svc.import_catalog(
+        [
+            {"codes": {"mtr_code": "MTR-NEW1"}, "item_type": "тройник", "name": "Тройник", "properties": {}},
+            {"codes": {"mtr_code": "MTR-NEW2"}, "item_type": "хомут", "name": "Хомут", "properties": {}},
+        ]
+    )
+    assert result["created"] == 2
+    by_type = {item["item_type"]: item for item in result["suggested_rules"]}
+    assert set(by_type) == {"тройник", "хомут"}
+    assert all(item["status"] == "draft" for item in result["suggested_rules"])
+
+    known = db.query(ValidationRule).filter(ValidationRule.item_type == "тройник").first()
+    assert known is not None
+    assert known.is_active is False
+    assert "dn" in known.required_params
+    assert "steel_grade" in known.required_params
+
+    unknown = db.query(ValidationRule).filter(ValidationRule.item_type == "хомут").first()
+    assert unknown is not None
+    assert unknown.required_params == "[]"
+
+    # Повторный импорт того же типа не дублирует черновик
+    result2 = svc.import_catalog(
+        [{"codes": {"mtr_code": "MTR-NEW3"}, "item_type": "тройник", "name": "Тройник 2", "properties": {}}]
+    )
+    assert not result2.get("suggested_rules")
+    assert db.query(ValidationRule).filter(ValidationRule.item_type == "тройник").count() == 1
+
+
 def test_import_stock_updates_quantities(db):
     from app.services.import_service import ImportService
     from app.models.sqlalchemy.all_models import CandidateItem

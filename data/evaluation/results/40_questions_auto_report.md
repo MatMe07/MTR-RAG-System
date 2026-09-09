@@ -1,6 +1,6 @@
 # Eval 40 вопросов в auto-режиме (quality gate)
 
-- Дата: 2026-09-09T14:32:21.414821+00:00
+- Дата: 2026-09-09T15:09:38.048810+00:00
 - Режим: auto
 - Total: 40
 - verdict PASS: 40 / REVIEW: 0
@@ -11,7 +11,7 @@
 - tools OK: 40/40
 - sources OK: 39/40
 - кейсов с sufficiency-verdict: 1
-- avg duration: 1550.2 ms
+- avg duration: 1554.5 ms
 
 ## Распределение gap-типов (reason)
 
@@ -20,43 +20,43 @@
 
 | case | cat | verdict | esc | escal | applied | tokens | sufficiency | tools | sources | ms |
 |---|---|---|---|---|---|---|---|---|---|---|
-| AQ001 | replacement | pass | - | none | none | - | - | P | P | 1968.2 |
-| AQ002 | replacement | pass | - | none | none | - | - | P | P | 1312.1 |
-| AQ003 | replacement | pass | - | none | none | - | - | P | P | 2126.6 |
-| AQ004 | replacement | pass | - | none | none | - | - | P | P | 1154.7 |
-| AQ005 | replacement | pass | - | none | none | - | - | P | P | 1280.4 |
-| AQ006 | replacement | pass | - | none | none | - | - | P | P | 1334.3 |
-| AQ007 | replacement | pass | - | none | none | - | - | P | P | 1314.4 |
-| AQ008 | inventory | pass | - | none | none | - | - | P | P | 1804.4 |
-| AQ009 | inventory | pass | - | none | none | - | Y | P | P | 1891.7 |
-| AQ010 | inventory | pass | - | none | none | - | - | P | P | 1257.8 |
-| AQ011 | inventory | pass | - | none | none | - | - | P | P | 2089.7 |
-| AQ012 | inventory | pass | - | none | none | - | - | P | P | 2040.5 |
-| AQ013 | inventory | pass | - | none | none | - | - | P | F | 1689.2 |
-| AQ014 | inventory | pass | - | none | none | - | - | P | P | 1727.8 |
-| AQ015 | inventory | pass | - | none | none | - | - | P | P | 1853.4 |
-| AQ016 | toir | pass | - | none | none | - | - | P | P | 1821.1 |
-| AQ017 | toir | pass | - | none | none | - | - | P | P | 1730.6 |
-| AQ018 | toir | pass | - | none | none | - | - | P | P | 1220.2 |
-| AQ019 | toir | pass | - | none | none | - | - | P | P | 1202.2 |
-| AQ020 | toir | pass | - | none | none | - | - | P | P | 1956.9 |
-| AQ021 | equipment_guidance | pass | - | none | none | - | - | P | P | 909.0 |
-| AQ022 | equipment_guidance | pass | - | none | none | - | - | P | P | 1365.1 |
-| AQ023 | equipment_guidance | pass | - | none | none | - | - | P | P | 1256.5 |
-| AQ024 | equipment_guidance | pass | - | none | none | - | - | P | P | 1902.7 |
-| AQ025 | equipment_guidance | pass | - | none | none | - | - | P | P | 1038.6 |
-| AQ026 | object_configuration | pass | - | none | none | - | - | P | P | 1640.4 |
-| AQ027 | object_configuration | pass | - | none | none | - | - | P | P | 2407.1 |
-| AQ028 | object_configuration | pass | - | none | none | - | - | P | P | 1789.9 |
-| AQ029 | object_configuration | pass | - | none | none | - | - | P | P | 1819.4 |
-| AQ030 | composite_replacement | pass | - | none | none | - | - | P | P | 1877.3 |
-| AQ031 | composite_replacement | pass | - | none | none | - | - | P | P | 1774.4 |
-| AQ032 | composite_replacement | pass | - | none | none | - | - | P | P | 2070.1 |
-| AQ033 | composite_replacement | pass | - | none | none | - | - | P | P | 1587.0 |
-| AQ034 | composite_replacement | pass | - | none | none | - | - | P | P | 1130.8 |
-| AQ035 | composite_replacement | pass | - | none | none | - | - | P | P | 2227.2 |
-| AQ036 | impact_analysis | pass | - | none | none | - | - | P | P | 881.5 |
-| AQ037 | impact_analysis | pass | - | none | none | - | - | P | P | 906.6 |
-| AQ038 | impact_analysis | pass | - | none | none | - | - | P | P | 817.1 |
-| AQ039 | document_search | pass | - | none | none | - | - | P | P | 913.5 |
-| AQ040 | document_search | pass | - | none | none | - | - | P | P | 916.0 |
+| AQ001 | replacement | pass | - | none | none | - | - | P | P | 1949.6 |
+| AQ002 | replacement | pass | - | none | none | - | - | P | P | 1503.5 |
+| AQ003 | replacement | pass | - | none | none | - | - | P | P | 2325.9 |
+| AQ004 | replacement | pass | - | none | none | - | - | P | P | 1176.2 |
+| AQ005 | replacement | pass | - | none | none | - | - | P | P | 1400.9 |
+| AQ006 | replacement | pass | - | none | none | - | - | P | P | 1356.5 |
+| AQ007 | replacement | pass | - | none | none | - | - | P | P | 1257.7 |
+| AQ008 | inventory | pass | - | none | none | - | - | P | P | 1944.9 |
+| AQ009 | inventory | pass | - | none | none | - | Y | P | P | 2044.3 |
+| AQ010 | inventory | pass | - | none | none | - | - | P | P | 1536.1 |
+| AQ011 | inventory | pass | - | none | none | - | - | P | P | 2160.5 |
+| AQ012 | inventory | pass | - | none | none | - | - | P | P | 2003.3 |
+| AQ013 | inventory | pass | - | none | none | - | - | P | F | 1921.9 |
+| AQ014 | inventory | pass | - | none | none | - | - | P | P | 1679.9 |
+| AQ015 | inventory | pass | - | none | none | - | - | P | P | 1883.7 |
+| AQ016 | toir | pass | - | none | none | - | - | P | P | 1733.4 |
+| AQ017 | toir | pass | - | none | none | - | - | P | P | 1709.3 |
+| AQ018 | toir | pass | - | none | none | - | - | P | P | 1185.9 |
+| AQ019 | toir | pass | - | none | none | - | - | P | P | 1311.4 |
+| AQ020 | toir | pass | - | none | none | - | - | P | P | 1918.8 |
+| AQ021 | equipment_guidance | pass | - | none | none | - | - | P | P | 926.0 |
+| AQ022 | equipment_guidance | pass | - | none | none | - | - | P | P | 1284.8 |
+| AQ023 | equipment_guidance | pass | - | none | none | - | - | P | P | 1223.3 |
+| AQ024 | equipment_guidance | pass | - | none | none | - | - | P | P | 1956.2 |
+| AQ025 | equipment_guidance | pass | - | none | none | - | - | P | P | 862.8 |
+| AQ026 | object_configuration | pass | - | none | none | - | - | P | P | 1569.3 |
+| AQ027 | object_configuration | pass | - | none | none | - | - | P | P | 2309.4 |
+| AQ028 | object_configuration | pass | - | none | none | - | - | P | P | 1674.5 |
+| AQ029 | object_configuration | pass | - | none | none | - | - | P | P | 1701.2 |
+| AQ030 | composite_replacement | pass | - | none | none | - | - | P | P | 1687.3 |
+| AQ031 | composite_replacement | pass | - | none | none | - | - | P | P | 1781.0 |
+| AQ032 | composite_replacement | pass | - | none | none | - | - | P | P | 1963.2 |
+| AQ033 | composite_replacement | pass | - | none | none | - | - | P | P | 1738.9 |
+| AQ034 | composite_replacement | pass | - | none | none | - | - | P | P | 1369.5 |
+| AQ035 | composite_replacement | pass | - | none | none | - | - | P | P | 1600.9 |
+| AQ036 | impact_analysis | pass | - | none | none | - | - | P | P | 841.2 |
+| AQ037 | impact_analysis | pass | - | none | none | - | - | P | P | 874.8 |
+| AQ038 | impact_analysis | pass | - | none | none | - | - | P | P | 856.9 |
+| AQ039 | document_search | pass | - | none | none | - | - | P | P | 939.3 |
+| AQ040 | document_search | pass | - | none | none | - | - | P | P | 1015.1 |

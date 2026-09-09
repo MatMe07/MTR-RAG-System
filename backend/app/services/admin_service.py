@@ -312,6 +312,16 @@ class AdminService:
         self.db.commit()
         self._invalidate_dynamic_rules()
 
+    def reload_validation_rules(self, actor: Optional[dict] = None) -> dict[str, Any]:
+        """Перезагрузка правил валидации без рестарта (1K.2)."""
+        self._audit("admin.rules.rule.reload", {}, actor)
+        self._invalidate_dynamic_rules()
+        return {
+            "status": "ok",
+            "message": "Validation rules reloaded",
+            "reloaded": ["validation_rules"],
+        }
+
     # ── Cache ───────────────────────────────────────────────────────
 
     def reload_cache(self) -> dict[str, Any]:

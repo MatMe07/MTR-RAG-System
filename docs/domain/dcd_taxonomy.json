@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "domain": {
+    "code": "gas_pipeline_mtr",
+    "name": "МТР газопровода"
+  },
+  "collections": [
+    {
+      "code": "pipes",
+      "name": "Трубы",
+      "item_types": ["труба"],
+      "role": "primary"
+    },
+    {
+      "code": "elbows",
+      "name": "Отводы",
+      "item_types": ["отвод"],
+      "role": "primary"
+    },
+    {
+      "code": "reducers",
+      "name": "Переходы",
+      "item_types": ["переход"],
+      "role": "primary"
+    },
+    {
+      "code": "valves",
+      "name": "Трубопроводная арматура",
+      "item_types": ["задвижка", "кран", "клапан"],
+      "role": "primary"
+    },
+    {
+      "code": "plugs",
+      "name": "Заглушки",
+      "item_types": ["заглушка"],
+      "role": "primary"
+    },
+    {
+      "code": "tees",
+      "name": "Тройники",
+      "item_types": ["тройник"],
+      "role": "supporting"
+    },
+    {
+      "code": "regulations",
+      "name": "Нормативные и локальные документы",
+      "item_types": ["нормативный документ"],
+      "role": "evidence"
+    }
+  ],
+  "document_types": [
+    {
+      "code": "passport",
+      "name": "Паспорт изделия"
+    },
+    {
+      "code": "ocr_text",
+      "name": "Результат OCR"
+    },
+    {
+      "code": "lnd",
+      "name": "Локальный нормативный документ"
+    },
+    {
+      "code": "catalog",
+      "name": "Каталог МТР"
+    },
+    {
+      "code": "user_query",
+      "name": "Пользовательский запрос"
+    }
+  ]
+}

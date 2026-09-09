@@ -9,6 +9,7 @@
 и запись в журнал (Log).
 """
 
+import json
 from typing import Any, List, Optional
 
 from sqlalchemy.orm import Session
@@ -18,6 +19,7 @@ from app.models.sqlalchemy.all_models import (
     MtrItem,
     MtrItemHistory,
     PipelineEdge,
+    ValidationRule,
 )
 
 
@@ -44,6 +46,7 @@ class ImportService:
         created = 0
         updated = 0
         errors: List[str] = []
+        seen_item_types: set[str] = set()
 
         for row in items:
             if not isinstance(row, dict):
@@ -61,6 +64,7 @@ class ImportService:
             if not item_type:
                 errors.append(f"row {mtr_code}: нет item_type")
                 continue
+            seen_item_types.add(str(item_type))
 
             props = _flatten_props(row.get("properties"))
             name = row.get("name") or row.get("designation") or mtr_code
@@ -119,8 +123,17 @@ class ImportService:
             if ksm_code:
                 self._upsert_stock(ksm_code, short_text=name, quantity=float(props.get("stock_qty", 0) or 0))
 
-        self._finish("admin.imports.catalog", {"created": created, "updated": updated, "errors": len(errors)}, changed_by)
-        return {"created": created, "updated": updated, "errors": errors}
+        suggested_rules = self._suggest_validation_rules(sorted(seen_item_types), changed_by)
+
+        self._finish(
+            "admin.imports.catalog",
+            {"created": created, "updated": updated, "errors": len(errors), "suggested_rules": len(suggested_rules)},
+            changed_by,
+        )
+        result = {"created": created, "updated": updated, "errors": errors}
+        if suggested_rules:
+            result["suggested_rules"] = suggested_rules
+        return result
 
     # ------------------------------------------------------------------
     # 2E.2 Складские остатки
@@ -174,6 +187,39 @@ class ImportService:
     # ------------------------------------------------------------------
     # Вспомогательные
     # ------------------------------------------------------------------
+    def _suggest_validation_rules(self, item_types: List[str], changed_by: Optional[str] = None) -> list:
+        """Автопредложение правил валидации для новых item_type (1L).
+
+        Создаёт черновик (is_active=False) с дефолтными параметрами из
+        DEFAULT_VALIDATION_RULES — предложение для админа, на рантайм не влияет.
+        """
+        if not item_types:
+            return []
+        try:
+            from app.services.agent.rules.dynamic_rules import DEFAULT_VALIDATION_RULES
+        except Exception:  # noqa: BLE001
+            DEFAULT_VALIDATION_RULES = {}
+
+        loaded = self.db.query(ValidationRule.item_type).all()
+        existing = {row[0] for row in loaded}
+        created = []
+        for itype in item_types:
+            if itype in existing:
+                continue
+            defaults = DEFAULT_VALIDATION_RULES.get(itype) or {}
+            rule = ValidationRule(
+                item_type=itype,
+                required_params=json.dumps(list(defaults.get("required", [])), ensure_ascii=False),
+                forbidden_params=json.dumps(list(defaults.get("forbidden", [])), ensure_ascii=False),
+                optional_params=json.dumps(list(defaults.get("optional", [])), ensure_ascii=False),
+                logical_conditions=None,
+                is_active=False,
+            )
+            self.db.add(rule)
+            existing.add(itype)
+            created.append({"item_type": itype, "status": "draft"})
+        return created
+
     def _upsert_stock(self, ksm: str, short_text: Optional[str] = None, quantity: float = 0) -> None:
         item = self.db.query(CandidateItem).filter(CandidateItem.ksm_code == ksm).first()
         if item is None:
@@ -204,5 +250,12 @@ class ImportService:
             from app.services.agent.repository.repository_factory import reset_repository
 
             reset_repository()
+        except Exception:  # noqa: BLE001
+            pass
+
+        try:
+            from app.services.agent.rules.dynamic_rules import get_dynamic_rules
+
+            get_dynamic_rules().refresh(force=True)
         except Exception:  # noqa: BLE001
             pass
