@@ -23,7 +23,7 @@ _STOP_WORDS = {
     "какой", "какая", "какие", "найди", "найти", "подбери", "подобрать",
     "замени", "заменить", "помоги", "нужно", "нужна", "для", "деталь",
     "изделия", "нужна", "выдать", "покажи", "дай", "и", "мне", "задвижку",
-    "приемлемо", "пожалуйста",
+    "приемлемо", "пожалуйста", "расскажи", "объясни",
 }
 
 
@@ -49,9 +49,15 @@ def _changes(parsed: Any) -> Dict[str, Any]:
 
 def _explain_terms(parsed: Any) -> Tuple[str, str]:
     q = parsed.original_query or ""
-    m = re.search(r"чем\s+отличается\s+([а-яёa-z0-9-]+)\s+(?:от|и)\s+([а-яёa-z0-9-]+)", q, re.IGNORECASE)
+    # «чем отличается переход от отвода» и «чем переход отличается от отвода»
+    m = re.search(
+        r"чем\s+отличается\s+([а-яёa-z0-9-]+)\s+(?:от|и)\s+([а-яёa-z0-9-]+)"
+        r"|чем\s+([а-яёa-z0-9-]+)\s+отличается\s+(?:от|и)\s+([а-яёa-z0-9-]+)",
+        q, re.IGNORECASE,
+    )
     if m:
-        return m.group(1), m.group(2)
+        g = m.groups()
+        return (g[0] or g[2]) or "", (g[1] or g[3]) or ""
     tokens = re.findall(r"[а-яёa-z0-9-]{3,}", _q(parsed), re.IGNORECASE)
     candidates = [t for t in tokens if t not in _STOP_WORDS]
     if candidates:
@@ -189,7 +195,9 @@ def _det_EXPLAIN_TERM(parsed):
 
 
 def _det_EXPLAIN_DIFFERENCE(parsed):
-    return any(w in _q(parsed) for w in ("чем отличается", "разница", "отличия"))
+    # «чем переход отличается от отвода» — подстрока «чем отличается» тут не
+    # совпадает, поэтому срабатываем по «отличается от» / «отличаются».
+    return any(w in _q(parsed) for w in ("чем отличается", "отличается от", "отличаются", "разница", "отличия"))
 
 
 def _det_FIND_DOCUMENTS(parsed):

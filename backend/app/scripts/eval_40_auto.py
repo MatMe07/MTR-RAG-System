@@ -73,7 +73,9 @@ def _run_case(case, mode: str):
     cfg = AgentConfig(use_llm=(mode == "auto_llm"), storage="json")
     ex = AgentExecutor(cfg)
     start = time.time()
-    answer = ex.execute(case["question"], mode=mode)
+    # "auto_llm" — тот же auto-пайплайн (deterministic → quality gate → C1/C2),
+    # но с живым LLM для эскалаций; execute() сам mode "auto" не знает.
+    answer = ex.execute(case["question"], mode=("auto" if mode == "auto_llm" else mode))
     ms = (time.time() - start) * 1000
 
     req_tools = set(case.get("required_tools") or [])

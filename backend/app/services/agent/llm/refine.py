@@ -38,6 +38,8 @@ _REFINE_PROMPT_TEMPLATE = """\
 Правила:
 - answer_text должен явно отвечать на запрос ( verdict-строки для «хватает ли», списки для «покажи все»).
 - Не повторяй сухие данные components — переформулируй.
+- Используй ТОЛЬКО данные из структурированного ответа и недостатков: не добавляй позиции,
+  коды, остатки или факты, которых нет в этих данных.
 - Если данных критически не хватает — confidence_gate = "still_unclear".
 """
 
@@ -56,6 +58,12 @@ def _format_structured_answer(answer: Any) -> str:
         status = getattr(c, "status", "") or (c.get("status", "") if isinstance(c, dict) else "")
         qty = getattr(c, "quantity", None) or (c.get("quantity") if isinstance(c, dict) else None)
         parts.append(f"  - {name}: {status} (кол-во: {qty})")
+    if hasattr(answer, "review_verdict") and answer.review_verdict:
+        issues = getattr(answer, "review_issues", None) or []
+        parts.append(
+            f"  Проверка качества: {answer.review_verdict} "
+            + (f"({'; '.join(issues[:3])})" if issues else "")
+        )
     warnings = getattr(answer, "warnings", []) or []
     if warnings:
         parts.append(f"  Предупреждения: {'; '.join(warnings[:5])}")

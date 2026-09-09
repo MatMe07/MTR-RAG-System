@@ -114,11 +114,13 @@ def build_explanation_prompt(context: Dict[str, Any]) -> str:
     return (
         "Ты — технический эксперт по МТР. На основе следующих данных составь "
         "понятное объяснение для инженера.\n\n"
+        f"Статус обработки запроса: {context.get('status') or '—'}\n"
         f"Критические параметры (нельзя менять, они должны совпадать): "
         f"{context.get('critical_params') or '—'}\n"
         f"Запрос: {context.get('query') or ''}\n"
         f"Найденные детали:\n{context.get('candidates') or '—'}\n"
         f"Результаты проверок: {context.get('compatibility') or '—'}\n"
+        f"Рекомендации: {context.get('recommendations') or '—'}\n"
         f"Предупреждения: {context.get('warnings') or '—'}\n"
         f"Ошибки: {context.get('errors') or '—'}\n\n"
         "Твой ответ должен быть:\n"
@@ -126,7 +128,9 @@ def build_explanation_prompt(context: Dict[str, Any]) -> str:
         "2. Содержать рекомендацию (какую деталь выбрать, что проверить).\n"
         "3. Если есть риски — указать их.\n"
         "4. Не повторять сухие технические данные — переформулировать их.\n"
-        "5. Если хотя бы один критический параметр не совпал — явно указать это.\n\n"
+        "5. Если хотя бы один критический параметр не совпал — явно указать это.\n"
+        "6. Использовать только данные из этого контекста: не выдумывать коды, "
+        "остатки или факты, которых здесь нет.\n\n"
         "Ответ:"
     )
 
@@ -175,10 +179,7 @@ def default_generator(context: Dict[str, Any]) -> Optional[str]:
             return None
         
         promt_context = build_explanation_prompt(context)
-        print(promt_context)
-        # return None
-    
-    
+
         text = client.invoke(promt_context)
         return (text or "").strip() or None
     except Exception as e:  # noqa: BLE001

@@ -116,6 +116,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
             "rules": "rules",
             "impact": "impact",
             "duplicates": "duplicates",
+            "regulation": "regulation",
             "answer": "answer",
         }
     )

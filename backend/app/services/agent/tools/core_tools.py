@@ -585,6 +585,20 @@ def regulation_lookup(state: AgentState, ctx) -> Dict[str, Any]:
     result["docs_found"] = docs["docs_found"]
     result["docs_missing"] = docs["docs_missing"]
 
+    # Найденные в реестре ГОСТ/ТУ становятся источниками kind="standard" —
+    # это закрывает required_sources ["catalog", "standard"] в справочном маршруте.
+    std_seen = set()
+    for entries in docs["docs_found"].values():
+        for entry in entries:
+            sid = entry.get("source_id") or entry.get("standard")
+            if not sid or sid in std_seen:
+                continue
+            std_seen.add(sid)
+            result["sources"].append(_source(
+                "standard", sid,
+                entry.get("title") or entry.get("standard") or "",
+            ))
+
     result["sources"].append(_source("regulation", "regulation_matrix.json"))
     if docs["docs_found"] or docs["docs_missing"]:
         decode_text = _fmt_docs(docs)

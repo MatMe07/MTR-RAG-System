@@ -26,6 +26,8 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "structlog>=24.1.0",
     "orjson>=3.10.0",
+    "sentence-transformers>=2.6.0",
+    "langchain-openai>=0.1.0",
     "langgraph>=0.2.0",
     "langgraph-checkpoint-sqlite>=2.0.0",
     "mawo-natasha>=1.0.3",
@@ -42,6 +44,7 @@ dev = [
     "pytest-cov>=5.0.0",
     "httpx>=0.27.0",
     "ruff>=0.4.0",
+    "jsonschema>=4.20.0",
 ]
 # OCR паспортов (Фаза 3): Docling + EasyOCR. Ставится только на образ-воркер:
 #   pip install -e ".[ocr]"

@@ -17,6 +17,29 @@ def _has_object_context(query: str) -> bool:
     return any(token in query for token in _OBJECT_CONTEXT)
 
 
+def is_reference_query(state: AgentState) -> bool:
+    """Справочный запрос по оборудованию без объектного контекста.
+
+    «Объясни параметры / что это / чем отличается» без привязки к участку.
+    Такие запросы не требуют графа, склада и правил — достаточно каталога
+    и нормативов (catalog_search → regulation_lookup).
+    """
+    intent = state.get("context", {}).get("intent", "search")
+    if intent != "equipment_guidance":
+        return False
+    # Уже ходили в граф (объектный контекст) — это не справочник.
+    if state.get("ksm_targets"):
+        return False
+    sources = state.get("sources") or []
+    if any(s.get("kind") == "object_graph" for s in sources if isinstance(s, dict)):
+        return False
+    parsed = state.get("parsed")
+    if parsed and getattr(parsed, "unit_ids", []):
+        return False
+    query = (getattr(parsed, "original_query", "") if parsed else state.get("query", "")) or ""
+    return not _has_object_context(query.lower())
+
+
 def router(state: AgentState) -> Literal[
     "catalog", "stock", "graph", "impact", "rules", "regulation",
     "duplicates", "inventory", "maintenance", "answer",
@@ -52,9 +75,11 @@ def router(state: AgentState) -> Literal[
     if intent in ["inventory", "calculate"]:
         return "graph" if (unit_ids or component_ids or _has_object_context(query)) else "catalog"
     
-    # Рекомендации по оборудованию → каталог (+ граф, если есть объектный контекст)
+    # Рекомендации по оборудованию → каталог (+ граф, если есть объектный контекст).
+    # component_ids исключены: геометрия вроде «426» ошибочно даёт COMP-*, а
+    # объектный контекст всегда выражается текстом (участок/перед/после/схема).
     if intent == "equipment_guidance":
-        return "graph" if (unit_ids or component_ids or _has_object_context(query)) else "catalog"
+        return "graph" if (unit_ids or _has_object_context(query)) else "catalog"
     
     # Есть явные участки/компоненты → граф
     if unit_ids or component_ids:
@@ -89,7 +114,7 @@ def graph_router(state: AgentState) -> Literal[
 
 
 def catalog_router(state: AgentState) -> Literal[
-    "stock", "rules", "impact", "duplicates", "answer",
+    "stock", "rules", "impact", "duplicates", "regulation", "answer",
 ]:
     """Роутинг после поиска в каталоге"""
     candidates = state.get("candidates", [])
@@ -99,6 +124,12 @@ def catalog_router(state: AgentState) -> Literal[
     # Дубли → детектор дублей
     if "дубл" in query:
         return "duplicates"
+    
+    # Справочный запрос (спросили «что это / объясни параметры» без привязки
+    # к объекту) → сразу нормативы: источник standard + ГОСТ-расшифровка,
+    # минуя склад и правила. Двух инструментов достаточно.
+    if is_reference_query(state):
+        return "regulation"
     
     # Если есть кандидаты
     if candidates:
