@@ -1,24 +1,24 @@
 Запрос: Метод поиска (0 - deterministic, 1 - llm, 2 - auto): 
 >>> Режим: auto
 
-2026-09-07 18:29:10,772 INFO    | mtr.agent.executor               | [Executor] Execute query='Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе' mode=auto request_id=None
-2026-09-07 18:29:10,772 INFO    | mtr.agent.executor               | [Executor] No parsed query, running HybridParser...
-2026-09-07 18:29:10,994 INFO    | mtr.agent.executor               | [Executor] Parsed: confidence=0.97 operations=['replace', 'inventory', 'check', 'search'] item_types=['отвод'] technical_filters={'item_type': 'отвод', 'dn': 426.0, 'wall_thickness': 10.0, 'angle': 90.0, 'medium': 'H2S', 'h2s_confirmed': True} ambiguities=[] (222ms)
-2026-09-07 18:29:11,006 INFO    | mtr.agent.executor               | [Executor] Parsed enriched: status=COMPLETE intents=['FIND_BY_PARAMS', 'FIND_ALTERNATIVE', 'CHECK_STOCK'] missing={'FIND_BY_PARAMS': [], 'FIND_ALTERNATIVE': ['pn'], 'CHECK_STOCK': []}
-2026-09-07 18:29:11,013 INFO    | mtr.agent.executor               | [Executor] Intent resolved: replacement
-2026-09-07 18:29:11,014 INFO    | mtr.agent.executor               | [Executor] Invoking graph...
-2026-09-07 18:29:11,213 INFO    | mtr.repository                   | DbRepository: loaded 1000 MTR items from DB
-2026-09-07 18:29:11,227 INFO    | mtr.repository                   | DbRepository: loaded 1000 CandidateItems for stock lookup
-2026-09-07 18:29:11,274 INFO    | mtr.repository                   | DbRepository: catalog built with 1000 cards
-2026-09-07 18:29:11,513 INFO    | mtr.agent.tools                  | [graph_search] Found 12 components, 12 targets in 237ms
-2026-09-07 18:29:11,514 INFO    | mtr.agent.tools                  | [catalog_search] Loaded 1000 cards from repository
-2026-09-07 18:29:11,528 INFO    | mtr.agent.tools                  | [catalog_search] Found 11 candidates (from 1000 cards) in 13ms
-2026-09-07 18:29:11,580 INFO    | mtr.agent.tools                  | [stock_query] Checked 11 items (kept 11) in 51ms
-2026-09-07 18:29:11,584 INFO    | mtr.agent.tools                  | [rules_engine] Scored 11 candidates in 0ms
-2026-09-07 18:29:11,589 INFO    | mtr.agent.tools                  | [regulation_lookup] Checked 1 regulations in 4ms
+2026-09-09 12:52:11,588 INFO    | mtr.agent.executor               | [Executor] Execute query='Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе' mode=auto request_id=None
+2026-09-09 12:52:11,588 INFO    | mtr.agent.executor               | [Executor] No parsed query, running HybridParser...
+2026-09-09 12:52:11,874 INFO    | mtr.agent.executor               | [Executor] Parsed: confidence=0.97 operations=['replace', 'inventory', 'check', 'search'] item_types=['отвод'] technical_filters={'item_type': 'отвод', 'dn': 426.0, 'wall_thickness': 10.0, 'angle': 90.0, 'medium': 'H2S', 'h2s_confirmed': True} ambiguities=[] (287ms)
+2026-09-09 12:52:11,906 INFO    | mtr.agent.executor               | [Executor] Parsed enriched: status=COMPLETE intents=['FIND_BY_PARAMS', 'FIND_ALTERNATIVE', 'CHECK_STOCK'] missing={'FIND_BY_PARAMS': [], 'FIND_ALTERNATIVE': ['pn'], 'CHECK_STOCK': []}
+2026-09-09 12:52:11,929 INFO    | mtr.agent.executor               | [Executor] Intent resolved: replacement
+2026-09-09 12:52:11,929 INFO    | mtr.agent.executor               | [Executor] Invoking graph...
+2026-09-09 12:52:12,264 INFO    | mtr.repository                   | DbRepository: loaded 1000 MTR items from DB
+2026-09-09 12:52:12,283 INFO    | mtr.repository                   | DbRepository: loaded 1000 CandidateItems for stock lookup
+2026-09-09 12:52:12,342 INFO    | mtr.repository                   | DbRepository: catalog built with 1000 cards
+2026-09-09 12:52:14,469 INFO    | mtr.agent.tools                  | [graph_search] Found 12 components, 12 targets in 2125ms
+2026-09-09 12:52:14,470 INFO    | mtr.agent.tools                  | [catalog_search] Loaded 1000 cards from repository
+2026-09-09 12:52:14,498 INFO    | mtr.agent.tools                  | [catalog_search] Found 11 candidates (from 1000 cards) in 28ms
+2026-09-09 12:52:14,552 INFO    | mtr.agent.tools                  | [stock_query] Checked 11 items (kept 11) in 54ms
+2026-09-09 12:52:14,556 INFO    | mtr.agent.tools                  | [rules_engine] Scored 11 candidates in 0ms
+2026-09-09 12:52:14,560 INFO    | mtr.agent.tools                  | [regulation_lookup] Checked 1 regulations in 3ms
 Ты — технический эксперт по МТР. На основе следующих данных составь понятное объяснение для инженера.
 
-Критические параметры (нельзя менять, они должны совпадать): ['марка стали', 'среда']
+Критические параметры (нельзя менять, они должны совпадать): ['среда', 'марка стали']
 Запрос: Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе
 Найденные детали:
 - ОКШ 90-426x10 13ХФА: 100% (соответствует)
@@ -41,11 +41,11 @@
 🔍 API Key resolved: OK
 🔍 Base URL: https://openrouter.ai/api/v1/
 🔍 Model: nvidia/nemotron-3-super-120b-a12b:free
-2026-09-07 18:29:13,444 INFO    | httpx2                           | HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-2026-09-07 18:29:31,775 INFO    | mtr.agent.executor               | [Executor] Graph finished in 20761ms: components=27 sources=85 warnings=3 tools_used=['graph_search', 'catalog_search', 'stock_query', 'impact_analyzer', 'maintenance_planner', 'rules_engine', 'regulation_lookup'] completed=True
-2026-09-07 18:29:31,775 INFO    | mtr.agent.executor               | [Executor] Answer found in state, returning directly
-2026-09-07 18:29:31,823 INFO    | mtr.agent.verify                 | [Verifier] verdict=pass gaps=0 max_severity=none reasons=[]
-2026-09-07 18:29:31,824 INFO    | mtr.agent.executor               | [Executor][auto] verdict=pass, no LLM escalation needed
+2026-09-09 12:52:16,672 INFO    | httpx2                           | HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2026-09-09 12:52:31,758 INFO    | mtr.agent.executor               | [Executor] Graph finished in 19828ms: components=27 sources=85 warnings=3 tools_used=['graph_search', 'catalog_search', 'stock_query', 'impact_analyzer', 'maintenance_planner', 'rules_engine', 'regulation_lookup'] completed=True
+2026-09-09 12:52:31,758 INFO    | mtr.agent.executor               | [Executor] Answer found in state, returning directly
+2026-09-09 12:52:31,846 INFO    | mtr.agent.verify                 | [Verifier] verdict=pass gaps=0 max_severity=none reasons=[]
+2026-09-09 12:52:31,846 INFO    | mtr.agent.executor               | [Executor][auto] verdict=pass, no LLM escalation needed
 
 ========================================================================
 >>> ОТВЕТ (как возвращает агент):
@@ -64,7 +64,7 @@
     "rules_engine",
     "regulation_lookup"
   ],
-  "explanation": "На складе имеется отвод ОКШ 90‑426х10 марки 13ХФА, который полностью совпадает по геометрии (тип, DN, стенка, угол) и заявленной среде. Однако в предоставленных данных не указана марка стали – один из критических параметров, необходимый для точного подбора аналога в среде H₂S, поэтому его следует уточнить в паспорте, ТУ или проектной документации изделия. Рекомендуем взять этот отвод, но перед установкой обязательно проверить документацию на подтверждение устойчивости к H₂S и наличие защитного покрытия. Если марка окажется несоответствующей, потребуется поиск другого аналога с подтверждённой коррозионной стойкостью.",
+  "explanation": "На складе имеется отвод 90° DN426 с стенкой 10 мм из стали 13ХФА, который полностью удовлетворяет геометрическим параметрам. Однако для работы в среде H₂S необходимо подтвердить, что именно эта марка стали обладает требуемой устойчивостью к сероводороду (паспорт, ТУ или проектная документация). Альтернативный вариант из стали 09ГСФ покрывает лишь 83 % требований и без дополнительных испытаний не может считаться надёжным аналогом. Рекомендую выбрать деталь 13ХФА, предварительно запросив её сертификат на H₂S‑сопротивление; при отсутствии такого подтверждения следует рассмотреть другие марки или провести дополнительные испытания.",
   "components": [
     {
       "mtr_code": null,
@@ -1247,7 +1247,7 @@
     "Требуется экспертная проверка: критические параметры не подтверждены.",
     "Не удалось однозначно обработать запрос. Попробовать LLM-режим?"
   ],
-  "expert_review_id": "req-2026-09-07-3d9a",
+  "expert_review_id": "req-2026-09-09-3d3d",
   "parsed_confidence": 0.97,
   "parsed_query": {
     "original_query": "Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе",
@@ -1504,8 +1504,9 @@
   "verification_verdict": "pass",
   "verification_reasons": [],
   "mode_refined": "auto",
-  "llm_refine_failed": null
+  "llm_refine_failed": null,
+  "llm_tokens_used": null
 }
 ========================================================================
 
->>> Время выполнения: 21052 мс
+>>> Время выполнения: 20259 мс

@@ -1,20 +1,20 @@
 # Автопроверка 40 вопросов
 
-- Дата: 2026-09-07T20:12:21.213123+00:00
+- Дата: 2026-09-09T13:59:27.156494+00:00
 - Режим LLM: off
-- tools: 40/40, sources: 39/40, warnings: 35/40, review pass: 40/40
+- tools: 40/40, sources: 39/40, warnings: 40/40, review pass: 40/40
 
 | case | tools | sources | warning | review |
 |---|---|---|---|---|
-| AQ001 | True | True | False | True |
-| AQ002 | True | True | False | True |
+| AQ001 | True | True | True | True |
+| AQ002 | True | True | True | True |
 | AQ003 | True | True | True | True |
 | AQ004 | True | True | True | True |
 | AQ005 | True | True | True | True |
 | AQ006 | True | True | True | True |
 | AQ007 | True | True | True | True |
 | AQ008 | True | True | True | True |
-| AQ009 | True | True | False | True |
+| AQ009 | True | True | True | True |
 | AQ010 | True | True | True | True |
 | AQ011 | True | True | True | True |
 | AQ012 | True | True | True | True |
@@ -26,10 +26,10 @@
 | AQ018 | True | True | True | True |
 | AQ019 | True | True | True | True |
 | AQ020 | True | True | True | True |
-| AQ021 | True | True | False | True |
+| AQ021 | True | True | True | True |
 | AQ022 | True | True | True | True |
 | AQ023 | True | True | True | True |
-| AQ024 | True | True | False | True |
+| AQ024 | True | True | True | True |
 | AQ025 | True | True | True | True |
 | AQ026 | True | True | True | True |
 | AQ027 | True | True | True | True |
