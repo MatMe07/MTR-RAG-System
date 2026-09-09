@@ -24,11 +24,24 @@ DICTIONARIES_TTL = 3600
 _PREFIX_SNAPSHOT = "dictionaries:snapshot"
 _PREFIX_VERSION = "dictionaries:version"
 
+# Per-type TTL по namespace ключа (остаток Фазы 2). Проверяется по префиксу
+# ключа в _resolve_ttl. «типы/материалы 24ч» из плана не заведены (нет такого
+# кеша в системе) — фиксируется как N/A в .opencode/plans/svodny-plan-status.md.
+DEFAULT_TTLS = {
+    "catalog:": 3600,        # каталог/компоненты — 1 час
+    "stock:": 300,           # остатки — 5 минут
+    "graph:": 1800,          # граф — 30 минут
+    "neighbors:": 900,       # соседи — 15 минут
+    "norms:": 86400,         # нормы — 24 часа
+    "passport:": 3600,       # паспорта — 1 час
+}
+
 
 class RedisCache:
-    def __init__(self, url: Optional[str] = None, prefix: str = "mtr:", ttl: int = DEFAULT_TTL):
+    def __init__(self, url: Optional[str] = None, prefix: str = "mtr:", ttl: int = DEFAULT_TTL, ttls: Optional[Dict[str, int]] = None):
         self._prefix = prefix
         self._ttl = int(ttl)
+        self._ttls = dict(DEFAULT_TTLS if ttls is None else ttls)
         self._url = url or None
         self._client: Optional[redis.Redis] = None
         self._available: Optional[bool] = None
@@ -61,6 +74,15 @@ class RedisCache:
     def _key(self, key: str) -> str:
         return f"{self._prefix}{key}"
 
+    def resolve_ttl(self, key: str, ttl: Optional[int] = None) -> int:
+        """TTL по явному значению либо по namespace ключа (per-type)."""
+        if ttl is not None:
+            return int(ttl)
+        for prefix, namespace_ttl in self._ttls.items():
+            if key.startswith(prefix):
+                return namespace_ttl
+        return self._ttl
+
     # ---------------------------------------------------------------- API
     def get(self, key: str) -> Optional[Any]:
         c = self._conn()
@@ -81,7 +103,7 @@ class RedisCache:
         try:
             c.setex(
                 self._key(key),
-                int(ttl) if ttl is not None else self._ttl,
+                self.resolve_ttl(key, ttl),
                 json.dumps(value, ensure_ascii=False, default=str),
             )
         except Exception:
@@ -103,6 +125,17 @@ class RedisCache:
             return
         try:
             for key in c.scan_iter(match=self._prefix + "*"):
+                c.delete(key)
+        except Exception:
+            pass
+
+    def delete_prefix(self, prefix: str) -> None:
+        """Точечная инвалидация namespace (например, 'norms:' после переиндексации)."""
+        c = self._conn()
+        if c is None:
+            return
+        try:
+            for key in c.scan_iter(match=self._prefix + prefix + "*"):
                 c.delete(key)
         except Exception:
             pass

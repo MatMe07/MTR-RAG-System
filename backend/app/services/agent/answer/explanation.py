@@ -173,11 +173,13 @@ def default_generator(context: Dict[str, Any]) -> Optional[str]:
         client = get_llm_client(DEFAULT_CONFIG)
         if client is None:
             return None
-        print(build_explanation_prompt(context))
-        return None
+        
+        promt_context = build_explanation_prompt(context)
+        print(promt_context)
+        # return None
     
     
-        text = client.invoke(build_explanation_prompt(context))
+        text = client.invoke(promt_context)
         return (text or "").strip() or None
     except Exception as e:  # noqa: BLE001
         log.warning("[explanation] LLM explanation failed, fallback to template: %s", e)

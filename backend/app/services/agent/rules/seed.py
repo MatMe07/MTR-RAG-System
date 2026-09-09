@@ -100,6 +100,8 @@ def seed_rules(db) -> Dict[str, int]:
         ("numeric_tolerance", DEFAULT_NUMERIC_TOLERANCE),
         ("passport_weights", dict(DEFAULT_PASSPORT_WEIGHTS)),
         ("passport_confidence_threshold", 0.6),
+        ("passport_link_auto_threshold", 0.8),
+        ("passport_link_review_threshold", 0.6),
         ("param_labels", dict(PARAM_LABELS)),
     ]
     for name, value in constants:

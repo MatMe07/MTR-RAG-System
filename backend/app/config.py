@@ -23,10 +23,23 @@ class Settings(BaseSettings):
 
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
+    # Legacy-имя единой коллекции (нормы раньше жили в mtr_descriptions).
+    # Актуальные коллекции — ниже: нормы/norm_documents, каталог/mtr_descriptions,
+    # паспорта/documents.
     QDRANT_COLLECTION: str = "mtr_descriptions"
+    QDRANT_NORMS_COLLECTION: str = "norm_documents"
+    QDRANT_CATALOG_COLLECTION: str = "mtr_descriptions"
+    QDRANT_DOCUMENTS_COLLECTION: str = "documents"
     QDRANT_API_KEY: Optional[str] = None
 
     REDIS_URL: str = "redis://localhost:6379/0"
+
+    # OCR-движок паспортов (Фаза 3): tesseract | easyocr | doctr | none.
+    # Docling поставляется как optional-dependency (см. pyproject [ocr]);
+    # при его отсутствии pipeline переходит в статус error с сообщением.
+    OCR_ENGINE: str = "tesseract"
+    # Каталог сохранения загруженных паспортов (пусто → <repo>/data/uploads).
+    DOCUMENT_UPLOAD_DIR: str = ""
 
     SECRET_KEY: str = "change-this-to-random-secret"
     JWT_ALGORITHM: str = "HS256"

@@ -1,6 +1,7 @@
 # agent/repository/db_repository.py
 
 import logging
+from types import SimpleNamespace
 from typing import Any, Dict, List, Optional
 from contextlib import contextmanager
 from sqlalchemy.orm import Session
@@ -22,6 +23,14 @@ def _safe_prop(card: Dict[str, Any], key: str, default: Any = None) -> Any:
     return p.get("value", default)
 
 
+def _contains(haystack: Any, needle: str) -> bool:
+    if haystack is None:
+        return False
+    h = str(haystack).strip().lower()
+    n = str(needle).strip().lower()
+    return bool(h) and bool(n) and (n in h or h in n)
+
+
 class DbRepository(IRepository):
     """DB-репозиторий (PostgreSQL) с fallback на JSON.
 
@@ -38,6 +47,7 @@ class DbRepository(IRepository):
         neo4j_provider: Optional[Any] = None,
         norms_provider: Optional[Any] = None,
         passport_provider: Optional[Any] = None,
+        catalog_provider: Optional[Any] = None,
         redis_cache: Optional[Any] = None,
         access_logger: Optional[Any] = None,
     ):
@@ -49,6 +59,7 @@ class DbRepository(IRepository):
         self._by_id_cache: Optional[Dict[str, Dict[str, Any]]] = None
 
         from .providers.access_logger import get_data_access_logger
+        from .providers.catalog_semantic_provider import CatalogSemanticProvider
         from .providers.neo4j_provider import Neo4jGraphProvider
         from .providers.norms_provider import NormsProvider
         from .providers.passport_provider import PassportProvider
@@ -64,6 +75,11 @@ class DbRepository(IRepository):
         )
         self._passport_provider = passport_provider or PassportProvider(
             access_logger=self._access_logger
+        )
+        # Семантический индекс каталога (Qdrant mtr_descriptions) — ленивый
+        # fallback поиска; подключается только когда детерминированный поиск пуст.
+        self._catalog_provider = (
+            catalog_provider if catalog_provider is not None else CatalogSemanticProvider()
         )
 
     @contextmanager
@@ -95,7 +111,7 @@ class DbRepository(IRepository):
         if self._catalog_cache is not None:
             return self._catalog_cache
 
-        cached = self._cache.get("catalog.json")
+        cached = self._cache.get("catalog:all")
         if cached is not None:
             self._catalog_cache = cached
             self._build_indexes()
@@ -123,7 +139,7 @@ class DbRepository(IRepository):
 
             self._catalog_cache = cards
             self._build_indexes()
-            self._cache.set("catalog.json", cards)
+            self._cache.set("catalog:all", cards)
             self._log("get_catalog", "postgresql")
             log.info("DbRepository: catalog built with %d cards", len(self._catalog_cache))
             return self._catalog_cache
@@ -187,16 +203,26 @@ class DbRepository(IRepository):
 
     # ==================================================================== ГРАФ
     def get_graph(self) -> Dict[str, Any]:
+        cached = self._cache.get("graph:object")
+        if cached is not None:
+            self._log("get_graph", "redis", cache_hit=True)
+            return cached
         if self._graph_provider is not None:
             result = self._graph_provider.graph()
             if result is not None:
+                self._cache.set("graph:object", result)
                 return result
         return self._json_fallback.get_graph()
 
     def get_components_by_unit(self, unit_id: str) -> List[Dict[str, Any]]:
+        cached = self._cache.get(f"graph:unit:{unit_id}")
+        if cached is not None:
+            self._log("get_components_by_unit", "redis", cache_hit=True)
+            return cached
         if self._graph_provider is not None:
             result = self._graph_provider.components_by_unit(unit_id)
             if result:
+                self._cache.set(f"graph:unit:{unit_id}", result)
                 return result
         return self._json_fallback.get_components_by_unit(unit_id)
 
@@ -207,16 +233,63 @@ class DbRepository(IRepository):
     def search_norms(
         self, query: str, limit: int = 5, document_type: Optional[str] = None
     ) -> Optional[List[Dict[str, Any]]]:
-        """Векторный поиск по Qdrant. None — провайдер недоступен/пуст."""
+        """Векторный поиск по Qdrant. None — провайдер недоступен/пуст.
+
+        Кешируются только непустые результаты (иначе теряется
+        полнотекстовый token-matcher fallback в ToolDAL).
+        """
+        cache_key = f"norms:{document_type or 'all'}:{query.strip()[:120]}"
+        cached = self._cache.get(cache_key)
+        if cached is not None:
+            self._log("search_norms", "redis", cache_hit=True)
+            return cached
         if self._norms_provider is not None:
-            return self._norms_provider.search(query=query, limit=limit, document_type=document_type)
+            result = self._norms_provider.search(
+                query=query, limit=limit, document_type=document_type
+            )
+            if result:
+                self._cache.set(cache_key, result)
+            return result
         return None
 
     # ==================================================================== ПАСПОРТА (PG)
     def get_passport_params(self, document_id: str) -> Optional[Dict[str, Any]]:
+        if not document_id:
+            return None
+        cache_key = f"passport:{document_id}"
+        cached = self._cache.get(cache_key)
+        if cached is not None:
+            self._log("get_passport_params", "redis", cache_hit=True)
+            return cached
         if self._passport_provider is not None:
-            return self._passport_provider.get_passport_params(document_id)
+            result = self._passport_provider.get_passport_params(document_id)
+            if result is not None:
+                self._cache.set(cache_key, result)
+            return result
         return None
+
+    # ==================================================================== СЕМАНТИКА КАТАЛОГА (Qdrant mtr_descriptions)
+    def search_catalog_semantic(
+        self, query: str, limit: int = 10
+    ) -> Optional[List[Dict[str, Any]]]:
+        """Семантический поиск по описаниям каталога.
+
+        Возвращает [{'card': ..., 'score': ...}] по образцу search_candidates;
+        None — провайдер недоступен/пуст/нет карточек.
+        """
+        if self._catalog_provider is None:
+            return None
+        hits = self._catalog_provider.search(query, limit=limit)
+        if not hits:
+            return None
+        out: List[Dict[str, Any]] = []
+        for h in hits:
+            ksm = h.get("ksm_code")
+            card = self.get_card_by_ksm(ksm) if ksm else None
+            if card is None:
+                continue
+            out.append({"card": card, "score": h.get("score", 0.0)})
+        return out or None
 
     # ==================================================================== ИСТОРИЯ (PG)
     def get_component_history(
@@ -254,6 +327,74 @@ class DbRepository(IRepository):
             self._log("get_component_history", "json", fallback=True, reason=str(e))
             return []
 
+    # ==================================================================== ПАСПОРТА: связи KSM (Фаза 3)
+    def _search_catalog_for_passport(self, search_params: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Поиск в каталоге по одному полю для скоринга паспортных связей."""
+        numeric = ("dn", "pn", "angle", "wall_thickness")
+        tf = {k: v for k, v in search_params.items() if k in numeric and v is not None}
+        parsed = SimpleNamespace(technical_filters=tf, item_types=[])
+
+        out: List[Dict[str, Any]] = []
+        for card in self.get_catalog():
+            if not _matches_filters(card, parsed):
+                continue
+            if not self._passport_extra_ok(card, search_params):
+                continue
+            score = _match_score(card, parsed) or 0.0
+            out.append({"card": card, "score": score})
+        out.sort(key=lambda x: x["score"], reverse=True)
+        return out[: int(search_params.get("limit", 10))]
+
+    def _passport_extra_ok(self, card: Dict[str, Any], search_params: Dict[str, Any]) -> bool:
+        """Текстовые поля паспорта (марка стали/среда) — подстрока (аналог
+        ToolDAL._extra_filters_ok)."""
+        for key, propkey in (("steel_grade", "steel_grade"), ("medium", "medium")):
+            want = search_params.get(key)
+            if not want:
+                continue
+            got = (card.get("properties") or {}).get(propkey)
+            if isinstance(got, dict):
+                got = got.get("value")
+            if not _contains(got, str(want)):
+                return False
+        return True
+
+    def suggest_ksm_links(self, document_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Кандидаты KSM по параметрам паспорта (2B.4 suggest_ksm_links)."""
+        if self._passport_provider is None:
+            return []
+        return self._passport_provider.suggest_ksm_links(
+            document_id, limit=limit, catalog_search=self._search_catalog_for_passport
+        )
+
+    def link_passport_to_ksm(
+        self,
+        document_id: str,
+        ksm_code: str,
+        confidence: float,
+        method: str = "semantic",
+        needs_review: bool = False,
+        reviewed_by: Optional[str] = None,
+    ) -> bool:
+        """Запись связи паспорт→KSM в document_links."""
+        if self._passport_provider is None:
+            return False
+        return self._passport_provider.link_passport_to_ksm(
+            document_id, ksm_code, confidence,
+            method=method, needs_review=needs_review, reviewed_by=reviewed_by,
+        )
+
+    def get_passport_text(self, document_id: str, page: Optional[int] = None):
+        if self._passport_provider is None:
+            return None
+        return self._passport_provider.get_passport_text(document_id, page=page)
+
+    def get_passport_status(self, document_id: str) -> Optional[Dict[str, Any]]:
+        """Статус обработки паспорта (2C: get_passport_status)."""
+        if self._passport_provider is None:
+            return None
+        return self._passport_provider.get_processing_status(document_id)
+
     # ==================================================================== ПОИСК
     def search_candidates(self, parsed: Any, limit: int = 40) -> List[Dict[str, Any]]:
         try:
@@ -274,6 +415,8 @@ class DbRepository(IRepository):
             return self._json_fallback.search_candidates(parsed, limit)
 
     def close(self) -> None:
+        if self._catalog_provider is not None:
+            self._catalog_provider.close()
         if self._graph_provider is not None:
             self._graph_provider.close()
         if self._norms_provider is not None:

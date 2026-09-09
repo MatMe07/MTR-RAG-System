@@ -71,6 +71,9 @@ DEFAULT_CONSTANT_NAMES = {
     "param_labels",
     "passport_weights",
     "passport_confidence_threshold",
+    # Фаза 3: пороги автоматической связки паспорта с KSM.
+    "passport_link_auto_threshold",
+    "passport_link_review_threshold",
 }
 
 
@@ -273,6 +276,10 @@ class DynamicRules:
         if name == "passport_weights":
             return dict(DEFAULT_PASSPORT_WEIGHTS)
         if name == "passport_confidence_threshold":
+            return 0.6
+        if name == "passport_link_auto_threshold":
+            return 0.8
+        if name == "passport_link_review_threshold":
             return 0.6
         return None
 

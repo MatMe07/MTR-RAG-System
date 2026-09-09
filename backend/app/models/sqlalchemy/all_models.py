@@ -97,6 +97,32 @@ class Document(Base):
     upload_date: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     processed_date: Mapped[datetime | None] = mapped_column(DateTime)
     is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Фаза 3 (Celery): идентификатор задачи обработки, прогресс (0–1) и текст ошибки.
+    task_id: Mapped[str | None] = mapped_column(String(64))
+    processing_progress: Mapped[float] = mapped_column(Float, default=0.0)
+    error_message: Mapped[str | None] = mapped_column(Text)
+    needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Постраничный OCR-текст (JSON): [{"page_number": 1, "text": "..."}].
+    page_texts: Mapped[dict | None] = mapped_column(JSONCol())
+
+
+class DocumentLink(Base):
+    __tablename__ = "document_links"
+
+    id: Mapped[int] = mapped_column(PKColType(), primary_key=True, autoincrement=True)
+    document_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    ksm_code: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    method: Mapped[str] = mapped_column(String(20), default="semantic")
+    needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
+    linked: Mapped[bool] = mapped_column(Boolean, default=False)
+    reviewed_by: Mapped[str | None] = mapped_column(String(100))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint("document_id", "ksm_code", name="uq_document_links_doc_ksm"),
+    )
 
 
 class ExtractedCharacteristic(Base):

@@ -88,11 +88,24 @@ class ToolDAL:
             if not self._extra_filters_ok(card, params):
                 continue
             matches.append({"card": card, "score": _match_score(card, parsed)})
-        matches.sort(
-            key=lambda x: (x["score"] is not None, x["score"] if x["score"] is not None else 0.0),
-            reverse=True,
-        )
-        return matches
+        if matches:
+            matches.sort(
+                key=lambda x: (x["score"] is not None, x["score"] if x["score"] is not None else 0.0),
+                reverse=True,
+            )
+            return matches
+
+        # Пустой детерминированный результат — семантический fallback по каталогу
+        # (Qdrant mtr_descriptions), если репозиторий его поддерживает.
+        semantic = getattr(self.repo, "search_catalog_semantic", None)
+        if semantic is not None:
+            try:
+                hits = semantic(self._params_to_semantic_query(params), limit=5)
+            except Exception:
+                hits = None
+            if hits:
+                return hits
+        return []
 
     def get_component(self, identifier: str) -> Optional[Dict[str, Any]]:
         """Карточка по KSM, card_id или MTR-коду."""
@@ -148,6 +161,24 @@ class ToolDAL:
             "stock_balance": _prop(card, "stock_balance"),
             "source": "repository",
         }
+
+    @staticmethod
+    def _params_to_semantic_query(params: Dict[str, Any]) -> str:
+        parts: List[str] = []
+        if params.get("item_type"):
+            parts.append(str(params["item_type"]))
+        if params.get("designation"):
+            parts.append(str(params["designation"]))
+        for key, label in (("dn", "DN"), ("pn", "PN"), ("angle", "угол")):
+            if params.get(key) is not None:
+                parts.append(f"{label} {params[key]}")
+        if params.get("steel_grade"):
+            parts.append(str(params["steel_grade"]))
+        if params.get("medium"):
+            parts.append(str(params["medium"]))
+        if params.get("gost_tu"):
+            parts.append(str(params["gost_tu"]))
+        return " ".join(parts).strip()
 
     def _extra_filters_ok(self, card: Dict[str, Any], params: Dict[str, Any]) -> bool:
         for key, propkey in (
@@ -282,6 +313,13 @@ class ToolDAL:
         if direction not in ("upstream", "downstream", "both"):
             direction = "both"
 
+        cache = getattr(self.repo, "_cache", None)
+        cache_key = f"neighbors:{ksm_code}:{depth}:{direction}"
+        if cache is not None:
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return cached
+
         by_ksm: Dict[str, Dict[str, Any]] = {}
         for comp in self.repo.get_graph().get("components", []):
             ksm = comp.get("ksm_code")
@@ -306,6 +344,8 @@ class ToolDAL:
                     comp = by_ksm[neighbor]
                     result.append(self._neighbor_info(neighbor, comp, direction))
             frontier = nxt
+        if cache is not None and result:
+            cache.set(cache_key, result)
         return result
 
     def _build_adjacency(self, by_ksm: Dict[str, Dict[str, Any]]) -> Dict[str, List[str]]:

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.core.exceptions import AppException
-from app.models.pydantic.schemas import ExtractedParam, DocumentMetadata
+from app.models.pydantic.schemas import ExtractedParam
 from app.services.passport_service import PassportService
 
 router = APIRouter()
@@ -18,8 +18,14 @@ class StatusResponse(BaseModel):
     document_id: str
     file_name: str
     ocr_status: str
+    progress: float = 0.0
+    task_state: str | None = None
+    stage: str | None = None
     ocr_confidence: float | None = None
     page_count: int | None = None
+    needs_review: bool = False
+    error_message: str | None = None
+    task_id: str | None = None
     upload_date: str | None = None
     processed_date: str | None = None
 
@@ -35,14 +41,26 @@ class ExtractedResponse(BaseModel):
 def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
     try:
         svc = PassportService(db)
-        document_id = svc.upload_document(file)
-        return {"document_id": document_id, "status": "pending"}
+        return svc.upload_document(file)
     except AppException:
         raise
     except Exception as e:
         from app.core.exceptions import InternalError
 
         raise InternalError(f"Upload failed: {e}")
+
+
+@router.post("/reprocess/{document_id}")
+def reprocess(document_id: str, db: Session = Depends(get_db)):
+    try:
+        svc = PassportService(db)
+        return svc.reprocess(document_id)
+    except AppException:
+        raise
+    except Exception as e:
+        from app.core.exceptions import InternalError
+
+        raise InternalError(f"Reprocess failed: {e}")
 
 
 @router.get("/status/{document_id}", response_model=StatusResponse)

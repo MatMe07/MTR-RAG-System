@@ -1,25 +1,44 @@
 # backend/app/services/ocr_service.py
 
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from docling.document_converter import DocumentConverter
-from docling.datamodel.pipeline_options import (PdfPipelineOptions,AcceleratorOptions,
-    AcceleratorDevice, EasyOcrOptions)
+from docling.datamodel.pipeline_options import (PdfPipelineOptions, AcceleratorOptions,
+    AcceleratorDevice, EasyOcrOptions, TesseractOcrOptions, DoctrOcrOptions)
 from docling.datamodel.base_models import InputFormat
 from docling.document_converter import DocumentConverter, PdfFormatOption
 
+# Поддерживаемые OCR-движки (значение настройки OCR_ENGINE -> опции Docling).
+_OCR_OPTIONS = {
+    "tesseract": lambda: TesseractOcrOptions(lang=["rus", "eng"]),
+    "easyocr": lambda: EasyOcrOptions(lang=["ru", "en"]),
+    "doctr": lambda: DoctrOcrOptions(),
+    "none": lambda: None,
+}
+
+
+def _resolve_engine(engine: Optional[str]) -> str:
+    requested = (engine or "").strip().lower()
+    if requested in _OCR_OPTIONS:
+        return requested
+    # Неизвестный/пустой движок -> дефолт окружения (OCR_ENGINE) или tesseract.
+    fallback = os.environ.get("OCR_ENGINE", "tesseract").strip().lower()
+    return fallback if fallback in _OCR_OPTIONS else "tesseract"
+
+
 class OCRService:
-    def __init__(self):
+    def __init__(self, engine: Optional[str] = None):
         pipeline_options = PdfPipelineOptions()
-        pipeline_options.do_ocr = True
+        ocr_options = _OCR_OPTIONS[_resolve_engine(engine)]
+
+        pipeline_options.do_ocr = ocr_options is not None
         pipeline_options.do_table_structure = True
-        pipeline_options.ocr_options = EasyOcrOptions(
-            lang=["ru", "en"]
-        )
-        
+        if ocr_options is not None:
+            pipeline_options.ocr_options = ocr_options
+
         pipeline_options.accelerator_options = AcceleratorOptions(
             num_threads=4,
-            device=AcceleratorDevice.AUTO  
+            device=AcceleratorDevice.AUTO
         )
         self.converter = DocumentConverter(
                 format_options={
@@ -73,7 +92,6 @@ class OCRService:
                 "confidence": 0.95,
                 "rotation": 0
             })
-        # print(results)
         return results
 
     def extract_text_from_bytes(self, file_bytes: bytes, file_name: str = "document.pdf") -> List[Dict[str, Any]]:
@@ -87,5 +105,5 @@ class OCRService:
             os.unlink(tmp_path)
 
 
-def get_ocr_service() -> OCRService:
-    return OCRService()
+def get_ocr_service(engine: Optional[str] = None) -> OCRService:
+    return OCRService(engine=engine)

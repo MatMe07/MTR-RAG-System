@@ -65,7 +65,9 @@ class NormsProvider:
         self._host = host or settings.QDRANT_HOST
         self._api_key = settings.QDRANT_API_KEY
         self._port = int(port or settings.QDRANT_PORT)
-        self._collection = collection or settings.QDRANT_COLLECTION
+        # Нормы живут в отдельной коллекции norm_documents (остаток Фазы 2);
+        # legacy QDRANT_COLLECTION больше не используется для норм.
+        self._collection = collection or settings.QDRANT_NORMS_COLLECTION
         self._client: Optional[Any] = None
         self._unavailable = False
         self._index_lock = threading.Lock()

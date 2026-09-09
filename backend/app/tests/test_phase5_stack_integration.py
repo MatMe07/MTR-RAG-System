@@ -17,7 +17,7 @@ os.environ.setdefault("NEO4J_USER", "neo4j")
 os.environ.setdefault("NEO4J_PASSWORD", "changeme")
 os.environ.setdefault("QDRANT_HOST", "localhost")
 os.environ.setdefault("QDRANT_PORT", "6333")
-os.environ.setdefault("QDRANT_COLLECTION", "mtr_descriptions")
+os.environ.setdefault("QDRANT_NORMS_COLLECTION", "norm_documents")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 
 import psycopg2
@@ -99,7 +99,7 @@ def test_catalog_filled_and_redis_cache(repo):
     cache = repo._cache  # RedisCache read-through
     if not cache.available:
         pytest.skip("Redis недоступен — проверка кеша пропускается")
-    cached = cache.get("catalog.json")
+    cached = cache.get("catalog:all")
     assert cached is not None and len(cached) >= 1000, "каталог должен лежать в Redis"
 
 

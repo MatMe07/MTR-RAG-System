@@ -17,5 +17,15 @@ if os.environ.get("AGENT_STORAGE") not in ("json", "db"):
 
 # Тесты БД-компонентов идут на SQLite: PK/JSON-типы детектятся по _is_sqlite
 # при импорте app.db.session, поэтому URL выставляется до любых app-импортов.
-if not os.environ.get("DATABASE_URL"):
+# План B.8.2: отдельная тестовая БД — по умолчанию sqlite (не трогает dev-PG);
+# для реального стека: TEST_DATABASE_URL=postgresql://... test_syn.
+if os.environ.get("TEST_DATABASE_URL"):
+    os.environ["DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
+elif not os.environ.get("DATABASE_URL"):
     os.environ["DATABASE_URL"] = "sqlite://"
+
+# План B.8.2: в тестах Celery работает в синхронном режиме (celery_always_eager).
+# Выставляется до импорта app.workers.celery_app, чтобы конфиг приложения
+# подхватил eager-режим при первом импорте.
+os.environ.setdefault("CELERY_TASK_ALWAYS_EAGER", "true")
+os.environ.setdefault("CELERY_TASK_EAGER_PROPAGATES_EXCEPTIONS", "true")

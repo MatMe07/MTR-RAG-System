@@ -2,10 +2,12 @@
 """Загрузка данных «полного стека» (Шаг 3).
 
 Наполняет реальные провайдеры данными из демо-источников:
-  --graph     граф объекта                  -> Neo4j (Unit/Component) + pipeline_edges (PG)
-  --norms     нормативные фрагменты         -> Qdrant (коллекция mtr_descriptions)
-  --passports параметры паспортов           -> documents + extracted_characteristics (PG)
-  --history   история изменений карточек    -> mtr_item_history (PG)
+  --graph             граф объекта                     -> Neo4j (Unit/Component) + pipeline_edges (PG)
+  --norms             нормативные фрагменты            -> Qdrant (коллекция norm_documents)
+  --catalog-semantic  описания каталога                -> Qdrant (коллекция mtr_descriptions)
+  --passports         параметры паспортов              -> documents + extracted_characteristics (PG)
+                      тексты паспортов                 -> Qdrant (коллекция documents)
+  --history           история изменений карточек       -> mtr_item_history (PG)
 
 Пример (локальный стек, хосты localhost):
   DATABASE_URL=postgresql://syn:syn_password@localhost:5432/syn \
@@ -171,8 +173,40 @@ def seed_norms() -> int:
     if not ok:
         log.error("norms: индексация в Qdrant не удалась")
         return 1
-    log.info("norms -> Qdrant: готово")
+    log.info("norms -> Qdrant (norm_documents): готово")
+    _invalidate_cache_prefix("norms:")
     return 0
+
+
+# ==================================================================== CATALOG SEMANTIC
+def seed_catalog_semantic() -> int:
+    from app.services.agent.repository.providers.catalog_semantic_provider import (
+        CatalogSemanticProvider,
+        build_catalog_points,
+        load_catalog_rows,
+    )
+
+    provider = CatalogSemanticProvider(auto_index=False)
+    rows = load_catalog_rows()
+    log.info("catalog-semantic: %d позиций каталога", len(rows))
+    ok = provider.ensure_index(build_catalog_points(rows))
+    provider.close()
+    if not ok:
+        log.error("catalog-semantic: индексация в Qdrant (mtr_descriptions) не удалась")
+        return 1
+    log.info("catalog-semantic -> Qdrant (mtr_descriptions): готово")
+    return 0
+
+
+def _invalidate_cache_prefix(prefix: str) -> None:
+    try:
+        from app.services.agent.repository.providers.redis_cache import get_redis_cache
+
+        cache = get_redis_cache()
+        cache.delete_prefix(prefix)
+        log.info("Redis-кеш: инвалидирован namespace '%s'", prefix)
+    except Exception as e:  # noqa: BLE001
+        log.warning("Redis-кеш: инвалидация '%s' не удалась: %s", prefix, e)
 
 
 # ==================================================================== PASSPORTS
@@ -249,7 +283,30 @@ def seed_passports() -> int:
         log.info("passports -> PG: документов %d, характеристик %d", len(list(docs_dir.glob("passport_*.md"))), count)
     finally:
         db.close()
+
+    _seed_passport_documents()
     return 0
+
+
+def _seed_passport_documents() -> None:
+    """Тексты паспортов -> Qdrant (коллекция documents). Инфраструктура Фазы 3."""
+    try:
+        from app.services.agent.repository.providers.documents_provider import (
+            DocumentsProvider,
+            build_document_points,
+            passport_md_paths,
+        )
+
+        provider = DocumentsProvider(auto_index=False)
+        paths = passport_md_paths()
+        ok = provider.ensure_index(build_document_points(paths)) if paths else False
+        provider.close()
+        if ok:
+            log.info("passports -> Qdrant (documents): %d документов", len(paths))
+        else:
+            log.warning("passports: индекс documents в Qdrant не создан (недоступен/нет файлов)")
+    except Exception as e:  # noqa: BLE001
+        log.warning("passports -> Qdrant (documents): %s", e)
 
 
 def _normalize_value(field: str, value: Any) -> Optional[str]:
@@ -318,8 +375,9 @@ def _mutated(value: Any, mtr_code: str, i: int) -> Any:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Загрузка данных полного стека (Шаг 3)")
     parser.add_argument("--graph", action="store_true", help="граф -> Neo4j + pipeline_edges")
-    parser.add_argument("--norms", action="store_true", help="нормативы -> Qdrant")
-    parser.add_argument("--passports", action="store_true", help="паспорта -> PG")
+    parser.add_argument("--norms", action="store_true", help="нормативы -> Qdrant (norm_documents)")
+    parser.add_argument("--catalog-semantic", action="store_true", help="описания каталога -> Qdrant (mtr_descriptions)")
+    parser.add_argument("--passports", action="store_true", help="паспорта -> PG + Qdrant (documents)")
     parser.add_argument("--history", action="store_true", help="история -> PG")
     parser.add_argument("--all", action="store_true", help="все источники")
     args = parser.parse_args()
@@ -327,8 +385,8 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
     if args.all:
-        args.graph = args.norms = args.passports = args.history = True
-    if not any([args.graph, args.norms, args.passports, args.history]):
+        args.graph = args.norms = args.catalog_semantic = args.passports = args.history = True
+    if not any([args.graph, args.norms, args.catalog_semantic, args.passports, args.history]):
         parser.print_help()
         return 2
 
@@ -336,6 +394,8 @@ def main() -> int:
     if args.graph and seed_graph() != 0:
         status = 1
     if args.norms and seed_norms() != 0:
+        status = 1
+    if args.catalog_semantic and seed_catalog_semantic() != 0:
         status = 1
     if args.passports and seed_passports() != 0:
         status = 1
