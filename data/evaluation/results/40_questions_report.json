@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-09-09T15:07:17.802939+00:00",
-  "mode": "off",
+  "generated_at": "2026-09-09T18:08:24.800120+00:00",
+  "mode": "on",
   "strict": false,
   "min_tools_coverage": 20,
   "summary": {
     "total": 40,
     "tools_ok": 40,
-    "sources_ok": 39,
+    "sources_ok": 40,
     "warnings_ok": 40,
     "review_pass": 40
   },
@@ -319,10 +319,8 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": false,
-      "missing_sources": [
-        "expert_decisions"
-      ],
+      "sources_ok": true,
+      "missing_sources": [],
       "warning_ok": true,
       "review_pass": true,
       "review_verdict": "pass",
@@ -505,8 +503,6 @@
       "intent": "equipment_guidance",
       "tools": [
         "catalog_search",
-        "stock_query",
-        "rules_engine",
         "regulation_lookup"
       ],
       "tools_ok": true,
@@ -526,10 +522,7 @@
       "question": "Объясни что означает отвод 90 426 на 10 и где такую деталь используют",
       "intent": "equipment_guidance",
       "tools": [
-        "graph_search",
         "catalog_search",
-        "stock_query",
-        "rules_engine",
         "regulation_lookup"
       ],
       "tools_ok": true,
@@ -571,14 +564,9 @@
       "case_id": "AQ024",
       "category": "equipment_guidance",
       "question": "Расскажи чем переход отличается от отвода и покажи по одному примеру из нашего каталога",
-      "intent": "replacement",
+      "intent": "equipment_guidance",
       "tools": [
-        "graph_search",
         "catalog_search",
-        "stock_query",
-        "impact_analyzer",
-        "maintenance_planner",
-        "rules_engine",
         "regulation_lookup"
       ],
       "tools_ok": true,
@@ -599,8 +587,6 @@
       "intent": "equipment_guidance",
       "tools": [
         "catalog_search",
-        "stock_query",
-        "rules_engine",
         "regulation_lookup"
       ],
       "tools_ok": true,
