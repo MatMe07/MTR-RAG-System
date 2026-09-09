@@ -188,8 +188,8 @@ def maintenance_node(state: AgentState) -> Dict[str, Any]:
 
 
 def duplicates_node(state: AgentState) -> Dict[str, Any]:
-    _set_repository(state)
-    result = _guarded_tool("duplicate_detector", lambda s, c: duplicate_detector(s), state)
+    ctx = get_repository()
+    result = _guarded_tool("duplicate_detector", lambda s, c: duplicate_detector(s, c), state, ctx)
     result["_tool_name"] = "duplicate_detector"
     return _merge_result(state, result)
 

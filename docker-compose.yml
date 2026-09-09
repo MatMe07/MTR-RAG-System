@@ -60,6 +60,7 @@ services:
         condition: service_started
     volumes:
       - ./backend:/app
+      - ./docs:/docs:ro
       - ./data:/data
       - uploads_data:/app/uploads
 

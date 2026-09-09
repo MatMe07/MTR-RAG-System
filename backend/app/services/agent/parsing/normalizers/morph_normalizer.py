@@ -10,7 +10,7 @@ from functools import lru_cache
 from typing import Dict, List, Optional
 
 try:
-    import pymorphy2
+    import mawo_pymorphy3 as pymorphy2
 
     _MORPH = pymorphy2.MorphAnalyzer()
 except Exception:  # noqa: BLE001  (офлайн-окружение без словарей)

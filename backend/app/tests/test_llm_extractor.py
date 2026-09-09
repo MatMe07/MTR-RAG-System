@@ -79,8 +79,8 @@ class LLMExtractorUnitTest(unittest.TestCase):
         ex = LLMExtractor(client=None)
         with patch("app.services.agent.parsing.llm_extractor.get_llm_client", return_value=None):
             got = ex.extract_missing("FIND_BY_PARAMS", "отвод", ["dn"], {})
-        self.assertEqual(got, {})
-        self.assertFalse(ex.enabled)
+            self.assertEqual(got, {})
+            self.assertFalse(ex.enabled)
 
     def test_numeric_coercion(self):
         ex, client = self._make({"dn": "200", "units_count": "3"})

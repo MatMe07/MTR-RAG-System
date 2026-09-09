@@ -492,13 +492,17 @@ def maintenance_planner(state: AgentState) -> Dict[str, Any]:
 
 
 @register_tool("duplicate_detector", "Обнаружение дублей в каталоге")
-def duplicate_detector(state: AgentState) -> Dict[str, Any]:
+def duplicate_detector(state: AgentState, ctx: Any = None) -> Dict[str, Any]:
     """Обнаружение дублей в каталоге"""
     start = time.time()
     result = _empty_result()
     
-    ctx = state.get("context", {}).get("repository")
-    if not ctx:
+    if ctx is None:
+        ctx = state.get("context", {}).get("repository")
+    if ctx is None:
+        from ..repository.repository_factory import get_repository
+        ctx = get_repository()
+    if ctx is None:
         result["text"] = "Репозиторий не доступен"
         return result
     

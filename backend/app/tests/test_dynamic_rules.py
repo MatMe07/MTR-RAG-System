@@ -114,16 +114,21 @@ def test_db_values_override_defaults(db_env):
 
 def test_unavailable_db_falls_back_to_defaults(empty_db_env):
     Session = empty_db_env
-    prov = _new_provider(Session, db_retry_seconds=0)
-    prov.refresh(force=True)
+    from unittest.mock import patch
+    from app.services.agent.rules.dynamic_rules import DynamicRules
 
-    # таблиц нет — должны вернуться дефолты кода без исключений
-    assert prov.matching_tolerances() == {
-        "dn": 0.1, "angle": 0.0, "wall_thickness": 0.15, "default": 0.1,
-    }
-    assert prov.numeric_tolerance() == 0.1
-    assert prov.validation_rule("труба")["required"] == ["dn", "wall_thickness", "steel_grade"]
-    assert prov.synonyms("item_type") == []
+    # Redis-снапшот от других тестов не должен маскировать дефолты кода.
+    with patch.object(DynamicRules, "_load_redis_snapshot", return_value=None):
+        prov = _new_provider(Session, db_retry_seconds=0)
+        prov.refresh(force=True)
+
+        # таблиц нет — должны вернуться дефолты кода без исключений
+        assert prov.matching_tolerances() == {
+            "dn": 0.1, "angle": 0.0, "wall_thickness": 0.15, "default": 0.1,
+        }
+        assert prov.numeric_tolerance() == 0.1
+        assert prov.validation_rule("труба")["required"] == ["dn", "wall_thickness", "steel_grade"]
+        assert prov.synonyms("item_type") == []
 
 
 def test_ttl_cache(db_env):

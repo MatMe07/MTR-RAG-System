@@ -1,6 +1,7 @@
 # agent/llm/client.py
 
 from typing import Optional, Any, Dict
+import hashlib
 import time
 
 from .cache import get_llm_cache
@@ -44,9 +45,6 @@ class LLMClient:
                 )
                 base_url = self.config.llm_base_url or "https://openrouter.ai/api/v1"
                 model = os.getenv("LLM_MODEL") or self.config.llm_model
-                print(f"🔍 API Key resolved: {'OK' if api_key else 'MISSING'}")
-                print(f"🔍 Base URL: {base_url}")
-                print(f"🔍 Model: {model}")
                 self._client = ChatOpenAI(
                     api_key=api_key,
                     base_url=base_url,
@@ -66,7 +64,7 @@ class LLMClient:
     
     def invoke(self, prompt: str, use_cache: bool = True) -> str:
         """Вызов LLM с кешированием"""
-        cache_key = f"llm:{hash(prompt[:])}"
+        cache_key = f"llm:{hashlib.sha1(prompt.encode('utf-8')).hexdigest()}"
         
         if use_cache:
             cached = self.cache.get(cache_key)
