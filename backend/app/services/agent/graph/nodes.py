@@ -203,6 +203,7 @@ def answer_node(state: AgentState) -> Dict[str, Any]:
         "missing": state.get("missing", []),
         "review": state.get("review_required", False),
         "normative_detail": state.get("normative_detail", ""),
+        "purchase_recommendation": state.get("purchase_recommendation"),
         "answers": [state.get("context", {}).get("last_text", "")],
         "mode": state.get("context", {}).get("mode", "offline_rules"),
         "tools_used": state.get("context", {}).get("tools_used", []),
@@ -258,6 +259,11 @@ def _merge_rows(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
             a["detail"] = f"{detail}{join}{extra}"
     if not a.get("source_id") and b.get("source_id"):
         a["source_id"] = b["source_id"]
+    # Копируем служебные флаги расчёта (F3): срочность закупки и контекстные
+    # метки не должны теряться при дедупе каталог+правила+склад+аналитика.
+    for k in ("_urgency_score", "_context_only"):
+        if a.get(k) is None and b.get(k) is not None:
+            a[k] = b[k]
     return a
 
 
@@ -300,6 +306,8 @@ def _merge_result(state: AgentState, result: Dict[str, Any]) -> Dict[str, Any]:
         state.setdefault("context", {})["last_text"] = result["text"]
     if result.get("normative_detail"):
         state["normative_detail"] = result["normative_detail"]
+    if result.get("purchase_recommendation"):
+        state["purchase_recommendation"] = result["purchase_recommendation"]
     if result.get("_tool_name"):
         state.setdefault("context", {}).setdefault("tools_used", []).append(result["_tool_name"])
 
@@ -309,6 +317,7 @@ def _merge_result(state: AgentState, result: Dict[str, Any]) -> Dict[str, Any]:
         "warnings": state.get("warnings", []),
         "missing": state.get("missing", []),
         "normative_detail": state.get("normative_detail", ""),
+        "purchase_recommendation": state.get("purchase_recommendation"),
         "review_required": state.get("review_required", False),
     }
 

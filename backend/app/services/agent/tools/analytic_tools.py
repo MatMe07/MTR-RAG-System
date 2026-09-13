@@ -175,10 +175,17 @@ def _urgency_reason(card: Dict, qty, base: int, bump: int) -> str:
 
 
 def _build_purchase_recommendation(components: List[Dict]) -> str:
-    """Итоговая сводка по закупке: группы по urgency."""
+    """Итоговая сводка по закупке: группы по urgency.
+
+    Учитываются только позиции, реально попавшие в расчёт (им присвоен
+    _urgency_score). Строки контекста (verdict/residual с _context_only и без
+    скоринга) в закупочную сводку не попадают.
+    """
     critical, high, medium, low = [], [], [], []
     for c in components:
-        s = c.get("_urgency_score", 1)
+        s = c.get("_urgency_score")
+        if not isinstance(s, int):
+            continue
         if s >= 5:
             critical.append(c)
         elif s >= 4:
@@ -190,16 +197,16 @@ def _build_purchase_recommendation(components: List[Dict]) -> str:
 
     parts = []
     if critical:
-        types = sorted(set(c.get("item_type", "?") for c in critical))
+        types = sorted({(c.get("item_type") or "?") for c in critical})
         parts.append(f"{', '.join(types)} — критически срочно ({len(critical)} шт.)")
     if high:
-        types = sorted(set(c.get("item_type", "?") for c in high))
+        types = sorted({(c.get("item_type") or "?") for c in high})
         parts.append(f"{', '.join(types)} — срочно ({len(high)} шт.)")
     if medium:
-        types = sorted(set(c.get("item_type", "?") for c in medium))
+        types = sorted({(c.get("item_type") or "?") for c in medium})
         parts.append(f"{', '.join(types)} — рекомендуется ({len(medium)} шт.)")
     if low:
-        types = sorted(set(c.get("item_type", "?") for c in low))
+        types = sorted({(c.get("item_type") or "?") for c in low})
         parts.append(f"{', '.join(types)} — можно позже ({len(low)} шт.)")
     return "Рекомендация по закупке: " + "; ".join(parts) if parts else ""
 
@@ -226,6 +233,11 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
     on_stock = getattr(parsed, "on_stock", None)
     out_of_stock_only = (on_stock is False) or ("LIST_OUT_OF_STOCK" in intents)
 
+    # Фактический остаток — всегда из репозитория, чтобы не зависеть от
+    # промежуточных пороговых фильтров stock_rows (F2).
+    from ..repository.repository_factory import get_repository
+    ctx = get_repository()
+
     for target in targets[:20]:
         card = target.get("card")
         if not card:
@@ -235,6 +247,12 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
 
         stock_info = stock_by_ksm.get(ksm) if ksm else None
         qty = stock_info.get("quantity") if stock_info else None
+
+        # Фактический остаток — репозиторий авторитетнее строк stock_rows.
+        if ksm and ctx is not None:
+            repo_qty = ctx.get_stock_quantity(ksm)
+            if repo_qty is not None:
+                qty = repo_qty
 
         # Если stock_query отфильтровал позицию по порогу остатка —
         # stock_rows её не содержит, qty=None; при наличии quantity_max
@@ -280,24 +298,78 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
             "status": _urgency_status(qty, urgency),
             "detail": _urgency_detail(card, qty, urgency),
             "source_id": card.get("card_id"),
-            "_urgency": urgency,
             "_urgency_score": urgency,
             "_tool": "inventory_calculator",
         })
 
-    result["components"].sort(key=lambda c: c.get("_urgency", 0), reverse=True)
-    for comp in result["components"]:
-        comp.pop("_urgency", None)
+    # F2: когда есть установленные компоненты, но ни одна позиция не ниже
+    # порога — явный verdict + таблица фактических остатков (residual).
+    valid_targets = [t for t in targets[:20] if t.get("card")]
+    no_purchase_needed = False
+    if valid_targets and not result["components"]:
+        if out_of_stock_only:
+            verdict_status = "нет позиций, отсутствующих на складе"
+            verdict_detail = (
+                f"проверены остатки по {len(valid_targets)} установленным "
+                f"позициям; все позиции в наличии"
+            )
+        else:
+            verdict_status = "нет позиций ниже порога"
+            verdict_detail = (
+                f"проверены остатки по {len(valid_targets)} установленным "
+                f"позициям; все соответствуют порогу — заявка не требуется"
+            )
+        result["components"].append({
+            "ksm_code": None,
+            "mtr_code": None,
+            "name": "Заявка на пополнение",
+            "item_type": None,
+            "quantity": 0,
+            "status": verdict_status,
+            "detail": verdict_detail,
+            "source_id": None,
+            "_context_only": True,
+            "_tool": "inventory_calculator",
+        })
+        for target in valid_targets:
+            card = target["card"]
+            comp = target.get("component", {})
+            ksm = (card.get("codes") or {}).get("ksm_code")
+            qty = ctx.get_stock_quantity(ksm) if (ksm and ctx is not None) else None
+            result["components"].append({
+                "ksm_code": ksm,
+                "mtr_code": (card.get("codes") or {}).get("mtr_code"),
+                "name": card.get("name"),
+                "item_type": comp.get("item_type") or card.get("item_type"),
+                "quantity": qty,
+                "status": f"остаток: {qty}" if qty is not None else "остаток не определён",
+                "detail": (
+                    f"установлен на {comp.get('unit_id')}"
+                    if comp.get("unit_id") else "контекст: фактический остаток"
+                ),
+                "source_id": comp.get("component_id") or card.get("card_id"),
+                "unit_id": comp.get("unit_id"),
+                "_context_only": True,
+                "_tool": "inventory_calculator",
+            })
 
-    purchase_rec = _build_purchase_recommendation(result["components"])
+        no_purchase_needed = True
+        purchase_rec = (
+            "Заявка не требуется: остатки установленных позиций выше порога"
+        )
+        result["purchase_recommendation"] = purchase_rec
+
+    if not no_purchase_needed:
+        purchase_rec = _build_purchase_recommendation(result["components"]) or None
+        result["purchase_recommendation"] = purchase_rec
 
     result["warnings"] = ["Расчёт — черновик: нормы запаса требуют утверждения"]
     result["review"] = True
     result["text"] = (
         f"Рассчитано {len(result['components'])} позиций"
         + (" (только отсутствующие на складе)" if out_of_stock_only else "")
+        + (" — нет позиций ниже порога" if no_purchase_needed else "")
     )
-    result["purchase_recommendation"] = purchase_rec
     result["duration_ms"] = (time.time() - start) * 1000
     return result
 

@@ -262,12 +262,46 @@ def stock_query(state: AgentState, ctx) -> Dict[str, Any]:
         return result
 
     candidates = state.get("candidates", [])
+    targets = state.get("ksm_targets", [])
     parsed = state.get("parsed")
 
-    # Сначала считаем остаток по всем кандидатам, затем применяем пороги
-    # (quantity_min/quantity_max/on_stock) — см. apply_stock_filters.
+    # Скоуп остатков (F1): при известном объектном составе (ksm_targets) остатки
+    # считаем по УСТАНОВЛЕННЫМ компонентам участка, а не по всех кандидатам
+    # каталога — иначе в «заявку на пополнение для участка с CO2» просачиваются
+    # позиции вне участка (напр. датчик H2S с остатком 1).
+    unit_rows = _stock_rows_for_targets(targets, ctx)
+    rows = unit_rows if unit_rows else _stock_rows_for_candidates(candidates, ctx, result)
+
+    filtered = apply_stock_filters(rows, parsed)
+    if len(filtered) < len(rows):
+        skipped = len(rows) - len(filtered)
+        result["warnings"].append(
+            f"По порогу остатка отфильтровано позиций: {skipped}"
+        )
+
+    for row in filtered:
+        ksm = row.get("ksm_code")
+        result["components"].append(row)
+        result["sources"].append(_source("stock", ksm, f"остаток: {row.get('quantity')}"))
+
+    state["stock_rows"] = result["components"]
+    result["text"] = (
+        f"Проверено {len(rows)} позиций"
+        + (f"{describe_stock_filter(parsed)}" if describe_stock_filter(parsed) else "")
+    )
+    result["duration_ms"] = (time.time() - start) * 1000
+    log.info(
+        "[stock_query] Checked %d items (kept %d) in %.0fms",
+        len(rows), len(result["components"]), result["duration_ms"],
+    )
+    return result
+
+
+def _stock_rows_for_candidates(
+    candidates: List[Dict], ctx, result: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    """Остатки по кандидатам каталога (скоуп без привязки к участку)."""
     rows = []
-    skipped = 0
     for item in candidates:
         card = item.get("card")
         if not card:
@@ -292,30 +326,37 @@ def stock_query(state: AgentState, ctx) -> Dict[str, Any]:
             "source_id": card.get("card_id"),
             "_tool": "stock_query",
         })
+    return rows
 
-    filtered = apply_stock_filters(rows, parsed)
-    if len(filtered) < len(rows):
-        skipped = len(rows) - len(filtered)
-        result["warnings"].append(
-            f"По порогу остатка отфильтровано позиций: {skipped}"
-        )
 
-    for row in filtered:
-        ksm = row.get("ksm_code")
-        result["components"].append(row)
-        result["sources"].append(_source("stock", ksm, f"остаток: {row.get('quantity')}"))
-
-    state["stock_rows"] = result["components"]
-    result["text"] = (
-        f"Проверено {len(candidates)} позиций"
-        + (f"{describe_stock_filter(parsed)}" if describe_stock_filter(parsed) else "")
-    )
-    result["duration_ms"] = (time.time() - start) * 1000
-    log.info(
-        "[stock_query] Checked %d items (kept %d) in %.0fms",
-        len(candidates), len(result["components"]), result["duration_ms"],
-    )
-    return result
+def _stock_rows_for_targets(targets: List[Dict], ctx) -> List[Dict[str, Any]]:
+    """Остатки по установленным компонентам (ksm_targets) — скоуп заявки."""
+    rows = []
+    for target in targets[:20]:
+        card = target.get("card")
+        comp = target.get("component", {})
+        if not card:
+            continue
+        ksm = (card.get("codes") or {}).get("ksm_code")
+        qty = ctx.get_stock_quantity(ksm) if ksm else None
+        unit_id = comp.get("unit_id")
+        if qty is not None and qty > 0:
+            status = f"на складе: {qty}"
+        else:
+            status = "нет на складе"
+        rows.append({
+            "ksm_code": ksm,
+            "mtr_code": (card.get("codes") or {}).get("mtr_code"),
+            "name": card.get("name") or comp.get("designation"),
+            "item_type": comp.get("item_type") or card.get("item_type"),
+            "quantity": qty if qty is not None else 0,
+            "status": status,
+            "detail": f"установлен на {unit_id}" if unit_id else "",
+            "source_id": comp.get("component_id") or card.get("card_id"),
+            "unit_id": unit_id,
+            "_tool": "stock_query",
+        })
+    return rows
 
 
 def rules_engine(state: AgentState) -> Dict[str, Any]:
@@ -526,17 +567,19 @@ def _fmt_docs(r: Dict[str, Any]) -> str:
     found = r.get("docs_found") or {}
     missing = r.get("docs_missing") or {}
     lines = []
-    found_labels = found or {}
-    for label, docs in found_labels.items():
+    seen_lines = set()
+    for label, docs in (found or {}).items():
         for doc in docs:
             title = doc.get("title") or doc.get("standard") or ""
             scope = doc.get("scope") or ""
             line = f"• {doc.get('standard')} — {title}"
             if scope:
                 line += f": {scope}"
+            if line in seen_lines:
+                continue
+            seen_lines.add(line)
             lines.append(line)
-    missing_labels = {k: v for k, v in (missing or {}).items() if v}
-    for label, docs in missing_labels.items():
+    for label, docs in ((missing or {}).items()):
         for doc in docs:
             lines.append(f"• {doc} — расшифровка отсутствует в реестре")
     return "\n".join(lines)
@@ -612,6 +655,25 @@ def regulation_lookup(state: AgentState, ctx) -> Dict[str, Any]:
     return result
 
 
+def _medium_compatible(want: Any, got: Any) -> bool:
+    """Совместимость заявленной среды запроса и среды карточки (F7).
+
+    Базово — medium_match (подстрока/канон). Когда обе среды разрешаются в
+    коды участков графа, карточка не должна быть строго ВНЕ области запроса:
+    так датчик H2S (gas_h2s) не попадает в подбор для «участка с CO2», а
+    смешанный газ_h2s_co2 — попадает.
+    """
+    if not want or not got:
+        return True
+    if not medium_match(want, got):
+        return False
+    w_codes = medium_unit_codes(want)
+    g_codes = medium_unit_codes(got)
+    if w_codes and g_codes:
+        return set(g_codes) <= set(w_codes)
+    return True
+
+
 def _matches_filters(card: Dict, parsed: Any) -> bool:
     props = card.get("properties", {})
     tf = getattr(parsed, "technical_filters", {}) or {}
@@ -675,6 +737,14 @@ def _matches_filters(card: Dict, parsed: Any) -> bool:
         if card_steel is not None and steel_h2s_status(
             card_steel, _h2s_steel_rules()
         ) == "incompatible":
+            return False
+
+    # F7: явная среда запроса + заявленная среда карточки. Позиции несовместимой
+    # среды исключаются (дампия H2S для заявки на участке с CO2), у карточек без
+    # среды фильтр не применяется.
+    if tf.get("medium"):
+        card_medium = text_val("medium")
+        if card_medium is not None and not _medium_compatible(tf["medium"], card_medium):
             return False
 
     item_types = getattr(parsed, "item_types", [])

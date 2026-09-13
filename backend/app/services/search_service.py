@@ -67,6 +67,7 @@ class SearchService:
                 requires_expert=answer.human_review_required,
                 expert_review_id=getattr(answer, "expert_review_id", None),
                 execution_time_ms=elapsed,
+                raw_agent_answer=_to_json_safe(answer.model_dump(mode="json")),
             )
         except Exception as e:
             elapsed = (time.time() - start) * 1000

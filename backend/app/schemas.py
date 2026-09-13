@@ -403,6 +403,15 @@ class AgentAnswer(BaseModel):
     sources: List[AgentSource] = Field(default_factory=list, description="Источники")
     missing_parameters: List[str] = Field(default_factory=list, description="Чего не хватает для полного ответа")
     human_review_required: bool = Field(False, description="Требуется ли проверка экспертом")
+    human_review_reasons: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Источники требования проверки: 'expert_data' (требование данных/графа, "
+            "напр. DUP-экспертиза) и 'quality_gate' (качество превышает детерминированный "
+            "проход в auto-режиме). Разведение позволяет иметь verification_verdict=pass "
+            "при сохранившейся экспертизе по данным."
+        ),
+    )
     status: str = Field("", description="ТЗ-статус ответа (ЭТАП 5): соответствует | потенциальный аналог | не соответствует | нет данных | требует проверки | требует экспертной проверки")
     recommendations: List[str] = Field(default_factory=list, description="Рекомендации по ответу (ТЗ 11.2)")
     expert_review_id: Optional[str] = Field(None, description="Идентификатор запроса на экспертную проверку")

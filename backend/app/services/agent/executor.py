@@ -192,7 +192,7 @@ class AgentExecutor:
 
         if escalation == "none":
             log.info("[Executor][auto] escalation 'none', returning review answer")
-            answer.human_review_required = True
+            self._mark_review(answer, "quality_gate")
             return answer
 
         tokens_before = self._llm_tokens_used()
@@ -206,7 +206,7 @@ class AgentExecutor:
                 "[Executor][auto] LLM недоступен, эскалация невозможна. "
                 "Помечаем ответ как требующий проверки (fallback deterministic)."
             )
-            answer.human_review_required = True
+            self._mark_review(answer, "quality_gate")
             self._log_escalation(query, request_id, mode_used="refine_skipped_no_llm",
                                  gaps=verification.gaps, verdict=verification.verdict)
             return answer
@@ -216,6 +216,7 @@ class AgentExecutor:
         self._log_escalation(query, request_id, mode_used="refine" if refined else "refine_failed",
                              gaps=verification.gaps, verdict=verification.verdict,
                              llm_tokens_used=answer.llm_tokens_used)
+        self._reverify_after_escalation(parsed, answer, verification)
         return answer
 
     def _auto_full_llm(self, query, parsed, start, request_id, answer, verification,
@@ -226,7 +227,7 @@ class AgentExecutor:
                 "[Executor][auto] C2 запрошен, но LLM недоступен. "
                 "Помечаем ответ как требующий проверки (fallback deterministic)."
             )
-            answer.human_review_required = True
+            self._mark_review(answer, "quality_gate")
             self._log_escalation(query, request_id, mode_used="full_llm_skipped_no_llm",
                                  gaps=verification.gaps, verdict=verification.verdict)
             return answer
@@ -235,7 +236,7 @@ class AgentExecutor:
             llm_answer = self._execute_llm(query, parsed, start, request_id=request_id)
         except Exception as e:  # noqa: BLE001
             log.warning("[Executor][auto] C2 full-LLM failed: %s", e)
-            answer.human_review_required = True
+            self._mark_review(answer, "quality_gate")
             self._log_escalation(query, request_id, mode_used="full_llm_failed",
                                  gaps=verification.gaps, verdict=verification.verdict,
                                  llm_tokens_used=self._llm_tokens_used() - tokens_before)
@@ -243,12 +244,13 @@ class AgentExecutor:
 
         llm_answer.mode = "auto"
         llm_answer.mode_refined = "auto_llm_full"
-        llm_answer.verification_verdict = verification.verdict
-        llm_answer.verification_reasons = list(verification.reasons)
-        llm_answer.human_review_required = (
-            llm_answer.human_review_required or answer.human_review_required
-        )
+        for r in list(getattr(answer, "human_review_reasons", None) or []):
+            if r not in (llm_answer.human_review_reasons or []):
+                llm_answer.human_review_reasons.append(r)
+        llm_answer.human_review_required = bool(llm_answer.human_review_reasons)
         llm_answer.llm_tokens_used = self._llm_tokens_used() - tokens_before
+
+        self._reverify_after_escalation(parsed, llm_answer, verification)
 
         self._log_escalation(query, request_id, mode_used="full_llm",
                              gaps=verification.gaps, verdict=verification.verdict,
@@ -258,6 +260,47 @@ class AgentExecutor:
             len(llm_answer.components or []), llm_answer.llm_tokens_used,
         )
         return llm_answer
+
+    def _reverify_after_escalation(self, parsed: ParsedQuery, answer: AgentAnswer,
+                                   original_verification) -> None:
+        """Повторная верификация после C1/C2: дооформление может закрыть gaps текстом.
+
+        Обновляет verification_verdict/reasons по фактическому результату и пересчитывает
+        human_review_required (True оставляется только если гейт всё ещё не пройден).
+        """
+        from .verify.verifier import verify_answer
+
+        re_verification = verify_answer(parsed, answer)
+        answer.verification_verdict = re_verification.verdict
+        answer.verification_reasons = re_verification.reasons
+
+        if re_verification.verdict == "pass":
+            log.info(
+                "[Executor][auto] re-verify: PASS (было review по %s)",
+                [g.type for g in original_verification.gaps],
+            )
+            reasons = list(getattr(answer, "human_review_reasons", None) or [])
+            if not answer.llm_refine_failed and "quality_gate" in reasons:
+                # Гейт пройден — снимаем только причину качества;
+                # требование экспертизы по данным (expert_data) сохраняется.
+                reasons.remove("quality_gate")
+            answer.human_review_reasons = reasons
+            answer.human_review_required = bool(reasons)
+        else:
+            log.info(
+                "[Executor][auto] re-verify: по-прежнему REVIEW (%s)",
+                re_verification.reasons,
+            )
+            self._mark_review(answer, "quality_gate")
+
+    @staticmethod
+    def _mark_review(answer: AgentAnswer, reason: str) -> None:
+        """Отмечает ответ как требующий проверки с указанием источника причины."""
+        reasons = list(getattr(answer, "human_review_reasons", None) or [])
+        if reason not in reasons:
+            reasons.append(reason)
+        answer.human_review_reasons = reasons
+        answer.human_review_required = True
 
     def _llm_tokens_used(self) -> int:
         """Суммарные токены LLMClient на текущий момент (0 для заглушек/None)."""
@@ -278,7 +321,7 @@ class AgentExecutor:
         if refined is None:
             log.warning("[Executor][auto] refine failed (LLM error/invalid), keeping deterministic")
             answer.llm_refine_failed = True
-            answer.human_review_required = True
+            self._mark_review(answer, "quality_gate")
             return False
 
         if refined.answer_text or refined.explanation:
@@ -291,7 +334,8 @@ class AgentExecutor:
 
         answer.mode_refined = "auto_llm_refine"
         answer.llm_refine_failed = refined.confidence_gate == "still_unclear"
-        answer.human_review_required = answer.llm_refine_failed or answer.human_review_required
+        if answer.llm_refine_failed:
+            self._mark_review(answer, "quality_gate")
 
         log.info(
             "[Executor][auto] refine applied: answer_text_len=%d confidence_gate=%s",
@@ -396,6 +440,7 @@ class AgentExecutor:
             "review": result.get("review_required", False),
             "answers": [result.get("context", {}).get("last_text", "")],
             "normative_detail": result.get("normative_detail", ""),
+            "purchase_recommendation": result.get("purchase_recommendation"),
             "mode": result.get("context", {}).get("mode", "offline_rules"),
             "tools_used": list(result.get("context", {}).get("tools_used", [])),
             "stock_rows": result.get("stock_rows", []),

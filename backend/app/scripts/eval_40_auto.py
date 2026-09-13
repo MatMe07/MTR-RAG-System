@@ -99,6 +99,7 @@ def _run_case(case, mode: str):
         "llm_refine_failed": answer.llm_refine_failed,
         "llm_tokens_used": answer.llm_tokens_used,
         "human_review_required": answer.human_review_required,
+        "human_review_reasons": list(answer.human_review_reasons or []),
         "review_verdict": answer.review_verdict,
         "sufficiency_verdicts": _sufficiency_verdicts(answer),
         "tools": answer.tools_used,

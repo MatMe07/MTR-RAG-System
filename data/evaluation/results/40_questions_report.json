@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-09-09T18:08:24.800120+00:00",
-  "mode": "on",
+  "generated_at": "2026-09-13T10:36:41.425933+00:00",
+  "mode": "off",
   "strict": false,
   "min_tools_coverage": 20,
   "summary": {
     "total": 40,
     "tools_ok": 40,
-    "sources_ok": 40,
+    "sources_ok": 39,
     "warnings_ok": 40,
     "review_pass": 40
   },
@@ -367,8 +367,10 @@
       ],
       "tools_ok": true,
       "missing_tools": [],
-      "sources_ok": true,
-      "missing_sources": [],
+      "sources_ok": false,
+      "missing_sources": [
+        "stock"
+      ],
       "warning_ok": true,
       "review_pass": true,
       "review_verdict": "pass",

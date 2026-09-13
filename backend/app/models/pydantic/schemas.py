@@ -294,3 +294,7 @@ class SearchResponse(BaseModel):
     requires_expert: bool = False
     expert_review_id: Optional[str] = Field(None, description="Идентификатор запроса на экспертную проверку")
     execution_time_ms: float = 0.0
+    raw_agent_answer: Optional[dict] = Field(
+        None,
+        description="Полный JSON-дамп AgentAnswer (как выводит app_console)",
+    )

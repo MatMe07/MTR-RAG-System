@@ -1,22 +1,74 @@
 # agent/verify/verifier.py
 """Quality gate: детерминированная проверка соответствия ответа запросу.
 
-6 эвристики (§3.2 плана):
+Эвристики (§3.2 плана):
   1. intent_mismatch — item_types/unit_ids не покрыты components
   2. quantity_unmet  — units_count есть, но нет verdict по спросу/остатку
-  3. scope_mismatch  — все компоненты одного типа, хотя запрошено несколько
-  4. zero_stock_missing — LIST_OUT_OF_STOCK, но в componentsqty>0
-  5. parameter_miss  — ambiguities непуст, нет clarification
-  6. empty_or_expert_silent — status EXPERT, explanation пуст
+  3. inventory_reply_missing — складской интент без заключения по остаткам/заявке
+  4. scope_mismatch  — все компоненты одного типа, хотя запрошено несколько
+  5. zero_stock_missing — LIST_OUT_OF_STOCK, но в componentsqty>0
+  6. parameter_miss  — ambiguities непуст, нет clarification
+  7. empty_or_expert_silent — status EXPERT, explanation пуст
 """
 
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 log = logging.getLogger("mtr.agent.verify")
+
+_MORPH = None
+
+
+def _morph():
+    """Ленивая pymorphy2 (normal_form для русского слова); None при недоступности."""
+    global _MORPH
+    if _MORPH is None:
+        try:
+            from pymorphy2 import MorphAnalyzer
+
+            _MORPH = MorphAnalyzer()
+        except Exception:  # noqa: BLE001
+            _MORPH = False
+    return _MORPH or None
+
+
+def _covers_types(text: str, types: List[str]) -> bool:
+    """Покрыт ли каждый запрошенный тип словами текста (с учётом морфологии).
+
+    «задвижки/задвижек» → «задвижка», «трубы» → «труба». Фолбэк на стем
+    (усечение последней буквы) если pymorphy недоступен.
+    """
+    words = [w for w in re.split(r"\W+", text.lower()) if w]
+    if not words:
+        return False
+
+    word_lemmas = set(words)
+    m = _morph()
+    if m is not None:
+        for w in words:
+            try:
+                nf = m.parse(w)[0].normal_form.lower()
+                if nf:
+                    word_lemmas.add(nf)
+            except Exception:  # noqa: BLE001
+                pass
+
+    for t in types:
+        t_forms = {t, t[:-1] if len(t) > 2 else t}
+        if m is not None:
+            try:
+                nf = m.parse(t)[0].normal_form.lower()
+                if nf:
+                    t_forms.add(nf)
+            except Exception:  # noqa: BLE001
+                pass
+        if not (set(t_forms) & word_lemmas):
+            return False
+    return True
 
 
 @dataclass
@@ -98,6 +150,59 @@ def _extract_unit(component: Dict[str, Any]) -> Optional[str]:
             if rest:
                 return rest.split()[0]
     return None
+
+
+_INVENTORY_VERDICT_KWS = (
+    "на складе", "остаток", "нет позиций", "хватает", "не хватает",
+    "дефицит", "достаточно", "пополнен", "срочность", "заявк",
+    "требуется закуп",
+)
+_INVENTORY_ABSENT_KWS = (
+    "нет данных", "нет информации", "нет сведений", "не удалось",
+    "недостаточно данных", "ничего не найдено", "нет в каталоге",
+)
+
+
+def _check_inventory_reply(
+    parsed: Any,
+    components: List[Dict[str, Any]],
+    answer_text: str,
+    purchase_recommendation: Optional[str],
+) -> Optional[Gap]:
+    """Склады/заявка: интент проверки запаса требует заключения по остаткам (F5).
+
+    Если в components/объяснении нет ни вердикта по остаткам, ни рекомендации
+    по закупке — gap inventory_reply_missing (эскалация C1/C2 дооформит текст).
+    """
+    intents = list(getattr(parsed, "intents", []) or [])
+    stock_intents = {"CHECK_STOCK", "CHECK_MINIMUM_STOCK", "LIST_OUT_OF_STOCK",
+                     "CHECK_SUFFICIENCY"}
+    if not (set(intents) & stock_intents):
+        return None
+
+    # LIST_OUT_OF_STOCK: позиции с нулевым остатком сами являются вердиктом.
+    if "LIST_OUT_OF_STOCK" in intents:
+        if any(
+            isinstance(c.get("quantity"), (int, float)) and c.get("quantity") == 0
+            for c in components
+        ):
+            return None
+
+    comps_text = " ".join(
+        f"{c.get('status') or ''} {(c.get('detail') or '')}" for c in components
+    ).lower()
+    hay = f"{str(answer_text or '').lower()} {comps_text}"
+    if any(k in hay for k in _INVENTORY_ABSENT_KWS):
+        return None  # честный «нет данных» — не дефект
+    if purchase_recommendation:
+        return None
+    if any(k in hay for k in _INVENTORY_VERDICT_KWS):
+        return None
+    return Gap(
+        type="inventory_reply_missing",
+        detail="интент проверки запаса, но ответ не содержит заключения по остаткам/заявке",
+        severity="med",
+    )
 
 
 def _check_quantity_unmet(parsed: Any, components: List[Dict[str, Any]]) -> Optional[Gap]:
@@ -220,6 +325,77 @@ def _check_empty_or_expert_silent(
     return None
 
 
+_QUANTITY_VERDICT_KWS = (
+    "хватает", "не хватает", "дефицит", "достаточно",
+    "недостаточно", "срочно", "в наличии",
+)
+_STOCK_ABSENT_KWS = (
+    "нет на складе", "нет в наличии", "нет остатка",
+    "отсутствует", "не числится", "снят с учёта",
+)
+# Негативные маркеры: текст может упоминать типы/verdict, но в отрицательном
+# контексте («нет информации о типах переход и отвод»). Такое покрытие НЕ закрывает gap.
+_NEGATIVE_MARKERS = (
+    "нет информации", "нет данных", "нет сведений", "не найдено",
+    "не удалось", "невозможно", "недоступно", "недостаточно данных",
+    "нет в каталоге", "ничего не найдено", "отсутствует информация",
+    "данные отсутствуют", "укажите", "уточните запрос", "лимит попыток",
+)
+
+
+def _recheck_with_explanation(
+    parsed: Any,
+    answer_text: str,
+    recommendations: List[str],
+    gaps: List[Gap],
+) -> List[Gap]:
+    """Вторая стадия гейта: закрывает ли текст explanation/рекомендаций gaps.
+
+    Эскалации C1/C2 пишут только в текстовую часть (explanation) и не меняют
+    components. Стадия снимает gap только при явном текстовом покрытии:
+      - quantity_unmet     — вердикт-слова (хватает, не хватает, дефицит, ...);
+      - scope_mismatch     — в тексте перечислены все запрошенные типы;
+      - intent_mismatch    — те же типы покрыты (при наличии unit_ids не снимаем);
+      - zero_stock_missing — явные слова об отсутствии (нет на складе, ...).
+    Первая (строгая по components) стадия остаётся неизменной.
+    """
+    if not gaps:
+        return gaps
+
+    text = "\n".join(p for p in (answer_text, " ".join(recommendations)) if p).lower()
+    if not text.strip():
+        return gaps
+
+    requested = [t.lower() for t in (getattr(parsed, "item_types", None) or []) if t]
+    unit_ids = [u for u in (getattr(parsed, "unit_ids", None) or []) if u]
+
+    kept: List[Gap] = []
+    resolved: List[str] = []
+    has_negatives = any(m in text for m in _NEGATIVE_MARKERS)
+    for g in gaps:
+        closed = False
+        if not has_negatives:
+            if g.type == "quantity_unmet":
+                closed = any(kw in text for kw in _QUANTITY_VERDICT_KWS)
+            elif g.type == "scope_mismatch" and requested:
+                closed = _covers_types(text, requested)
+            elif g.type == "intent_mismatch" and requested and not unit_ids:
+                closed = _covers_types(text, requested)
+            elif g.type == "zero_stock_missing":
+                closed = any(kw in text for kw in _STOCK_ABSENT_KWS)
+            elif g.type == "inventory_reply_missing":
+                closed = any(kw in text for kw in _INVENTORY_VERDICT_KWS)
+
+        if closed:
+            resolved.append(g.type)
+        else:
+            kept.append(g)
+
+    if resolved:
+        log.info("[Verifier] recheck_with_explanation closed: %s", resolved)
+    return kept
+
+
 def verify_answer(parsed: Any, answer: Any) -> VerificationResult:
     """Основная функция quality gate. Принимает ParsedQuery + AgentAnswer."""
     components = [c.model_dump() if hasattr(c, "model_dump") else dict(c) for c in (answer.components or [])]
@@ -228,9 +404,12 @@ def verify_answer(parsed: Any, answer: Any) -> VerificationResult:
 
     gaps: List[Gap] = []
 
+    purchase_recommendation = getattr(answer, "purchase_recommendation", None) or ""
+
     for check in [
         lambda: _check_intent_mismatch(parsed, components),
         lambda: _check_quantity_unmet(parsed, components),
+        lambda: _check_inventory_reply(parsed, components, answer_text, purchase_recommendation),
         lambda: _check_scope_mismatch(parsed, components),
         lambda: _check_zero_stock_missing(parsed, components),
         lambda: _check_parameter_miss(parsed, components),
@@ -239,6 +418,9 @@ def verify_answer(parsed: Any, answer: Any) -> VerificationResult:
         gap = check()
         if gap is not None:
             gaps.append(gap)
+
+    recommendations = list(getattr(answer, "recommendations", []) or [])
+    gaps = _recheck_with_explanation(parsed, answer_text, recommendations, gaps)
 
     max_severity = _max_severity(gaps)
     verdict = "review" if gaps else "pass"

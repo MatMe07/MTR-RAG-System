@@ -28,6 +28,9 @@ class AnswerBuilder:
     # Жёсткий кап на «несмысловые» (не защищённые фильтром/вердиктом) строки
     MAX_COMPONENTS = 10
 
+    # Марки стали для подбора ADD_COMPONENT (по приоритету узнавания в имени).
+    STEEL_GRADES = ("13ХФА", "09Г2С", "09ГСФ", "09ГС", "12Х1МФ", "10", "20")
+
     def __init__(self, generator: Optional[Callable[[Dict[str, Any]], Optional[str]]] = None):
         """generator — LLM-генератор объяснения (5A.3); None → default_generator."""
         self._explanations = ExplanationGenerator(generator)
@@ -42,7 +45,7 @@ class AnswerBuilder:
         rule_warnings, rule_recommendations = evaluate_parameter_rules(parsed)
 
         raw_components = result.get("components", [])
-        components = self._to_components(raw_components, parsed=parsed)
+        components = self._to_components(raw_components, parsed=parsed, intent=intent)
         sources = self._to_sources(result.get("sources", []))
         tools_used = list(dict.fromkeys(result.get("tools_used", [])))
         purchase_recommendation = (
@@ -68,10 +71,6 @@ class AnswerBuilder:
         review = bool(result.get("review")) or status == STATUS_EXPERT
         mode = result.get("mode", "offline_rules")
         recommendations = build_recommendations(status, warnings, missing) + rule_recommendations
-        if mode != "llm" and status in (STATUS_UNCLEAR, STATUS_EXPERT):
-            recommendations.append(
-                "Не удалось однозначно обработать запрос. Попробовать LLM-режим?"
-            )
 
         explanation = self._explanations.generate(
             status=status,
@@ -88,10 +87,27 @@ class AnswerBuilder:
         head_answer = (result.get("answer") or "").strip()
         if not explanation and head_answer:
             explanation = head_answer
+        llm_text = explanation or head_answer
+        if not explanation and intent in ("inventory", "calculate"):
+            explanation = self._inventory_explanation(
+                components, purchase_recommendation, parsed
+            ) or ""
         if not explanation:
             explanation = result.get("normative_detail") or ""
         if not explanation:
             explanation = self._template_explanation(status, components) or ""
+
+        # «Попробовать LLM-режим?» — только когда LLM/refine не дали текста
+        # (иначе в auto с успешным LLM-прогоном подсказка вводит в заблуждение).
+        # Шаблонная/детерминированная сводка сама по себе подсказку не снимает.
+        if (
+            mode != "llm"
+            and not llm_text
+            and status in (STATUS_UNCLEAR, STATUS_EXPERT)
+        ):
+            recommendations.append(
+                "Не удалось однозначно обработать запрос. Попробовать LLM-режим?"
+            )
 
         verdict, review_issues = auto_review(result, tools_used, sources, explanation or "")
 
@@ -110,6 +126,7 @@ class AnswerBuilder:
             sources=sources,
             missing_parameters=missing,
             human_review_required=review,
+            human_review_reasons=["expert_data"] if review else [],
             status=status,
             recommendations=recommendations,
             expert_review_id=expert_review_id() if status == STATUS_EXPERT else None,
@@ -119,7 +136,7 @@ class AnswerBuilder:
             review_issues=review_issues,
         )
 
-    def _to_components(self, rows: List[Dict], parsed=None) -> List[AgentComponent]:
+    def _to_components(self, rows: List[Dict], parsed=None, intent: str = None) -> List[AgentComponent]:
         out_of_stock = False
         if parsed:
             intents = getattr(parsed, "intents", []) or []
@@ -129,19 +146,49 @@ class AnswerBuilder:
             )
         has_stock_filter = _has_stock_filters(parsed)
 
+        # Скоуп заявки (F1): инвентарный запрос по участку считает установленные
+        # компоненты (unit_id), а не все кандидаты каталога. Когда в результате
+        # есть установленные позиции, каталоговые строки без unit_id (остатки
+        # склада вне участка) в заявку не попадают.
+        unit_scope_inventory = (
+            intent in ("inventory", "calculate")
+            and any(isinstance(r, dict) and r.get("unit_id") for r in rows)
+        )
+        if unit_scope_inventory:
+            rows = [
+                r for r in rows
+                if (isinstance(r, dict)
+                    and (r.get("unit_id") or r.get("_context_only")
+                         or self._is_analysis_row(r)))
+            ]
+
         scored = [
             r for r in rows
             if isinstance(r, dict) and r.get("match_score") is not None
+            and not r.get("unit_id")
         ]
         aux = [
             r for r in rows
-            if isinstance(r, dict) and r.get("match_score") is None
+            if isinstance(r, dict)
+            and (r.get("match_score") is None or r.get("unit_id"))
         ]
 
         # Аналитические/verdict-строки (sufficiency/inventory/план) всегда
         # сохраняем в ответе — они отвечают на запрос «хватает ли».
         verdict_aux = [r for r in aux if self._is_analysis_row(r)]
-        generic_aux = [r for r in aux if not self._is_analysis_row(r)]
+        # «Общие» aux-строки — без привязки к участку. Установленные
+        # компоненты (unit_id) обрабатываются только unit_aux, иначе строки,
+        # не прошедшие _matches_geometry, просачивались бы в ответ повторно
+        # (напр. переход с чужими диаметрами при выборе перехода 219→159).
+        generic_aux = [
+            r for r in aux
+            if not self._is_analysis_row(r) and not r.get("unit_id")
+        ]
+        # ADD_COMPONENT: вместо «дампа» всех кандидатов каталога сужаем их
+        # параметрами уже установленной детали того же типа на участке
+        # (DN/PN/марка стали) — пользователь просил «подбери параметры».
+        if intent == "object_configuration":
+            generic_aux = self._narrow_add_component(generic_aux, aux)
 
         unit_aux = [r for r in aux if r.get("unit_id")]
         unit_aux = [r for r in unit_aux if self._matches_geometry(r, parsed)]
@@ -150,6 +197,24 @@ class AnswerBuilder:
             scored = [
                 r for r in scored
                 if not r.get("quantity") or r.get("quantity", 0) == 0
+            ]
+            # Установленные компоненты/прочие aux-строки с реальным остатком
+            # тоже не должны утекать в ответ «нет на складе» (F1: unit_rows
+            # теперь несут фактический остаток).
+            unit_aux = [
+                r for r in unit_aux
+                if not r.get("quantity") or r.get("quantity", 0) == 0
+            ]
+            generic_aux = [
+                r for r in generic_aux
+                if not r.get("quantity") or r.get("quantity", 0) == 0
+            ]
+            # Аналитические/verdict-строки с фактическим остатком (напр. unit-строки,
+            # чей detail содержит «остаток: N») тоже не должны утекать в ответ
+            # «нет на складе» — контекст с положительным остатком здесь неуместен.
+            verdict_aux = [
+                r for r in verdict_aux
+                if r.get("quantity") is None or r.get("quantity", 0) == 0
             ]
             rows = scored + verdict_aux + unit_aux + generic_aux
         elif has_stock_filter:
@@ -238,6 +303,84 @@ class AnswerBuilder:
                 found_any = True
         return found_any
 
+    @staticmethod
+    def _parse_component_params(row: Dict) -> tuple:
+        """Извлекает (DN, PN, марка стали) из имени/обозначения детали."""
+        import re
+
+        name = str(row.get("name") or row.get("designation") or "")
+        text = name.lower()
+        dn = pn = None
+        m_dn = re.search(r"\bdn\s*(\d{2,4})\b", text)
+        if m_dn:
+            dn = float(m_dn.group(1))
+        m_pn = re.search(r"\bpn\s*(\d{2,4})\b", text)
+        if m_pn:
+            pn = float(m_pn.group(1))
+        material = None
+        for grade in AnswerBuilder.STEEL_GRADES:
+            if grade.lower() in text:
+                material = grade
+                break
+        return dn, pn, material
+
+    @staticmethod
+    def _narrow_add_component(candidates: List[Dict], rows: List[Dict]) -> List[Dict]:
+        """Сужает кандидатов ADD_COMPONENT параметрами установленной детали того же типа.
+
+        DN/PN/марка стали берутся из установленной детали участка (напр.
+        «Задвижка клиновая DN150 PN40»). Для каждого типа оставляем только
+        кандидатов с совпадающим DN/PN (допуск 2%), предпочтение — той же марке
+        стали; итог не более 3 позиций на тип. Нет установленной детали типа или
+        параметров — текущее поведение (группа как была).
+        """
+        if not candidates:
+            return candidates
+        installed = [r for r in rows if isinstance(r, dict) and r.get("unit_id")]
+        by_type: Dict[str, List[Dict]] = {}
+        for c in candidates:
+            by_type.setdefault(((c.get("item_type") or "").lower()), []).append(c)
+
+        narrowed: List[Dict] = []
+        for item_type, group in by_type.items():
+            inst = next(
+                (r for r in installed if (r.get("item_type") or "").lower() == item_type),
+                None,
+            )
+            if inst is None:
+                narrowed.extend(group)
+                continue
+            want_dn, want_pn, want_material = AnswerBuilder._parse_component_params(inst)
+            if want_dn is None and want_pn is None:
+                narrowed.extend(group[:3])
+                continue
+
+            def _matches(c: Dict) -> bool:
+                dn, pn, _ = AnswerBuilder._parse_component_params(c)
+                if want_dn is not None and dn is not None and abs(dn - want_dn) > want_dn * 0.02:
+                    return False
+                if want_pn is not None and pn is not None and abs(pn - want_pn) > want_pn * 0.02:
+                    return False
+                return True
+
+            def _dist(c: Dict) -> float:
+                dn, pn, material = AnswerBuilder._parse_component_params(c)
+                d = 0.0
+                if want_dn is not None and dn is not None:
+                    d += abs(dn - want_dn)
+                if want_pn is not None and pn is not None:
+                    d += abs(pn - want_pn) * 10.0
+                if want_material and material == want_material:
+                    d -= 50.0
+                return d
+
+            matched = [c for c in group if _matches(c)]
+            if not matched:
+                matched = list(group)
+            matched.sort(key=_dist)
+            narrowed.extend(matched[:3])
+        return narrowed
+
     def _apply_stock_filter(self, rows: List[Dict], parsed: Any) -> List[Dict]:
         """Финальный фильтр кандидатов по порогам stock_filters (quantity_min/max).
 
@@ -264,6 +407,10 @@ class AnswerBuilder:
           - аналитические вердикты (sufficiency/дефицит/рекомендации),
           - позиции, отобранные явным фильтром запроса (порог остатка / on_stock):
             они уже прошли _apply_stock_filter, и их нельзя терять.
+        Голый on_stock (True/False) снимает кап, только если флаг исходит из
+        реального складского контекста: «есть» в «в схеме есть …» теперь не даёт
+        on_stock (parser._extract_on_stock), поэтому позиции с остатком защищены
+        только по-настоящему осмысленными запросами «что на складе / чего нет».
         Порядок: кандидаты (по match_percent убыв.) -> вспомогательные.
         """
         if parsed is None:
@@ -271,7 +418,9 @@ class AnswerBuilder:
 
         explicit_filter = _has_stock_filters(parsed) or (
             getattr(parsed, "on_stock", None) is not None
-        ) or ("LIST_OUT_OF_STOCK" in (getattr(parsed, "intents", None) or []))
+        ) or (
+            "LIST_OUT_OF_STOCK" in (getattr(parsed, "intents", None) or [])
+        )
 
         protected: List[Dict] = []
         plain: List[Dict] = []
@@ -303,7 +452,7 @@ class AnswerBuilder:
         return any(k in hay for k in (
             "хватает", "не хватает", "дефицит", "потребность",
             "критично", "рассчитан", "рекомендуется закуп",
-            "дата", "план работ",
+            "дата", "план работ", "остаток", "нет позиций",
         ))
     
     def _purchase_recommendation(self, rows: List[Dict]) -> Optional[str]:
@@ -372,6 +521,60 @@ class AnswerBuilder:
             count = len(scored)
             return f"Найдено {count} подходящих позиций. {text}"
         return text or None
+
+    def _inventory_explanation(
+        self,
+        components: List,
+        purchase_recommendation: Optional[str],
+        parsed: Optional[Any],
+    ) -> Optional[str]:
+        """Детерминированная сводка для инвентарного / заявочного запроса (F4).
+
+        Показывает заключение по остаткам (позиции ниже порога или отсутствие
+        таких) вместо сухой строки нормативов/«базы данных».
+        """
+        rows = [c for c in components if getattr(c, "quantity", None) is not None]
+        if not rows:
+            return None
+
+        threshold = None
+        if parsed is not None:
+            stock_filters = getattr(parsed, "stock_filters", None) or {}
+            threshold = stock_filters.get("quantity_max")
+
+        # Строка-вердикт «нет позиций ниже порога» (quantity=0) — не позиция.
+        real = [
+            c for c in rows
+            if "нет позиций" not in (getattr(c, "status", "") or "").lower()
+        ]
+
+        parts = []
+        if threshold is not None:
+            if real:
+                below = [
+                    c for c in real if (c.quantity or 0) < threshold
+                ]
+                if below:
+                    names = ", ".join(
+                        dict.fromkeys(str(c.name or c.ksm_code or c.item_type or "?") for c in below)
+                    )
+                    parts.append(
+                        f"Ниже порога остатка (≤{threshold}) — {len(below)} позиций: {names}."
+                    )
+                else:
+                    parts.append(
+                        f"Позиций с остатком ниже порога (≤{threshold}) нет — заявка не требуется."
+                    )
+            else:
+                parts.append(
+                    f"Позиций с остатком ниже порога (≤{threshold}) нет — заявка не требуется."
+                )
+        parts.append(
+            f"Проверены остатки по {len(real) if real else len(rows)} позициям складского учёта."
+        )
+        if purchase_recommendation:
+            parts.append(purchase_recommendation)
+        return " ".join(p for p in parts if p)
 
     def _intent_label(self, intent: str) -> str:
         labels = {
