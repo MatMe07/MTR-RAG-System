@@ -162,11 +162,11 @@ class DynamicRules:
                 close = True
             try:
                 from app.models.sqlalchemy.all_models import (
+                    ContextualOverride,
+                    GroupKeyword,
                     SynonymRecord,
                     ValidationConstant,
                     ValidationRule,
-                    GroupKeyword,
-                    ContextualOverride,
                 )
 
                 constants = {}

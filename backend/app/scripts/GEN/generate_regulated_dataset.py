@@ -10,7 +10,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
-
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_REGULATION = REPO_ROOT / "data" / "regulation" / "regulation_matrix.json"
 DEFAULT_CATALOG_JSONL = (
@@ -368,7 +367,8 @@ def _designation(
     subtype: str,
     properties: dict[str, dict[str, Any]],
 ) -> str:
-    value = lambda key: properties[key]["value"]
+    def value(key: str):
+        return properties[key]["value"]
     if item_type == "труба":
         return (
             f"Труба {subtype} {value('outer_diameter')}x"

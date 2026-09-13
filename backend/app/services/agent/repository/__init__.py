@@ -1,8 +1,8 @@
 # agent/repository/__init__.py
 
+from .db_repository import DbRepository
 from .interfaces import IRepository
 from .json_repository import JsonRepository
-from .db_repository import DbRepository
 from .repository_factory import get_repository, reset_repository
 
 __all__ = [

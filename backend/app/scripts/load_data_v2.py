@@ -5,15 +5,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from app.db.session import engine, Base, SessionLocal
+
+from app.db.session import Base, SessionLocal, engine
 from app.models.sqlalchemy.all_models import (
-    User, MtrItem, CandidateItem, Document, ExtractedCharacteristic,
-    GoldenDataset, GroupKeyword, ContextualOverride, SynonymRecord,
-    ValidationConstant, ValidationRule,
+    CandidateItem,
+    GoldenDataset,
+    GroupKeyword,
+    MtrItem,
+    SynonymRecord,
+    User,
+    ValidationRule,
 )
-from app.core.security import hash_password
 from app.services.agent.rules.seed import seed_rules_standalone
-from datetime import datetime, timezone
 
 
 def create_tables():
@@ -223,9 +226,9 @@ def load_sample_data():
 
 
 if __name__ == "__main__":
-    
+
     # print((Path(__file__).parent.parent.parent.parent / "data" / "catalog" / "regulated_mtr_catalog_1000.jsonl").exists())
-    
+
     import argparse
 
     parser = argparse.ArgumentParser(description="Load data into the database")

@@ -1,37 +1,29 @@
 # agent/graph/nodes.py
 
-from typing import Any, Callable, Dict, Optional, List
-import time
 import logging
+from typing import Any, Callable, Dict, List, Optional
 
+from ..answer.builder import build_answer
 from ..core.state import AgentState
 from ..repository.repository_factory import get_repository
-from ..llm.client import get_llm_client
-from ..tools.core_tools import (
-    catalog_search,
-    stock_query,
-    rules_engine,
-    graph_search,
-    regulation_lookup,
-)
 from ..tools.analytic_tools import (
+    duplicate_detector,
     impact_analyzer,
     inventory_calculator,
-    sufficiency_check,
     maintenance_planner,
-    duplicate_detector,
+    sufficiency_check,
+)
+from ..tools.core_tools import (
+    catalog_search,
+    graph_search,
+    regulation_lookup,
+    rules_engine,
+    stock_query,
 )
 from ..tools.error_handler import ErrorDecision, ErrorHandler
 from ..tools.errors import ToolErrorCode
-from ..answer.builder import build_answer
 
 log = logging.getLogger("mtr.agent.graph.nodes")
-
-
-def _set_repository(state: AgentState) -> None:
-    # Репозиторий не кладём в state: он не msgpack-сериализуем и ломает
-    # контрольные точки LangGraph. Инструменты получают ctx из обёрток узлов.
-    pass
 
 
 def _normalize_error(error: Any) -> Optional[Dict[str, Any]]:
@@ -145,7 +137,6 @@ def rules_node(state: AgentState) -> Dict[str, Any]:
 
 def graph_node(state: AgentState) -> Dict[str, Any]:
     ctx = get_repository()
-    _set_repository(state)
     result = _guarded_tool("graph_search", graph_search, state, ctx)
     result["_tool_name"] = "graph_search"
     patch = _merge_result(state, result)
@@ -153,7 +144,6 @@ def graph_node(state: AgentState) -> Dict[str, Any]:
 
 
 def impact_node(state: AgentState) -> Dict[str, Any]:
-    _set_repository(state)
     result = _guarded_tool("impact_analyzer", lambda s, c: impact_analyzer(s), state)
     result["_tool_name"] = "impact_analyzer"
     return _merge_result(state, result)
@@ -167,21 +157,18 @@ def regulation_node(state: AgentState) -> Dict[str, Any]:
 
 
 def inventory_node(state: AgentState) -> Dict[str, Any]:
-    _set_repository(state)
     result = _guarded_tool("inventory_calculator", lambda s, c: inventory_calculator(s), state)
     result["_tool_name"] = "inventory_calculator"
     return _merge_result(state, result)
 
 
 def sufficiency_node(state: AgentState) -> Dict[str, Any]:
-    _set_repository(state)
     result = _guarded_tool("sufficiency_check", lambda s, c: sufficiency_check(s), state)
     result["_tool_name"] = "sufficiency_check"
     return _merge_result(state, result)
 
 
 def maintenance_node(state: AgentState) -> Dict[str, Any]:
-    _set_repository(state)
     result = _guarded_tool("maintenance_planner", lambda s, c: maintenance_planner(s), state)
     result["_tool_name"] = "maintenance_planner"
     return _merge_result(state, result)
@@ -208,7 +195,7 @@ def answer_node(state: AgentState) -> Dict[str, Any]:
         "mode": state.get("context", {}).get("mode", "offline_rules"),
         "tools_used": state.get("context", {}).get("tools_used", []),
     }
-    
+
     answer = build_answer(state["parsed"], intent, result)
     state["answer"] = answer
     state["completed"] = True
@@ -288,7 +275,7 @@ def _merge_result(state: AgentState, result: Dict[str, Any]) -> Dict[str, Any]:
 
     Канал context сознательно НЕ возвращаем: он мутируется in-place, а
     несериализуемый объект утекал бы в pull-райты чекпоинтера
-    (см. _set_repository — репозиторий в state не кладём).
+    (репозиторий в state не кладём).
     """
     if result.get("components"):
         state.setdefault("components", [])

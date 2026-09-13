@@ -13,12 +13,11 @@
 - finish: непустой final_answer.
 """
 
-import json
-import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Optional, Set
 
 from ..core.exceptions import LLMResponseError
+from .json_utils import extract_json_object
 
 
 @dataclass
@@ -34,20 +33,16 @@ class ParsedAction:
 
 ALLOWED_ACTIONS = ("call_tool", "ask_user", "finish")
 
-_JSON_RE = re.compile(r"\{.*\}", re.DOTALL)
 
+def extract_json_object_strict(text: str) -> Dict[str, Any]:
+    """Извлекает первый JSON-объект из текста (включая код-фенсы ```json).
 
-def extract_json_object(text: str) -> Dict[str, Any]:
-    """Извлекает первый JSON-объект из текста (включая код-фенсы ```json)."""
-    match = _JSON_RE.search(text or "")
-    if not match:
+    Бросает LLMResponseError, если объект не найден или валидный JSON
+    отсутствует.
+    """
+    data = extract_json_object(text)
+    if data is None:
         raise LLMResponseError("JSON-объект не найден в ответе", response=text)
-    try:
-        data = json.loads(match.group())
-    except json.JSONDecodeError as e:
-        raise LLMResponseError(f"Невалидный JSON: {e}", response=text) from e
-    if not isinstance(data, dict):
-        raise LLMResponseError("Ожидался JSON-объект", response=text)
     return data
 
 
@@ -64,7 +59,7 @@ class LLMResponseParser:
 
     def parse(self, text: str) -> ParsedAction:
         """Возвращает ParsedAction или бросает LLMResponseError с причиной."""
-        data = extract_json_object(text)
+        data = extract_json_object_strict(text)
 
         action = data.get("action")
         if not action:
@@ -111,8 +106,8 @@ class LLMResponseParser:
             except Exception:  # noqa: BLE001
                 schema = None
             if schema is not None:
-                from app.services.agent.tools.validation import validate_input
                 from app.services.agent.tools.errors import ToolError
+                from app.services.agent.tools.validation import validate_input
 
                 try:
                     validate_input(schema, action_input)

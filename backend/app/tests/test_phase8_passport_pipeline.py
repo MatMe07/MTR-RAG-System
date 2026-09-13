@@ -16,20 +16,21 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
-from app.config import settings
-from app.main import app
-from app.models.sqlalchemy.all_models import (
-    Document,
-    DocumentLink,
-    ExtractedCharacteristic,
-    Base,
-)
+import app.db.session as db_session  # noqa: E402
+
 # Порядок важен: сначала celery_app, затем shared_task-модуль — тогда
 # passport.process/passport.reprocess регистрируются на нашем приложении.
 import app.workers.passport_worker as pw  # noqa: E402,F401
-from app.workers.celery_app import celery_app  # noqa: F401,E402
-import app.db.session as db_session  # noqa: E402
+from app.config import settings
+from app.main import app
+from app.models.sqlalchemy.all_models import (
+    Base,
+    Document,
+    DocumentLink,
+    ExtractedCharacteristic,
+)
 from app.services.agent.repository import db_repository  # noqa: E402
+from app.workers.celery_app import celery_app  # noqa: F401,E402
 
 _PASSPORT_TEXT = (
     "ПАСПОРТ ТРУБОПРОВОДНОЙ АРМАТУРЫ\n"
@@ -61,12 +62,12 @@ def passport_db(engine_url, monkeypatch):
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
-    Session = sessionmaker(bind=engine)
+    SessionLocal = sessionmaker(bind=engine)
     # Подмена общего SessionLocal/engine для АПИ, Celery-задач и провайдеров.
     monkeypatch.setattr(db_session, "engine", engine)
-    monkeypatch.setattr(db_session, "SessionLocal", Session)
+    monkeypatch.setattr(db_session, "SessionLocal", SessionLocal)
     Base.metadata.create_all(engine)
-    yield Session
+    yield SessionLocal
     Base.metadata.drop_all(engine)
     engine.dispose()
 
@@ -102,8 +103,8 @@ def _register_fake_repo(monkeypatch, suggestions):
     monkeypatch.setattr(db_repository, "DbRepository", _FakeRepo)
 
 
-def _seed_document(Session, doc_id, text_=_PASSPORT_TEXT, status="completed"):
-    db = Session()
+def _seed_document(SessionLocal, doc_id, text_=_PASSPORT_TEXT, status="completed"):
+    db = SessionLocal()
     try:
         db.add(
             Document(

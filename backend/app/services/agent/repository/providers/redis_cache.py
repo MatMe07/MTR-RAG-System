@@ -11,7 +11,7 @@ Redis ровно 1 час, версия-счётчик позволяет обн
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import redis
 
@@ -118,6 +118,40 @@ class RedisCache:
                 c.delete(*[self._key(k) for k in keys])
         except Exception:
             pass
+
+    def update(self, key: str, fn: Any, ttl: Optional[int] = None) -> Optional[Any]:
+        """Оптимистичное read-modify-write (WATCH/MULTI/EXEC).
+
+        `fn(current: Optional[Any]) -> Any` возвращает новое значение; если вернёт
+        None — запись отменяется (возвращается None). При параллельных запросах
+        на один ключ потерянных обновлений не будет (retry на WatchError).
+        Возвращает записанное значение или None (нет Redis / отмена fn).
+        """
+        c = self._conn()
+        if c is None:
+            return None
+        full = self._key(key)
+        resolved = self.resolve_ttl(key, ttl)
+        with c.pipeline(transaction=True) as pipe:
+            while True:
+                try:
+                    pipe.watch(full)
+                    raw = pipe.get(full)
+                    current = json.loads(raw) if raw is not None else None
+                    updated = fn(current)
+                    if updated is None:
+                        pipe.unwatch()
+                        return None
+                    pipe.multi()
+                    pipe.setex(
+                        full,
+                        resolved,
+                        json.dumps(updated, ensure_ascii=False, default=str),
+                    )
+                    pipe.execute()
+                    return updated
+                except redis.WatchError:
+                    continue
 
     def flush_prefix(self) -> None:
         c = self._conn()

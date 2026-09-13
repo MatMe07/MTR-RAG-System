@@ -140,8 +140,8 @@ def _extract_unit(component: Dict[str, Any]) -> Optional[str]:
     uid = component.get("unit_id")
     if uid:
         return str(uid).strip() or None
-    for field in ("status", "detail"):
-        st = component.get(field) or ""
+    for field_key in ("status", "detail"):
+        st = component.get(field_key) or ""
         for marker in ("участок:", "установлен на unit:", "установлен на "):
             idx = st.find(marker)
             if idx == -1:

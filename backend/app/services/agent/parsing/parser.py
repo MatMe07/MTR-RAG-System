@@ -3,35 +3,34 @@
 import re
 from typing import Any, Dict, List, Optional
 
-from .parsers.operation_parser import OperationParser
-from .parsers.item_type_parser import ItemTypeParser
-from .parsers.geometry_parser import GeometryParser
-from .parsers.pressure_parser import PressureParser
-from .parsers.material_parser import MaterialParser
-from .parsers.environment_parser import EnvironmentParser
-from .parsers.component_parser import ComponentParser
-from .parsers.normative_parser import NormativeParser
-from .parsers.context_parser import ContextParser
+from app.schemas import (
+    Environment,
+    Extraction,
+    Geometry,
+    ItemCard,
+    Material,
+    Normative,
+    ParsedQuery,
+    Pressure,
+    Source,
+)
+
 from .ambiguity_detector import AmbiguityDetector
-from .context_extractor import ContextExtractor
 from .confidence_calculator import ConfidenceCalculator
+from .context_extractor import ContextExtractor
+from .dictionaries import refresh_dictionaries
+from .normalizers.normalizers import normalize_item_type
+from .parsers.component_parser import ComponentParser
+from .parsers.context_parser import ContextParser
+from .parsers.environment_parser import EnvironmentParser
+from .parsers.geometry_parser import GeometryParser
+from .parsers.item_type_parser import ItemTypeParser
+from .parsers.material_parser import MaterialParser
+from .parsers.normative_parser import NormativeParser
+from .parsers.operation_parser import OperationParser
+from .parsers.pressure_parser import PressureParser
 from .utils.data_utils import clean_technical_filters
 from .utils.replacement_utils import has_explicit_dn_replacement
-from .normalizers.normalizers import normalize_item_type
-from .dictionaries import refresh_dictionaries
-
-
-from app.schemas import (
-    ParsedQuery,
-    ItemCard,
-    Geometry,
-    Pressure,
-    Material,
-    Environment,
-    Normative,
-    Source,
-    Extraction,
-)
 
 
 class QueryParser:
@@ -49,7 +48,7 @@ class QueryParser:
         self.normative_parser = NormativeParser()
         self.context_parser = ContextParser()
         self.ambiguity_detector = AmbiguityDetector()
-        
+
         # Новые компоненты
         self.context_extractor = ContextExtractor()
         self.confidence_calculator = ConfidenceCalculator()
@@ -84,12 +83,12 @@ class QueryParser:
         material = self._safe_parse(self.material_parser.parse, text) or {}
         environment = self._safe_parse(self.environment_parser.parse, text) or {}
         normative = self._safe_parse(self.normative_parser.parse, text) or {}
-        
+
         # Извлекаем component_ids и unit_ids из результатов
         ids_result = self._safe_parse(self.component_parser.parse_all, text) or {}
         comp_ids = ids_result.get('component_ids', []) if isinstance(ids_result, dict) else []
         unit_ids_list = ids_result.get('unit_ids', []) if isinstance(ids_result, dict) else []
-        
+
         # Безопасная обработка material + normative
         material = self._clean_material_standard(material, normative)
 
@@ -258,7 +257,7 @@ class QueryParser:
         """
         if not material or not normative:
             return material
-        
+
         if not isinstance(material, dict) or not isinstance(normative, dict):
             return material
 
@@ -268,7 +267,7 @@ class QueryParser:
         if material_standard and normative_gost and material_standard == normative_gost:
             # Создаём новый словарь вместо мутации
             return {**material, "standard": None}
-        
+
         return material
 
     def _extract_references(self, text: str, component_ids=None, unit_ids=None) -> List[str]:
@@ -391,7 +390,6 @@ class QueryParser:
         text_lower = text.lower()
 
         # Символьные пороги: "остаток > 50", "< 3", ">= 10", "<= 5"
-        m = re.search(r'(?:остат\w{0,4}\s*)?(?:[>=<]\s*)(\d+)', text_lower)
         sym = re.search(r'(?P<op>>=?|<=?)\s*(?P<num>\d+)', text_lower)
         if sym:
             qty = self._parse_quantity_token(sym.group("num"))
@@ -605,7 +603,7 @@ class QueryParser:
         Обновлено с учётом новых операций
         """
         capabilities = set()
-        
+
         # Обновлённый маппинг
         mapping = {
             "search": "search",
@@ -620,7 +618,7 @@ class QueryParser:
             "assemble": "assembly_planning",
             "calculate": "calculation",
         }
-        
+
         for operation in operations:
             capability = mapping.get(operation)
             if capability:
@@ -818,7 +816,7 @@ class QueryParser:
                 strength_class=card.material.strength_class,
                 standard=card.material.standard,
             )
-            
+
             # Создаём новую карточку с обновлённым материалом
             new_card = ItemCard(
                 card_id=card.card_id,
@@ -856,7 +854,7 @@ class QueryParser:
 
         transition_types = ["переход", "тройник"]
         angle_types = ["отвод", "кран"]
-        
+
         if card.geometry:
             if card.item_type in transition_types:
                 if card.geometry.d1 is None and card.geometry.d2 is None:

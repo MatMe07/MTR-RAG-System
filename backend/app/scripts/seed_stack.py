@@ -211,7 +211,6 @@ def _invalidate_cache_prefix(prefix: str) -> None:
 
 # ==================================================================== PASSPORTS
 def seed_passports() -> int:
-    import re
 
     from app.db.session import SessionLocal
     from app.models.sqlalchemy.all_models import Document, ExtractedCharacteristic
@@ -328,7 +327,7 @@ def _normalize_value(field: str, value: Any) -> Optional[str]:
 # ==================================================================== HISTORY
 def seed_history(n: int = 200, per: int = 3) -> int:
     from app.db.session import SessionLocal
-    from app.models.sqlalchemy.all_models import CandidateItem, MtrItem, MtrItemHistory
+    from app.models.sqlalchemy.all_models import MtrItem, MtrItemHistory
 
     db = SessionLocal()
     try:

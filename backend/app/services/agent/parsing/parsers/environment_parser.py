@@ -1,11 +1,10 @@
 # query_parser/parsers/environment_parser.py
 
 import re
-from typing import Dict, Any, Optional, Tuple
-from dataclasses import dataclass, field
-from functools import lru_cache
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
-from ..dictionaries import MEDIUM_ALIASES, CLIMATE_ALIASES
+from ..dictionaries import CLIMATE_ALIASES, MEDIUM_ALIASES
 from ..normalizers.normalizers import normalize_climate, normalize_medium
 from ..utils.fuzzy_utils import FuzzyMatcher
 
@@ -29,7 +28,7 @@ class EnvironmentParser:
     - Температуру эксплуатации
     - Подтверждение H2S/CO2 стойкости
     """
-    
+
     # Паттерны для извлечения среды с приоритетами
     MEDIUM_PATTERNS = [
         # Специфические среды с высоким приоритетом
@@ -37,39 +36,39 @@ class EnvironmentParser:
         (r'\bCO2\b', 'medium', 100, "CO2", lambda x: "CO2"),
         (r'\bсероводород(?:ная среда)?\b', 'medium', 95, "сероводород", lambda x: "H2S"),
         (r'\bуглекислый газ\b', 'medium', 95, "углекислый газ", lambda x: "CO2"),
-        
+
         # Основные среды
         (r'\bнефть\b', 'medium', 90, "нефть", lambda x: "нефть"),
-        (r'\bнефтян(?:ая|ой|ую|ые|ых)\s+сред[аы]?\b', 'medium', 90, "нефтяная среда", lambda x: "нефть"), 
+        (r'\bнефтян(?:ая|ой|ую|ые|ых)\s+сред[аы]?\b', 'medium', 90, "нефтяная среда", lambda x: "нефть"),
         (r'\bприродный газ\b', 'medium', 90, "природный газ", lambda x: "природный газ"),
         (r'\bгаз\b', 'medium', 85, "газ", lambda x: "газ"),
         (r'\bвода\b', 'medium', 85, "вода", lambda x: "вода"),
-        
+
         # Среда через предлоги
         (r'(?:для|с|на)\s+(?:H2S|сероводород)', 'medium', 80, "для H2S", lambda x: "H2S"),
         (r'(?:для|с|на)\s+(?:CO2|углекислый газ)', 'medium', 80, "для CO2", lambda x: "CO2"),
-        
+
         # Среда в составе слова
         (r'UNIT[-_\s]*(?:H2S|CO2)', 'medium', 75, "UNIT с H2S/CO2", lambda x: x.upper()),
     ]
-    
+
     # Паттерны для климатического исполнения
     CLIMATE_PATTERNS = [
         # Точные совпадения (высший приоритет)
         (r'\bУХЛ1?\b', 'climate_version', 100, "УХЛ", lambda x: "УХЛ"),
         (r'\bХЛ1?\b', 'climate_version', 100, "ХЛ", lambda x: "ХЛ"),
         (r'\bТ\b', 'climate_version', 95, "Т", lambda x: "Т"),
-        
+
         # Климатика через слова
         (r'\bсевер(?:ный|ное)?\b', 'climate_version', 90, "север", lambda x: "ХЛ"),
-        (r'\bтропик(?:и|еский|еская|еское)?\b', 'climate_version', 90, "тропики", lambda x: "Т"), 
+        (r'\bтропик(?:и|еский|еская|еское)?\b', 'climate_version', 90, "тропики", lambda x: "Т"),
         (r'\bтропическ(?:ий|ая|ое|ие|их)\s+исполнени[ея]?\b', 'climate_version', 90, "тропическое исполнение", lambda x: "Т"),
         (r'\bумеренн(?:ый|ая|ое)?\b', 'climate_version', 85, "умеренный", lambda x: "У"),
-        
+
         # Климатика с пояснениями
         (r'(?:климат|исполнение)\s+(?:УХЛ|ХЛ|Т|У)', 'climate_version', 80, "климат X", lambda x: x.upper()),
     ]
-    
+
     # Паттерны для температуры
     TEMPERATURE_PATTERNS = [
         (r'(?:температур\w*|град)\s*[:]?\s*([-+]?\d+(?:[.,]\d+)?)\s*(?:°?C|°|градус[а]?)?',
@@ -79,7 +78,7 @@ class EnvironmentParser:
         (r'([-+]?\d+(?:[.,]\d+)?)\s*(?:°?C|°|градус[а]?)\s*(?:температур[аы])',
          'temperature_min_c', 85, "X°C температура"),
     ]
-    
+
     # Контекстные паттерны для определения среды
     CONTEXT_PATTERNS = {
         "h2s_confirmed": [
@@ -98,13 +97,13 @@ class EnvironmentParser:
             (r'горюч\w*', "нефть"),
         ],
     }
-    
+
     # Список климатических исполнений для валидации
     VALID_CLIMATE_VERSIONS = ["У", "ХЛ", "УХЛ", "Т", "УХЛ1", "ХЛ1"]
-    
+
     # Список валидных сред
     VALID_MEDIUMS = ["нефть", "природный газ", "газ", "вода", "H2S", "CO2", "CORR", "пар", "воздух"]
-    
+
     def __init__(self):
         self.fuzzy_matcher = FuzzyMatcher(threshold=80)
         self._cache: Dict[str, Dict[str, Any]] = {}
@@ -115,14 +114,14 @@ class EnvironmentParser:
         """
         if not text or not text.strip():
             return self._empty_result()
-        
+
         # Проверка кеша
         cache_key = text.strip()
         if cache_key in self._cache:
             return self._cache[cache_key].copy()
-        
+
         result = self._parse_impl(text)
-        
+
         # Сохраняем в кеш
         self._cache[cache_key] = result.copy()
         return result
@@ -133,11 +132,11 @@ class EnvironmentParser:
         """
         result = self._empty_result()
         normalized = text.lower()
-        
+
         # Проверяем наличие UNIT с указанием среды
         has_unit_h2s = bool(re.search(r'unit[\-_\s]*h2s', normalized))
         has_unit_co2 = bool(re.search(r'unit[\-_\s]*co2', normalized))
-        
+
         if has_unit_h2s or has_unit_co2:
             if has_unit_h2s:
                 result["medium"] = "H2S"
@@ -148,24 +147,24 @@ class EnvironmentParser:
         else:
             # 1. Извлечение среды
             self._apply_medium_patterns(normalized, result)
-            
+
             # 2. Контекстный поиск среды
             if result.get("medium") is None:
                 self._apply_context_medium_patterns(normalized, result)
-            
+
             # 3. Извлечение климатики
             self._apply_climate_patterns(normalized, result)
-            
+
             # 4. Извлечение температуры
             self._apply_temperature_patterns(normalized, result)
-            
+
             # 5. Подтверждение H2S/CO2 стойкости
             self._apply_h2s_co2_confirmation(normalized, result)
-            
+
             # 6. Fuzzy-поиск для среды
             if result.get("medium") is None:
                 self._apply_fuzzy_medium_search(normalized, result)
-        
+
         # 7. Нормализация климатики
         if result.get("climate_version"):
             result["climate_version"] = normalize_climate(result["climate_version"])
@@ -173,16 +172,16 @@ class EnvironmentParser:
         # 7a. Нормализация среды (алиасы §1E.4 + synonyms БД)
         if result.get("medium"):
             result["medium"] = normalize_medium(result["medium"]) or result["medium"]
-        
+
         # 8. Если есть h2s_confirmed, но нет medium - заполняем
         if result.get("h2s_confirmed") and result.get("medium") is None:
             result["medium"] = "H2S"
         if result.get("co2_confirmed") and result.get("medium") is None:
             result["medium"] = "CO2"
-        
+
         # 9. Отрицание подтверждения: «ещё не подтверждены для CO2» -> co2_confirmed=False
         self._apply_confirmation_negation(normalized, result)
-        
+
         return result
 
     def _apply_confirmation_negation(self, text: str, result: Dict[str, Any]) -> None:
@@ -208,7 +207,7 @@ class EnvironmentParser:
         """
         # Сортируем по приоритету
         sorted_patterns = sorted(self.MEDIUM_PATTERNS, key=lambda x: x[2], reverse=True)
-        
+
         for pattern, field, priority, _, normalize_func in sorted_patterns:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
@@ -217,12 +216,12 @@ class EnvironmentParser:
                     result[field] = normalize_func(value)
                 else:
                     result[field] = value
-                
+
                 if result.get("medium") == "H2S":
                     result["h2s_confirmed"] = True
                 elif result.get("medium") == "CO2":
                     result["co2_confirmed"] = True
-                
+
                 break
 
     def _apply_climate_patterns(self, text: str, result: Dict[str, Any]) -> None:
@@ -231,7 +230,7 @@ class EnvironmentParser:
         """
         # Сортируем по приоритету
         sorted_patterns = sorted(self.CLIMATE_PATTERNS, key=lambda x: x[2], reverse=True)
-        
+
         for pattern, field, priority, _, normalize_func in sorted_patterns:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
@@ -241,7 +240,7 @@ class EnvironmentParser:
                 else:
                     result[field] = value
                 break
-        
+
         # Специальная обработка для "У" (отличаем от предлога)
         if result.get("climate_version") is None:
             self._extract_climate_u(text, result)
@@ -285,7 +284,7 @@ class EnvironmentParser:
                 if result.get("medium") is None:
                     result["medium"] = "H2S"
                 break
-        
+
         # Проверяем CO2
         for pattern, value in self.CONTEXT_PATTERNS.get("co2_confirmed", []):
             if re.search(pattern, text, re.IGNORECASE):
@@ -299,14 +298,14 @@ class EnvironmentParser:
         Fuzzy-поиск среды
         """
         words = re.findall(r"[а-яёa-z0-9]+", text.lower())
-        
+
         # Собираем все алиасы сред
         all_aliases = list(MEDIUM_ALIASES.keys())
-        
+
         for word in words:
             if len(word) < 3:
                 continue
-            
+
             matches = self.fuzzy_matcher.match(word, all_aliases)
             for matched_alias, score in matches:
                 if score >= 85:
@@ -327,7 +326,7 @@ class EnvironmentParser:
         Специальное извлечение климатики "У" (отличаем от предлога)
         """
         text_lower = text.lower()
-        
+
         # Проверяем, что "у" не является предлогом
         # Ищем "У" в конце строки, после запятой, после тире, или в скобках
         climate_u_patterns = [
@@ -339,12 +338,12 @@ class EnvironmentParser:
             r'\bу\s*[,;]',        # "у," или "у;"
             r'-\s*у\b',           # "- у" после тире
         ]
-        
+
         for pattern in climate_u_patterns:
             if re.search(pattern, text_lower):
                 result["climate_version"] = "У"
                 return
-        
+
         # Проверяем, что "у" не является предлогом "у меня", "у нас" и т.д.
         words = re.findall(r'\b\w+\b', text_lower)
         for i, word in enumerate(words):
@@ -363,12 +362,12 @@ class EnvironmentParser:
         Нормализация климатического исполнения
         """
         climate_upper = climate.upper()
-        
+
         # Проверяем по алиасам
         for alias, normalized in CLIMATE_ALIASES.items():
             if alias.upper() == climate_upper:
                 return normalized
-        
+
         return climate_upper
 
     # =========================================================

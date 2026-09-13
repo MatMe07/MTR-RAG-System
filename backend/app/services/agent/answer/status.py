@@ -10,8 +10,8 @@
 from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.schemas import AgentAnswer, AgentComponent, AgentSource
-from app.services.agent.intent.matrix import BLOCKER_FIELDS
+from app.schemas import AgentComponent, AgentSource
+
 from ..medium import medium_match
 
 STATUS_MATCH = "соответствует"

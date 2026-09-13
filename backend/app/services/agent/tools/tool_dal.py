@@ -15,7 +15,7 @@ from types import SimpleNamespace
 from typing import Any, Dict, List, Optional
 
 from app.services.agent.repository.interfaces import IRepository
-from app.services.agent.tools.core_tools import _matches_filters, _match_score
+from app.services.agent.tools.core_tools import _match_score, _matches_filters
 
 log = logging.getLogger("mtr.agent.tool_dal")
 

@@ -1,11 +1,10 @@
 import json
+import sys
 import unittest
 from pathlib import Path
-from pathlib import Path
-import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from jsonschema import Draft202012Validator, FormatChecker
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SCHEMA_PATH = PROJECT_ROOT / "docs" / "schemas" / "item_card.schema.json"

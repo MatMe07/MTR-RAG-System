@@ -30,6 +30,7 @@ dependencies = [
     "langchain-openai>=0.1.0",
     "langgraph>=0.2.0",
     "langgraph-checkpoint-sqlite>=2.0.0",
+    "langgraph-checkpoint-redis>=2.0.0",
     "mawo-natasha>=1.0.3",
     "mawo-pymorphy3>=1.0.4",
     "mawo-razdel>=1.0.6",
@@ -62,7 +63,10 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
+# Легаси-базовый долг стиля (будут включены после постепенной чистки):
+#   E501 - длинные строки в старом коде
+#   N801/N802/N803/N805/N806/N818 - устаревшие имена функций/переменных/классов
+extend-ignore = ["E501", "N801", "N802", "N803", "N805", "N806", "N818"]
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
 testpaths = ["app/tests"]

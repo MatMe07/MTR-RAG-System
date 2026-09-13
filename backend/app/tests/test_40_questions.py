@@ -15,10 +15,10 @@ required_tools, required_sources, mandatory_warning, human_review_required.
 """
 import json
 import os
+import sys
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
-import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -29,7 +29,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA_FILE = _REPO_ROOT / "data" / "evaluation" / "complex_questions_40.jsonl"
 RESULTS_DIR = _REPO_ROOT / "data" / "evaluation" / "results"
 
-MIN_TOOLS_COVERAGE = int(os.getenv("AGENT_EVAL_MIN_TOOLS", "20"))
+MIN_TOOLS_COVERAGE = int(os.getenv("AGENT_EVAL_MIN_TOOLS", "35"))
 STRICT = os.environ.get("AGENT_EVAL_STRICT") == "1"
 
 

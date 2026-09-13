@@ -1,5 +1,4 @@
 from typing import Any
-from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -17,13 +16,13 @@ class AuditService:
         action: str,
         data: dict[str, Any] | None = None,
     ) -> None:
-        import json
-
+        # Колонка Log.data — JSON-тип (JSONBCompat): храним dict напрямую,
+        # иначе двойное JSON-кодирование возвращает строку, а не объект.
         entry = Log(
             request_id=request_id,
             user_id=user_id,
             action=action,
-            data=json.dumps(data or {}, ensure_ascii=False, default=str),
+            data=data or {},
         )
         self.db.add(entry)
         self.db.commit()

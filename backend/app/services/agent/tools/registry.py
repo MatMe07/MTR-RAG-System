@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List, Optional
 
 from .validation import validate_input
 
-
 _TOOL_REGISTRY: Dict[str, Callable] = {}
 _TOOL_DESCRIPTIONS: Dict[str, str] = {}
 

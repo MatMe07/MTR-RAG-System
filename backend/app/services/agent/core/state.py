@@ -1,15 +1,16 @@
 # agent/core/state.py
 
-from typing import TypedDict, List, Dict, Any, Optional
-from app.schemas import ParsedQuery, AgentAnswer
+from typing import Any, Dict, List, Optional, TypedDict
+
+from app.schemas import AgentAnswer, ParsedQuery
 
 
 class AgentState(TypedDict, total=False):
     """Состояние агента для LangGraph (только сериализуемые данные)"""
-    
+
     query: str
     parsed: ParsedQuery
-    
+
     candidates: List[Dict[str, Any]]
     stock_rows: List[Dict[str, Any]]
     ksm_targets: List[Dict[str, Any]]
@@ -26,7 +27,7 @@ class AgentState(TypedDict, total=False):
     review_required: bool
     completed: bool
     current_node: str
-    
+
     answer: Optional[AgentAnswer]
 
 

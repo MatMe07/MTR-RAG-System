@@ -41,6 +41,3 @@ class DetailLevel(str, Enum):
     BASIC = "basic"
     WITH_STOCK = "with_stock"
     FULL = "full"
-
-
-BLOCKER_FIELDS = {"dn", "pn", "item_type", "material", "medium"}

@@ -1,9 +1,8 @@
 # query_parser/parsers/component_parser.py
 
 import re
-from typing import Optional, List, Dict, Any, Tuple
-from dataclasses import dataclass, field
-from functools import lru_cache
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from ..utils.fuzzy_utils import FuzzyMatcher
 
@@ -28,7 +27,7 @@ class ComponentParser:
     - Различные форматы записи
     - Множественные идентификаторы в одном запросе
     """
-    
+
     # Паттерны для извлечения идентификаторов
     IDENTIFIER_PATTERNS = {
         'component': [
@@ -57,7 +56,7 @@ class ComponentParser:
             (r'\bPIPELINE[-_]([A-Z0-9-]+)\b', 'PL', "PIPELINE-XXX", 85),
         ],
     }
-    
+
     # Контекстные паттерны для поиска без явного префикса
     CONTEXT_PATTERNS = {
         'component': [
@@ -75,7 +74,7 @@ class ComponentParser:
             (r'(?:МТР|материал)\s+([A-Z0-9-]+)', 90),
         ],
     }
-    
+
     # Стоп-слова для фильтрации ложных срабатываний
     STOP_WORDS = {
         'COMP', 'UNIT', 'KSM', 'MTR', 'EQ', 'PL',
@@ -83,7 +82,7 @@ class ComponentParser:
         'ГОСТ', 'ТУ', 'СТО', 'ЛНД',  # Нормативные документы
         'DN', 'PN', 'РУ',  # Технические параметры
     }
-    
+
     def __init__(self):
         self.fuzzy_matcher = FuzzyMatcher(threshold=75)
         self._cache: Dict[str, Dict[str, Any]] = {}
@@ -111,14 +110,14 @@ class ComponentParser:
         """
         if not text or not text.strip():
             return self._empty_result()
-        
+
         # Проверка кеша
         cache_key = text.strip()
         if cache_key in self._cache:
             return self._cache[cache_key].copy()
-        
+
         result = self._parse_impl(text)
-        
+
         # Сохраняем в кеш
         self._cache[cache_key] = result.copy()
         return result
@@ -129,21 +128,21 @@ class ComponentParser:
         """
         result = self._empty_result()
         text_upper = text.upper()
-        
+
         # 1. Извлечение по паттернам
         self._apply_identifier_patterns(text_upper, result)
-        
+
         # 2. Контекстный поиск
         if not self._has_any_identifiers(result):
             self._apply_context_patterns(text_upper, result)
-        
+
         # 3. Поиск числовых кодов без префикса
         if not self._has_any_identifiers(result):
             self._apply_numeric_search(text_upper, result)
-        
+
         # 4. Очистка от дубликатов и валидация
         result = self._clean_result(result)
-        
+
         return result
 
     # =========================================================
@@ -157,7 +156,7 @@ class ComponentParser:
         for id_type, patterns in self.IDENTIFIER_PATTERNS.items():
             # Сортируем по приоритету
             sorted_patterns = sorted(patterns, key=lambda x: x[3], reverse=True)
-            
+
             for pattern, prefix, description, priority in sorted_patterns:
                 matches = re.findall(pattern, text, re.IGNORECASE)
                 if matches:
@@ -194,16 +193,16 @@ class ComponentParser:
         """
         # Ищем числа, которые могут быть кодами
         numbers = re.findall(r'\b(\d{3,6})\b', text)
-        
+
         if numbers:
             # Проверяем контекст для определения типа
             text_lower = text.lower()
-            
+
             for number in numbers:
                 # Пропускаем, если число может быть параметром
                 if self._is_parameter_number(number, text_lower):
                     continue
-                
+
                 # Определяем тип по контексту
                 id_type = self._determine_type_by_context(text_lower, number)
                 if id_type:
@@ -259,15 +258,15 @@ class ComponentParser:
         # Проверяем точное совпадение
         if identifier in self.STOP_WORDS:
             return True
-        
+
         # Проверяем, не является ли идентификатор нормативным документом
         if re.match(r'^(ГОСТ|ТУ|СТО)\s+\d+', identifier):
             return True
-        
+
         # Проверяем, не является ли идентификатор техническим параметром
         if re.match(r'^(DN|PN|РУ)\d+', identifier):
             return True
-        
+
         return False
 
     def _is_parameter_number(self, number: str, text: str) -> bool:
@@ -277,12 +276,12 @@ class ComponentParser:
         # Если рядом с числом есть "DN", "PN", "РУ" - это параметр
         if re.search(rf'(?:DN|PN|РУ|Ду)\s*{number}', text, re.IGNORECASE):
             return True
-        
+
         # Если число от 10 до 400 - может быть PN
         num = int(number)
         if 10 <= num <= 400 and num % 10 == 0:
             return True
-        
+
         return False
 
     def _determine_type_by_context(self, text: str, number: str) -> Optional[str]:
@@ -295,7 +294,7 @@ class ComponentParser:
                 # Проверяем, есть ли число в контексте
                 if re.search(pattern.replace(r'([A-Z0-9-]+)', number), text, re.IGNORECASE):
                     return id_type
-        
+
         # Если не определился - проверяем по ключевым словам
         if re.search(r'\b(?:деталь|компонент)\b', text):
             return 'component'
@@ -305,7 +304,7 @@ class ComponentParser:
             return 'ksm'
         elif re.search(r'\b(?:МТР|материал)\b', text):
             return 'mtr'
-        
+
         return None
 
     def _has_any_identifiers(self, result: Dict[str, List[str]]) -> bool:
@@ -338,7 +337,7 @@ class ComponentParser:
                     cleaned[key] = []
             else:
                 cleaned[key] = []
-        
+
         return cleaned
 
     def _empty_result(self) -> Dict[str, List[str]]:

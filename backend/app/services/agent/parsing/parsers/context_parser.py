@@ -1,9 +1,8 @@
 # query_parser/parsers/context_parser.py
 
 import re
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
-from functools import lru_cache
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from ..utils.fuzzy_utils import FuzzyMatcher
 
@@ -39,7 +38,7 @@ class ContextParser:
     - Имплицитные ссылки
     - Количество участков
     """
-    
+
     # Паттерны для извлечения количества штук
     QUANTITY_PATTERNS = [
         # Цифры + штуки
@@ -54,7 +53,7 @@ class ContextParser:
         (r'\b(\d+)\s+(?:отвод|труба|задвижка|заглушка|переход|тройник)',
          'quantity', 80, "X деталей"),
     ]
-    
+
     # Паттерны для извлечения длины
     LENGTH_PATTERNS = [
         # Цифры + метры
@@ -65,7 +64,7 @@ class ContextParser:
         # Километры
         (r'(\d+)\s*(?:км|километр|километров|километра)', 'length_meters', 80, "X км"),
     ]
-    
+
     # Паттерны для извлечения временных рамок
     TIMEFRAME_PATTERNS = [
         (r'следующ(?:ая|ей|ую|их)?\s*(?:недел[ея]|месяц|год)', 'timeframe', 100, "следующая неделя"),
@@ -73,7 +72,7 @@ class ContextParser:
         (r'завтра|утром|вечером', 'timeframe', 80, "завтра"),
         (r'(?:в\s+)?течени[ея]\s+(\d+)\s*(?:дн[ей]|час[ов]|минут)', 'timeframe_days', 70, "в течение X дней"),
     ]
-    
+
     # Паттерны для извлечения срочности
     URGENCY_PATTERNS = [
         (r'срочн(?:о|ый|ая|ое|ые|ых)', 'urgency', 100, "срочно"),
@@ -82,7 +81,7 @@ class ContextParser:
         (r'аварийн(?:о|ый|ая|ое|ые|ых)', 'urgency', 95, "аварийно"),
         (r'немедленн(?:о|ый|ая|ое|ые|ых)', 'urgency', 95, "немедленно"),
     ]
-    
+
     # Паттерны для извлечения количества участков
     UNITS_COUNT_PATTERNS = [
         # Слова + участков
@@ -93,7 +92,7 @@ class ContextParser:
         # Участки без явного количества
         (r'несколько\s+участков', 'units_count_implicit', 80, "несколько участков"),
     ]
-    
+
     # Паттерны для извлечения ссылок
     REFERENCE_PATTERNS = {
         'explicit': [
@@ -115,7 +114,7 @@ class ContextParser:
             (r'этого участка', 'implicit_reference', 80),
         ],
     }
-    
+
     # Словари числительных
     NUM_WORDS = {
         'одна': 1, 'один': 1, 'одно': 1, 'одну': 1,
@@ -134,7 +133,7 @@ class ContextParser:
         'восемьсот': 800, 'девятьсот': 900,
         'тысяча': 1000,
     }
-    
+
     UNITS_COUNT_WORDS = {
         'одн': 1, 'дв': 2, 'трёх': 3, 'тр': 3,
         'четырёх': 4, 'четыр': 4,
@@ -145,7 +144,7 @@ class ContextParser:
         'девяти': 9, 'девят': 9,
         'десяти': 10, 'десят': 10,
     }
-    
+
     def __init__(self):
         self.fuzzy_matcher = FuzzyMatcher(threshold=75)
         self._cache: Dict[str, Dict[str, Any]] = {}
@@ -156,14 +155,14 @@ class ContextParser:
         """
         if not text or not text.strip():
             return {}
-        
+
         # Проверка кеша
         cache_key = text.strip()
         if cache_key in self._cache:
             return self._cache[cache_key].copy()
-        
+
         result = self._parse_impl(text)
-        
+
         # Сохраняем в кеш
         self._cache[cache_key] = result.copy()
         return result
@@ -174,37 +173,37 @@ class ContextParser:
         """
         result = {}
         text_lower = text.lower()
-        
+
         # 1. Количество штук
         self._apply_quantity_patterns(text_lower, result)
-        
+
         # 2. Количество участков
         self._apply_units_count_patterns(text_lower, result)
-        
+
         # 3. Длина
         self._apply_length_patterns(text_lower, result)
-        
+
         # 4. Временные рамки
         self._apply_timeframe_patterns(text_lower, result)
-        
+
         # 5. Срочность
         self._apply_urgency_patterns(text_lower, result)
-        
+
         # 6. Ссылки
         references = self._extract_references(text)
         if references:
             result['references'] = references
-        
+
         # 7. Имплицитные ссылки
         implicit_refs = self._extract_implicit_references(text)
         if implicit_refs:
             if 'references' not in result:
                 result['references'] = []
             result['references'].extend(implicit_refs)
-        
+
         # 8. Чистка результата
         result = self._clean_result(result)
-        
+
         return result
 
     # =========================================================
@@ -305,7 +304,7 @@ class ContextParser:
         Извлечение явных ссылок
         """
         references = []
-        
+
         for pattern, ref_type, priority in self.REFERENCE_PATTERNS['explicit']:
             matches = re.findall(pattern, text, re.IGNORECASE)
             for match in matches:
@@ -316,7 +315,7 @@ class ContextParser:
                     confidence=priority / 100.0
                 )
                 references.append(ref)
-        
+
         return references
 
     def _extract_implicit_references(self, text: str) -> List[ContextReference]:
@@ -325,7 +324,7 @@ class ContextParser:
         """
         references = []
         text_lower = text.lower()
-        
+
         for pattern, ref_type, priority in self.REFERENCE_PATTERNS['implicit']:
             if re.search(pattern, text_lower):
                 ref = ContextReference(
@@ -336,7 +335,7 @@ class ContextParser:
                 )
                 references.append(ref)
                 break  # Достаточно одной имплицитной ссылки
-        
+
         return references
 
     # =========================================================
@@ -349,11 +348,11 @@ class ContextParser:
         """
         # Удаляем None значения
         cleaned = {k: v for k, v in result.items() if v is not None}
-        
+
         # Удаляем пустые списки
         if 'references' in cleaned and not cleaned['references']:
             del cleaned['references']
-        
+
         return cleaned
 
     # =========================================================

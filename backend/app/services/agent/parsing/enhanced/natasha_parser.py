@@ -1,20 +1,13 @@
 # query_parser/enhanced/natasha_parser.py
 
 import re
-from typing import Dict, Any, List, Optional, Set
-from functools import lru_cache
+from typing import Any, Dict, List, Optional, Set
 
-from mawo_natasha import (
-    Segmenter,
-    MorphVocab,
-    NewsMorphTagger,
-    NewsNERTagger,
-    Doc
-)
+from mawo_natasha import Doc, MorphVocab, NewsMorphTagger, NewsNERTagger, Segmenter
 
 from ..dictionaries import ITEM_TYPE_ALIASES, OPERATION_ALIASES
-from ..utils.replacement_utils import has_explicit_dn_replacement
 from ..utils.fuzzy_utils import FuzzyMatcher
+from ..utils.replacement_utils import has_explicit_dn_replacement
 
 
 class NatashaParser:
@@ -22,10 +15,10 @@ class NatashaParser:
     NLP-парсер на основе библиотеки Natasha.
     Извлекает сущности и параметры из текста с использованием NER и морфологии.
     """
-    
+
     # Типы деталей для NER (используются для фильтрации)
     ITEM_TYPE_KEYWORDS = {"отвод", "задвижка", "заглушка", "переход", "тройник", "труба", "кран"}
-    
+
     # Паттерны для извлечения subtype (централизовано)
     SUBTYPE_PATTERNS = [
         # Задвижки
@@ -50,13 +43,13 @@ class NatashaParser:
         (r'равнопроходн(?:ый|ая|ое)', "равнопроходный"),
         (r'переходн(?:ой|ая|ое)', "переходной"),
     ]
-    
-    # ✅ Обновлены паттерны для извлечения операций
+
+    # Обновлены паттерны для извлечения операций
     OPERATION_PATTERNS = {
         "replace": [
             r'(?:подбер|найд|замен|аналог|вмест)',
             r'(?:замени|замену|замены)',
-            r'(?:подбери|подобрать)',  # ✅ Добавлено
+            r'(?:подбери|подобрать)',
         ],
         "repair": [
             r'(?:ремонт|сломал|поврежд|утечк|отказал|почин)',
@@ -83,7 +76,6 @@ class NatashaParser:
         ],
         "search": [
             r'(?:найди|покажи|найти|показать|выбери)',
-            # r'(?:подбери|подобрать)',  # ❌ Удаляем отсюда
         ],
         "assemble": [
             r'(?:собер|комплект|сборка)',
@@ -92,17 +84,17 @@ class NatashaParser:
             r'(?:посчитай|подсчитай|рассчитай|расчет)',
         ],
     }
-    
+
     def __init__(self):
         # Инициализация MAWO (Natasha) компонентов
         self.segmenter = Segmenter()
         self.morph_vocab = MorphVocab()
         self.ner_tagger = NewsNERTagger()
         self.morph_tagger = NewsMorphTagger()
-        
+
         # Fuzzy matcher для улучшенного поиска
         self.fuzzy_matcher = FuzzyMatcher(threshold=75)
-        
+
         # Кеш для результатов парсинга
         self._cache: Dict[str, Dict[str, Any]] = {}
 
@@ -114,13 +106,13 @@ class NatashaParser:
         cache_key = text.strip()
         if cache_key in self._cache:
             return self._cache[cache_key].copy()
-        
+
         # Основной парсинг
         result = self._parse_impl(text)
-        
+
         # Сохраняем в кеш
         self._cache[cache_key] = result.copy()
-        
+
         return result
 
     def _parse_impl(self, text: str) -> Dict[str, Any]:
@@ -132,7 +124,7 @@ class NatashaParser:
         doc.segment(self.segmenter)
         doc.tag_ner(self.ner_tagger)
         self._apply_morph_markup(doc)
-        
+
         # Инициализация результата
         result = {
             "item_types": [],
@@ -158,28 +150,28 @@ class NatashaParser:
             "component_id": None,
             "medium": None,
         }
-        
+
         # 1. Извлечение операций
         result["operations"] = self._extract_operations(text)
-        
+
         # 2. Извлечение типов деталей (через NER)
         result["item_types"] = self._extract_item_types(doc, text)
-        
+
         # 3. Извлечение subtype
         result["subtype"] = self._extract_subtype(text)
-        
+
         # 4. Извлечение параметров
         self._extract_parameters(text, result)
-        
+
         # 5. Извлечение ID компонентов и участков
         result["component_ids"], result["unit_ids"] = self._extract_ids(text)
-        
+
         # 6. Извлечение ссылок (ГОСТ, ТУ)
         result["references"] = self._extract_references(text)
-        
+
         # 7. Извлечение неоднозначностей
         result["ambiguities"] = self._extract_ambiguities(text, result)
-        
+
         return result
 
     def _apply_morph_markup(self, doc: Doc) -> None:
@@ -215,23 +207,23 @@ class NatashaParser:
         """
         operations: Set[str] = set()
         text_lower = text.lower()
-        
+
         # Проверяем по паттернам
         for op, patterns in self.OPERATION_PATTERNS.items():
             for pattern in patterns:
                 if re.search(pattern, text_lower, re.IGNORECASE):
                     operations.add(op)
                     break
-        
+
         # Проверяем через алиасы (из dictionaries.py)
         for alias, op in OPERATION_ALIASES.items():
             if re.search(rf"(?<![а-яёa-z]){re.escape(alias)}(?![а-яёa-z])", text_lower):
                 operations.add(op)
-        
-        # ✅ Дополнительная проверка для impact через ключевые фразы
+
+        # Дополнительная проверка для impact через ключевые фразы
         if re.search(r'(?:какие соседние|прид[её]тся заменить|затронет|соседние детали)', text_lower):
             operations.add("impact")
-        
+
         return sorted(operations)
 
     # =========================================================
@@ -244,7 +236,7 @@ class NatashaParser:
         """
         item_types: Set[str] = set()
         text_lower = text.lower()
-        
+
         # 1. Через NER (ORGANIZATION часто содержит коды деталей)
         for span in doc.spans:
             if span.type == "ORG":
@@ -253,12 +245,12 @@ class NatashaParser:
                     if keyword in span_lower:
                         item_types.add(keyword)
                         break
-        
+
         # 2. Через точное совпадение с алиасами
         for alias, normalized in ITEM_TYPE_ALIASES.items():
             if re.search(rf"(?<![а-яёa-z]){re.escape(alias)}(?![а-яёa-z])", text_lower):
                 item_types.add(normalized)
-        
+
         # 3. Через fuzzy-поиск (для опечаток в базовых типах; полнота по БД
         #    достигается точным совпадением выше, а широкий fuzzy по алиасам БД
         #    даёт ложные типа («проверить» → «просвет»)).
@@ -272,7 +264,7 @@ class NatashaParser:
                 if self.fuzzy_matcher.match(word, [keyword]):
                     item_types.add(keyword)
                     break
-        
+
         return list(item_types)
 
     # =========================================================
@@ -284,11 +276,11 @@ class NatashaParser:
         Извлечение подтипа из текста
         """
         text_lower = text.lower()
-        
+
         for pattern, subtype in self.SUBTYPE_PATTERNS:
             if re.search(pattern, text_lower):
                 return subtype
-        
+
         return None
 
     # =========================================================
@@ -301,7 +293,7 @@ class NatashaParser:
         """
         params = result["parameters"]
         text_lower = text.lower()
-        
+
         # DN
         dn_patterns = [
             r'DN\s*[:]?\s*(\d+)',
@@ -314,7 +306,7 @@ class NatashaParser:
             if match:
                 params["dn"] = float(match.group(1))
                 break
-        
+
         # Толщина стенки
         wall_patterns = [
             r'стенк[аиой]\s*[:]?\s*(\d+(?:[.,]\d+)?)',
@@ -326,7 +318,7 @@ class NatashaParser:
             if match:
                 params["wall_thickness"] = float(match.group(1).replace(',', '.'))
                 break
-        
+
         # Давление (PN)
         pressure_patterns = [
             r'PN\s*[:]?\s*(\d+)',
@@ -339,7 +331,7 @@ class NatashaParser:
                 val = float(match.group(1).replace(',', '.'))
                 params["pressure"] = val / 10.0 if val >= 10 else val
                 break
-        
+
         # Угол
         angle_patterns = [
             r'\b(30|45|60|90)\s*°',
@@ -350,7 +342,7 @@ class NatashaParser:
             if match:
                 params["angle"] = float(match.group(1))
                 break
-        
+
         # Материал (марка стали)
         steel_patterns = [
             r'(?:стал[иь])\s+([0-9а-яёa-z]+)',
@@ -361,14 +353,14 @@ class NatashaParser:
             if match:
                 params["steel_grade"] = match.group(1).upper()
                 break
-        
+
         # Среда (приоритет: нефть > газ > вода > H2S > CO2)
         medium_priority = ["нефть", "природный газ", "вода", "H2S", "CO2"]
         for medium in medium_priority:
             if re.search(rf'\b{medium}\b', text, re.IGNORECASE):
                 params["medium"] = medium
                 break
-        
+
         # Климатика (исполнение)
         climate_patterns = [
             (r'\bУХЛ1?\b', "УХЛ"),
@@ -391,10 +383,10 @@ class NatashaParser:
         """
         component_ids = re.findall(r'\bCOMP[-_][A-Z0-9-]+\b', text, re.IGNORECASE)
         unit_ids = re.findall(r'\bUNIT[-_][A-Z0-9-]+\b', text, re.IGNORECASE)
-        
+
         component_ids = [cid.upper() for cid in component_ids]
         unit_ids = [uid.upper() for uid in unit_ids]
-        
+
         return component_ids, unit_ids
 
     # =========================================================
@@ -407,13 +399,13 @@ class NatashaParser:
         """
         references = []
         text_upper = text.upper()
-        
+
         gost_matches = re.findall(r'ГОСТ\s+[\d\-]+(?:\.[\d\-]+)?', text_upper)
         references.extend(gost_matches)
-        
+
         tu_matches = re.findall(r'ТУ\s+[\d\-]+(?:\.[\d\-]+)?', text_upper)
         references.extend(tu_matches)
-        
+
         return list(dict.fromkeys(references))
 
     # =========================================================
@@ -426,15 +418,15 @@ class NatashaParser:
         """
         ambiguities = []
         text_lower = text.lower()
-        
+
         dns = re.findall(r'\b(?:dn|ду)\s*[:]?\s*(\d+)', text_lower)
         if len(set(dns)) > 1 and not has_explicit_dn_replacement(text):
             ambiguities.append("Обнаружено несколько значений DN")
-        
+
         angles = re.findall(r'\b(30|45|60|90)\s*°?', text_lower)
         if len(set(angles)) > 1:
             ambiguities.append("Обнаружено несколько значений угла")
-        
+
         if not result.get("item_types"):
             _ITEM_HINTS = (
                 r'\b(?:отвод|окш|ог|задвижк[а-я]*|заглушк[а-я]*|переход[а-я]*|'

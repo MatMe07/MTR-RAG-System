@@ -1,14 +1,14 @@
 # agent/tools/analytic_tools.py
 
 import logging
-from typing import Any, Dict, List
-from collections import defaultdict
 import time
+from collections import defaultdict
+from typing import Any, Dict, List
 
-from .registry import register_tool
-from .core_tools import _empty_result, _source, _card_component
-from .stock_filters import passes_stock_filter
 from ..core.state import AgentState
+from .core_tools import _empty_result, _source
+from .registry import register_tool
+from .stock_filters import passes_stock_filter
 
 log = logging.getLogger("mtr.agent.tools")
 
@@ -18,20 +18,20 @@ def impact_analyzer(state: AgentState) -> Dict[str, Any]:
     """Анализ влияния изменений"""
     start = time.time()
     result = _empty_result()
-    
+
     parsed = state["parsed"]
     changes = getattr(parsed, "proposed_changes", {}) or {}
     tf = getattr(parsed, "technical_filters", {}) or {}
-    
+
     # Определяем изменения из контекста
     if not changes.get("medium") and tf.get("medium"):
         medium = str(tf["medium"]).lower()
         if "h2s" in medium or "co2" in medium:
             changes["medium"] = str(tf["medium"])
-    
+
     checks = []
     affected = set()
-    
+
     dn_to = changes.get("dn_to")
     dn_from = changes.get("dn_from")
     if dn_to or dn_from:
@@ -44,15 +44,15 @@ def impact_analyzer(state: AgentState) -> Dict[str, Any]:
         result["warnings"].append(
             "Изменение DN является изменением узла и не должно утверждаться автоматически."
         )
-    
+
     if changes.get("medium"):
         checks.append(f"проверить совместимость материалов и уплотнений со средой {changes['medium']}")
         affected.update(["уплотнения", "материал деталей"])
-    
+
     if changes.get("material_to") or changes.get("strength_to"):
         checks.append("проверить класс прочности и сварку по нормативной базе")
         affected.update(["сварные швы"])
-    
+
     # Реальные соседние детали из графа (если известен участок/компонент).
     ctx = state.get("context", {}).get("repository")
     seen_units = set()
@@ -81,7 +81,7 @@ def impact_analyzer(state: AgentState) -> Dict[str, Any]:
                 "source_id": ncid,
             })
             result["sources"].append(_source("object_graph", ncid, unit))
-    
+
     for c in checks[:6]:
         result["components"].append({
             "ksm_code": None,
@@ -93,7 +93,7 @@ def impact_analyzer(state: AgentState) -> Dict[str, Any]:
             "detail": c,
             "source_id": None,
         })
-    
+
     for name in sorted(affected)[:6]:
         result["components"].append({
             "ksm_code": None,
@@ -105,7 +105,7 @@ def impact_analyzer(state: AgentState) -> Dict[str, Any]:
             "detail": "соседний узел при замене",
             "source_id": None,
         })
-    
+
     result["sources"].append(_source("project_documentation", None, "оценка влияния требует проектной схемы"))
     result["review"] = True
     result["text"] = f"Анализ влияния: {len(checks)} проверок, {len(affected)} затронутых узлов"
@@ -147,7 +147,6 @@ def _urgency_status(qty, score: int) -> str:
 def _urgency_detail(card: Dict, qty, score: int) -> str:
     parts = []
     item_type = card.get("item_type") or ""
-    label = _urgency_label(score)
     if score >= 4:
         parts.append(f"критично: {item_type} нужна срочно")
     elif score >= 2:
@@ -568,7 +567,7 @@ def duplicate_detector(state: AgentState, ctx: Any = None) -> Dict[str, Any]:
     """Обнаружение дублей в каталоге"""
     start = time.time()
     result = _empty_result()
-    
+
     if ctx is None:
         ctx = state.get("context", {}).get("repository")
     if ctx is None:
@@ -577,10 +576,10 @@ def duplicate_detector(state: AgentState, ctx: Any = None) -> Dict[str, Any]:
     if ctx is None:
         result["text"] = "Репозиторий не доступен"
         return result
-    
+
     cards = ctx.get_catalog()
     groups = defaultdict(list)
-    
+
     for card in cards:
         key = (
             card.get("item_type"),
@@ -590,9 +589,9 @@ def duplicate_detector(state: AgentState, ctx: Any = None) -> Dict[str, Any]:
         )
         if all(k is not None for k in key):
             groups[key].append(card)
-    
+
     dup_groups = [(k, v) for k, v in groups.items() if len(v) > 1]
-    
+
     for key, items in dup_groups[:10]:
         dn, pn, wall = key[1], key[2], key[3]
         label = f"DN={dn}, PN={pn}, стенка={wall}"
@@ -606,7 +605,7 @@ def duplicate_detector(state: AgentState, ctx: Any = None) -> Dict[str, Any]:
                 "detail": label,
                 "source_id": card.get("card_id"),
             })
-    
+
     result["warnings"] = ["Совпадение параметров не доказывает дубль — нужен аудит экспертом"]
     result["sources"].append(
         _source("expert_decisions", "expert-review-001",

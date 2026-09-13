@@ -1,7 +1,7 @@
 # query_parser/utils/data_utils.py
 
-from typing import Dict, Any, Optional
 import copy
+from typing import Any, Dict
 
 
 def safe_merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -10,7 +10,7 @@ def safe_merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str
     Только не-None значения из override заменяют base.
     """
     result = copy.deepcopy(base)
-    
+
     for key, value in override.items():
         if value is not None:
             if key in result and isinstance(result[key], dict) and isinstance(value, dict):
@@ -18,7 +18,7 @@ def safe_merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str
                 result[key] = safe_merge_dicts(result[key], value)
             else:
                 result[key] = value
-    
+
     return result
 
 
@@ -26,11 +26,11 @@ def clean_technical_filters(filters: Dict[str, Any]) -> Dict[str, Any]:
     """Удаляет мусорные значения из фильтров"""
     garbage_values = ["ТУ ДЛЯ", "ГОСТЫ", "ТУ для", "ГОСТы", "ТУ", "ГОСТ"]
     result = copy.deepcopy(filters)
-    
+
     for key, value in list(result.items()):
         if value in garbage_values:
             del result[key]
-    
+
     return result
 
 
@@ -46,9 +46,9 @@ def safe_update_card(card: Any, updates: Dict[str, Any]) -> Any:
         # Fallback для обычных объектов
         import copy
         new_card = copy.deepcopy(card)
-    
+
     for field, value in updates.items():
         if hasattr(new_card, field):
             setattr(new_card, field, value)
-    
+
     return new_card

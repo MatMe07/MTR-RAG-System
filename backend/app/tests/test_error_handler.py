@@ -2,9 +2,9 @@
 """Юнит-тесты ErrorHandler (ЭТАП 4, секция 4B.1)."""
 
 from app.services.agent.tools.error_handler import (
-    ErrorHandler,
-    ErrorDecision,
     REQUIRED_TOOLS,
+    ErrorDecision,
+    ErrorHandler,
 )
 from app.services.agent.tools.errors import ToolErrorCode
 
@@ -96,9 +96,9 @@ def test_required_tools_set():
 # Интеграция ErrorHandler в детерминированный граф (_guarded_tool, 4B.1)
 # ---------------------------------------------------------------------------
 
-from app.services.agent.graph.nodes import _guarded_tool  # noqa: E402
-from app.services.agent.core.state import create_initial_state  # noqa: E402
 from app.schemas import ParsedQuery  # noqa: E402
+from app.services.agent.core.state import create_initial_state  # noqa: E402
+from app.services.agent.graph.nodes import _guarded_tool  # noqa: E402
 
 
 def _test_state(query="отвод"):

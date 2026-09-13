@@ -5,13 +5,13 @@
 import unittest
 
 from app.services.agent.parsing.normalizers import (
+    MorphNormalizer,
+    normalize_climate,
     normalize_dn,
-    normalize_pressure,
+    normalize_item_type,
     normalize_material,
     normalize_medium,
-    normalize_climate,
-    normalize_item_type,
-    MorphNormalizer,
+    normalize_pressure,
 )
 
 

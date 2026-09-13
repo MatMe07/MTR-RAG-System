@@ -65,8 +65,9 @@ class Neo4jGraphProvider:
     def _get_driver(self):
         if self._driver is not None:
             return self._driver
-        from app.config import settings
         from neo4j import GraphDatabase
+
+        from app.config import settings
 
         uri = self._uri or settings.NEO4J_URI
         user = self._user or settings.NEO4J_USER

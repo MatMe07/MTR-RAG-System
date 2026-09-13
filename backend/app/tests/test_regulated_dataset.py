@@ -1,12 +1,12 @@
 import csv
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
-from pathlib import Path
-import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from app.scripts.GEN.generate_regulated_dataset import (
     DEFAULT_REGULATION,
@@ -14,7 +14,6 @@ from app.scripts.GEN.generate_regulated_dataset import (
     iter_cards,
     load_regulation,
 )
-
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 

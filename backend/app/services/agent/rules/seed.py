@@ -6,7 +6,7 @@ validation_rules, synonyms). Действует как бутстрап: деф�
 
 import json
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 log = logging.getLogger("mtr.agent.rules.seed")
 
@@ -76,6 +76,7 @@ def _upsert_rule(db, item_type: str, required, forbidden, optional) -> int:
 
 def seed_rules(db) -> Dict[str, int]:
     """Заполняет БД правилами из дефолтов кода. Возвращает счётчики изменений."""
+    from ..answer.status import PARAM_LABELS
     from ..parsing.dictionaries import CLIMATE_ALIASES, ITEM_TYPE_ALIASES, MEDIUM_ALIASES, OPERATION_ALIASES
     from .dynamic_rules import (
         DEFAULT_MATCHING_TOLERANCES,
@@ -83,7 +84,6 @@ def seed_rules(db) -> Dict[str, int]:
         DEFAULT_PASSPORT_WEIGHTS,
         DEFAULT_VALIDATION_RULES,
     )
-    from ..answer.status import PARAM_LABELS
 
     counts: Dict[str, int] = {"synonyms": 0, "constants": 0, "rules": 0}
 

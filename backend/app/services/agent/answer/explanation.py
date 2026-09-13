@@ -18,13 +18,13 @@ from typing import Any, Callable, Dict, List, Optional
 from app.services.agent.intent.matrix import BLOCKER_FIELDS
 
 from .status import (
-    STATUS_MATCH,
+    PARAM_LABELS,
     STATUS_ANALOG,
+    STATUS_EXPERT,
+    STATUS_MATCH,
     STATUS_MISMATCH,
     STATUS_NOT_FOUND,
     STATUS_UNCLEAR,
-    STATUS_EXPERT,
-    PARAM_LABELS,
 )
 
 log = logging.getLogger("mtr.agent.answer.explanation")
@@ -70,8 +70,8 @@ def _critical_param_labels(
         for label in labels:
             if label and label.lower() in str(warning).lower():
                 blocked.add(label)
-    ordered = [l for l in labels if l and l in blocked]
-    return ordered or [l for l in labels if l]
+    ordered = [lb for lb in labels if lb and lb in blocked]
+    return ordered or [lb for lb in labels if lb]
 
 
 def _components_for_prompt(components: List[Any]) -> str:
@@ -177,7 +177,7 @@ def default_generator(context: Dict[str, Any]) -> Optional[str]:
         client = get_llm_client(DEFAULT_CONFIG)
         if client is None:
             return None
-        
+
         promt_context = build_explanation_prompt(context)
 
         text = client.invoke(promt_context)

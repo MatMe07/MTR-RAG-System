@@ -1,38 +1,41 @@
 # query_parser/hybrid_parser.py
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, List, Optional
+
 from app.schemas import (
-    ParsedQuery,
-    ItemCard,
-    Geometry,
-    Pressure,
-    Material,
     Environment,
-    Normative,
     Extraction,
+    Geometry,
+    ItemCard,
+    Material,
+    Normative,
+    ParsedQuery,
+    Pressure,
     Source,
 )
-from .parser import QueryParser
-from .parsers.operation_parser import OperationParser
-from .enhanced.natasha_parser import NatashaParser
+
+from .confidence_calculator import ConfidenceCalculator
+
 # from .normalizers.morph_normalizer import MorphNormalizer
 from .dictionaries import get_operations, refresh_dictionaries
-from .confidence_calculator import ConfidenceCalculator
+from .enhanced.natasha_parser import NatashaParser
+from .parser import QueryParser
+from .parsers.operation_parser import OperationParser
 
 
 class HybridParser:
     """
     Гибридный парсер, объединяющий rule-based и NLP подходы.
-    
+
     Стратегия:
     1. Сначала запускается rule-based парсер (быстрый и точный)
     2. Если confidence >= 0.8 - результат считается хорошим, Natasha только дополняет
     3. Если confidence < 0.8 - запускается Natasha и результаты объединяются
     """
-    
+
     # Порог, выше которого rule-based результат считается достаточным
     RULE_CONFIDENCE_THRESHOLD = 0.8
-    
+
     def __init__(self):
         self.rule_parser = QueryParser()
         self.natasha_parser = NatashaParser()
@@ -49,14 +52,14 @@ class HybridParser:
 
         # 1. Rule-based парсинг
         rule_result = self.rule_parser.parse(text)
-        
+
         # 2. Natasha парсинг (всегда запускаем, но используем по-разному)
         natasha_result = self.natasha_parser.parse(text)
-        
+
         # 3. Если rule уже хороший - только дополняем
         if rule_result.confidence >= self.RULE_CONFIDENCE_THRESHOLD:
             return self._enrich_result(rule_result, natasha_result, text)
-        
+
         # 4. Иначе - полноценное объединение
         return self._merge_results(rule_result, natasha_result, text)
 
@@ -69,49 +72,49 @@ class HybridParser:
         Дополняет rule-результат данными из Natasha (без изменения структуры)
         """
         card = rule.card
-        
+
         # 1. Добавляем subtype
         if card and card.subtype is None and natasha.get("subtype"):
             card.subtype = natasha["subtype"]
-        
+
         # 2. Операции: rule-based результат авторитетен (natasha добавляет шум).
         #    Natasha используется только как fallback, если rule не нашёл ничего.
         rule.operations = self._merge_operations(rule.operations, natasha.get("operations", []), text)
-        
+
         # 3. Добавляем ID компонентов и участков (из Natasha)
         if natasha.get("component_ids"):
             for cid in natasha["component_ids"]:
                 if cid not in rule.component_ids:
                     rule.component_ids.append(cid)
-        
+
         if natasha.get("unit_ids"):
             for uid in natasha["unit_ids"]:
                 if uid not in rule.unit_ids:
                     rule.unit_ids.append(uid)
-        
+
         # 4. Обновляем фильтры
         if natasha.get("filters"):
             for k, v in natasha["filters"].items():
                 if k not in rule.technical_filters or rule.technical_filters.get(k) is None:
                     rule.technical_filters[k] = v
-        
+
         # 5. Обновляем references
         if natasha.get("references"):
             for ref in natasha["references"]:
                 if ref not in rule.references:
                     rule.references.append(ref)
-        
+
         # 6. Обновляем ambiguities
         if natasha.get("ambiguities"):
             for amb in natasha["ambiguities"]:
                 if amb not in rule.ambiguities:
                     rule.ambiguities.append(amb)
-        
+
         # 7. Обновляем карточку из Natasha (если есть пропуски)
         if card and natasha.get("parameters"):
             card = self._enrich_card(card, natasha)
             rule.card = card
-        
+
         # 8. Пересчитываем confidence (с учётом дополнений)
         rule.confidence = self.confidence_calculator.calculate(
             text=text,
@@ -125,7 +128,7 @@ class HybridParser:
             card=card,
             ambiguities=rule.ambiguities,
         )
-        
+
         return rule
 
     def _merge_results(self, rule: ParsedQuery, natasha: Dict, text: str) -> ParsedQuery:
@@ -134,33 +137,33 @@ class HybridParser:
         """
         # 1. Создаём или обновляем карточку
         card = self._merge_card(rule.card, natasha, text)
-        
+
         # 2. Объединяем все списки
         item_types = self._merge_unique_lists(rule.item_types, natasha.get("item_types", []))
         component_ids = self._merge_unique_lists(rule.component_ids, natasha.get("component_ids", []))
         unit_ids = self._merge_unique_lists(rule.unit_ids, natasha.get("unit_ids", []))
         references = self._merge_unique_lists(rule.references, natasha.get("references", []))
         ambiguities = self._merge_unique_lists(rule.ambiguities, natasha.get("ambiguities", []))
-        
+
         # ✅ 3. Объединяем операции (rule авторитетен; natasha только как fallback)
         operations = self._merge_operations(rule.operations, natasha.get("operations", []), text)
-        
+
         # 4. Объединяем фильтры (Natasha дополняет rule)
         technical_filters = self._merge_filters(rule.technical_filters, natasha.get("filters", {}))
         stock_filters = self._merge_filters(rule.stock_filters, natasha.get("stock_filters", {}))
-        
+
         # 5. Объединяем контексты
         unit_context = self._merge_contexts(rule.unit_context, natasha)
         component_context = self._merge_contexts(rule.component_context, natasha)
-        
+
         # 6. Объединяем изменения
         proposed_changes = self._merge_dicts(rule.proposed_changes, natasha.get("changes", {}))
-        
+
         # 7. Обновляем missing_fields
         if card and card.extraction:
             card.extraction.missing_fields = self.rule_parser._get_missing_fields(card)
             card.extraction.method = "hybrid"
-        
+
         # 8. Пересчитываем confidence
         confidence = self.confidence_calculator.calculate(
             text=text,
@@ -174,7 +177,7 @@ class HybridParser:
             card=card,
             ambiguities=ambiguities,
         )
-        
+
         # 9. Определяем требуемых агентов
         required_agents = self._determine_required_agents(
             operations=operations,
@@ -183,7 +186,7 @@ class HybridParser:
             references=references,
             ambiguities=ambiguities,
         )
-        
+
         # 10. Определяем capabilities
         required_capabilities = self.rule_parser._detect_capabilities(
             operations=operations,
@@ -191,7 +194,7 @@ class HybridParser:
             references=references,
             changes=proposed_changes,
         )
-        
+
         # 11. Формируем результат
         return ParsedQuery(
             original_query=text,
@@ -242,10 +245,10 @@ class HybridParser:
         """
         params = natasha.get("parameters", {})
         item_types = natasha.get("item_types", [])
-        
+
         if not item_types and not params:
             return None
-        
+
         card = ItemCard(
             card_id=None,
             item_type=item_types[0] if item_types else None,
@@ -278,7 +281,7 @@ class HybridParser:
             ),
             sources=[Source(type="user_query", fragment=text)],
         )
-        
+
         card.designation = self.rule_parser._build_designation(
             card.geometry, card.pressure, card.material, card.environment
         )
@@ -286,7 +289,7 @@ class HybridParser:
             card.item_type, card.geometry, card.pressure
         )
         card.extraction.missing_fields = self.rule_parser._get_missing_fields(card)
-        
+
         return card
 
     def _enrich_card(self, card: ItemCard, natasha: Dict) -> ItemCard:
@@ -294,7 +297,7 @@ class HybridParser:
         Дополнение существующей карточки данными из Natasha
         """
         params = natasha.get("parameters", {})
-        
+
         if card.geometry is None:
             card.geometry = Geometry()
         if params.get("dn") and card.geometry.dn is None:
@@ -303,19 +306,19 @@ class HybridParser:
             card.geometry.wall_thickness = params["wall_thickness"]
         if params.get("angle") and card.geometry.angle is None:
             card.geometry.angle = params["angle"]
-        
+
         if card.pressure is None:
             card.pressure = Pressure()
         if params.get("pressure") and card.pressure.pn is None:
             card.pressure.pn = params["pressure"]
-        
+
         if card.material is None:
             card.material = Material()
         if params.get("steel_grade") and card.material.steel_grade is None:
             card.material.steel_grade = params["steel_grade"]
         if params.get("strength_class") and card.material.strength_class is None:
             card.material.strength_class = params["strength_class"]
-        
+
         if card.environment is None:
             card.environment = Environment()
         if params.get("medium") and card.environment.medium is None:
@@ -324,23 +327,23 @@ class HybridParser:
                 card.environment.h2s_confirmed = True
             elif params["medium"] == "CO2":
                 card.environment.co2_confirmed = True
-        
+
         if params.get("climate_version") and card.environment.climate_version is None:
             card.environment.climate_version = params["climate_version"]
-        
+
         if card.item_type is None and natasha.get("item_types"):
             card.item_type = natasha["item_types"][0]
-        
+
         if card.subtype is None and natasha.get("subtype"):
             card.subtype = natasha["subtype"]
-        
+
         card.designation = self.rule_parser._build_designation(
             card.geometry, card.pressure, card.material, card.environment
         )
         card.name = self.rule_parser._build_name(
             card.item_type, card.geometry, card.pressure
         )
-        
+
         return card
 
     def _merge_unique_lists(self, list1: List, list2: List) -> List:
@@ -394,14 +397,14 @@ class HybridParser:
         Объединение контекстов
         """
         context = base_context.copy() if base_context else {}
-        
+
         if natasha.get("unit_id"):
             context["unit_id"] = natasha["unit_id"]
         if natasha.get("component_id"):
             context["component_id"] = natasha["component_id"]
         if natasha.get("medium"):
             context["medium"] = natasha["medium"]
-        
+
         return context
 
     def _sort_operations(self, operations: List[str]) -> List[str]:

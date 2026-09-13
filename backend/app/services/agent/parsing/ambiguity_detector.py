@@ -1,10 +1,9 @@
 # query_parser/ambiguity_detector.py
 
 import re
-from typing import List, Dict, Any, Optional, Set, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-from functools import lru_cache
+from typing import Any, Dict, List, Optional
 
 
 class AmbiguitySeverity(Enum):
@@ -24,7 +23,7 @@ class Ambiguity:
     values: List[str] = field(default_factory=list)
     suggestion: Optional[str] = None
     confidence: float = 1.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Преобразование в словарь"""
         return {
@@ -59,11 +58,11 @@ class AmbiguityDetector:
     - Отсутствие обязательных параметров
     - Противоречия в запросе
     """
-    
+
     # Паттерны для обнаружения неоднозначностей
     AMBIGUITY_PATTERNS = {
         'multiple_dn': [
-            (r'\b(?:DN|Ду)\s*[:]?\s*(\d+)', 'geometry.dn', 
+            (r'\b(?:DN|Ду)\s*[:]?\s*(\d+)', 'geometry.dn',
              "В запросе указано несколько значений DN", AmbiguitySeverity.HIGH),
         ],
         'multiple_angle': [
@@ -83,25 +82,25 @@ class AmbiguityDetector:
              "В запросе указано несколько сред", AmbiguitySeverity.HIGH),
         ],
     }
-    
+
     # Паттерны для обнаружения конфликтов
     CONFLICT_PATTERNS = [
         # Давление и геометрия
-        (r'\b(?:отвод|труба|окш|ог)\b.*\d+\s+(?:на|x|х|×)\s+\d+', 
+        (r'\b(?:отвод|труба|окш|ог)\b.*\d+\s+(?:на|x|х|×)\s+\d+',
          'pressure.pn', "Числовое значение может быть частью геометрии изделия",
          AmbiguitySeverity.LOW),
-        
+
         # Материал и среда
-        (r'\b(?:стал[иь])\s+([0-9а-яёa-z]+).*H2S', 
+        (r'\b(?:стал[иь])\s+([0-9а-яёa-z]+).*H2S',
          'material.steel_grade', "Марка стали может не подходить для H2S среды",
          AmbiguitySeverity.MEDIUM),
-        
+
         # Температура и климатика
-        (r'температур[аы]\s*[-+]?(\d+).*УХЛ', 
+        (r'температур[аы]\s*[-+]?(\d+).*УХЛ',
          'environment.climate_version', "Температура может не соответствовать климатике",
          AmbiguitySeverity.MEDIUM),
     ]
-    
+
     # Обязательные поля для разных типов деталей
     REQUIRED_FIELDS = {
         'отвод': ['item_type', 'dn', 'angle'],
@@ -111,7 +110,7 @@ class AmbiguityDetector:
         'переход': ['item_type', 'd1', 'd2'],
         'тройник': ['item_type', 'd1', 'd2'],
     }
-    
+
     # Рекомендации по устранению неоднозначностей
     SUGGESTIONS = {
         'multiple_dn': "Уточните нужный DN",
@@ -125,7 +124,7 @@ class AmbiguityDetector:
         'missing_wall_thickness': "Уточните толщину стенки",
         'missing_pn': "Уточните давление (PN)",
     }
-    
+
     def __init__(self):
         self._cache: Dict[str, List[Ambiguity]] = {}
 
@@ -135,14 +134,14 @@ class AmbiguityDetector:
         """
         if not text or not text.strip():
             return []
-        
+
         # Проверка кеша
         cache_key = f"{text.strip()}:{str(card_data)}"
         if cache_key in self._cache:
             return self._cache[cache_key].copy()
-        
+
         result = self._detect_impl(text, card_data or {})
-        
+
         # Сохраняем в кеш
         self._cache[cache_key] = result.copy()
         return result
@@ -153,25 +152,25 @@ class AmbiguityDetector:
         """
         ambiguities: List[Ambiguity] = []
         text_lower = text.lower()
-        
+
         # 1. Множественные значения
         ambiguities.extend(self._detect_multiple_values(text_lower))
-        
+
         # 2. Конфликты
         ambiguities.extend(self._detect_conflicts(text_lower, card_data))
-        
+
         # 3. Отсутствие обязательных полей
         ambiguities.extend(self._detect_missing_fields(card_data))
-        
+
         # 4. Противоречия
         ambiguities.extend(self._detect_contradictions(text_lower, card_data))
-        
+
         # 5. Сортировка по серьёзности и приоритету
         ambiguities.sort(key=lambda x: (
             self._severity_score(x.severity),
             -x.confidence
         ), reverse=True)
-        
+
         return ambiguities
 
     # =========================================================
@@ -183,14 +182,14 @@ class AmbiguityDetector:
         Обнаружение множественных значений
         """
         ambiguities: List[Ambiguity] = []
-        
-        for amb_type, (pattern, field, reason, severity) in self.AMBIGUITY_PATTERNS.items():
+
+        for amb_type, (pattern, field_name, reason, severity) in self.AMBIGUITY_PATTERNS.items():
             values = re.findall(pattern, text, re.IGNORECASE)
             unique_values = list(dict.fromkeys(values))
-            
+
             if len(unique_values) > 1:
                 ambiguity = Ambiguity(
-                    field=field,
+                    field=field_name,
                     reason=reason,
                     severity=severity,
                     values=unique_values,
@@ -198,7 +197,7 @@ class AmbiguityDetector:
                     confidence=0.8
                 )
                 ambiguities.append(ambiguity)
-        
+
         return ambiguities
 
     # =========================================================
@@ -210,20 +209,20 @@ class AmbiguityDetector:
         Обнаружение конфликтов между параметрами
         """
         ambiguities: List[Ambiguity] = []
-        
-        for pattern, field, reason, severity in self.CONFLICT_PATTERNS:
+
+        for pattern, field_name, reason, severity in self.CONFLICT_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
                 # Проверяем, есть ли конфликтное значение в card_data
-                if self._has_conflict_value(card_data, field):
+                if self._has_conflict_value(card_data, field_name):
                     ambiguity = Ambiguity(
-                        field=field,
+                        field=field_name,
                         reason=reason,
                         severity=severity,
                         suggestion="Проверьте соответствие параметров",
                         confidence=0.7
                     )
                     ambiguities.append(ambiguity)
-        
+
         return ambiguities
 
     def _has_conflict_value(self, card_data: Dict[str, Any], field: str) -> bool:
@@ -232,17 +231,17 @@ class AmbiguityDetector:
         """
         if not card_data:
             return False
-        
+
         # Разбираем путь поля (например, 'pressure.pn')
         parts = field.split('.')
         current = card_data
-        
+
         for part in parts:
             if isinstance(current, dict):
                 current = current.get(part)
             else:
                 return False
-        
+
         return current is not None
 
     # =========================================================
@@ -254,29 +253,30 @@ class AmbiguityDetector:
         Обнаружение отсутствия обязательных полей
         """
         ambiguities: List[Ambiguity] = []
-        
+
         if not card_data:
             return ambiguities
-        
+
         # Определяем тип детали
         item_type = card_data.get('item_type')
         if not item_type:
             return ambiguities
-        
+
         # Проверяем обязательные поля для типа
         required = self.REQUIRED_FIELDS.get(item_type, [])
-        
-        for field in required:
-            if not self._has_field_value(card_data, field):
+
+        for field_name in required:
+            if not self._has_field_value(card_data, field_name):
                 ambiguity = Ambiguity(
-                    field=field,
-                    reason=f"Отсутствует обязательное поле: {field}",
-                    severity=AmbiguitySeverity.HIGH,
-                    suggestion=self.SUGGESTIONS.get(f'missing_{field}'),
+                    field=field_name,
+                    reason=f"Отсутствует обязательное поле: {field_name}",
+                    values=[],
+                    severity="high",
+                    suggestion=self.SUGGESTIONS.get(f'missing_{field_name}'),
                     confidence=0.9
                 )
                 ambiguities.append(ambiguity)
-        
+
         return ambiguities
 
     def _has_field_value(self, card_data: Dict[str, Any], field: str) -> bool:
@@ -286,13 +286,13 @@ class AmbiguityDetector:
         # Разбираем путь поля
         parts = field.split('.')
         current = card_data
-        
+
         for part in parts:
             if isinstance(current, dict):
                 current = current.get(part)
             else:
                 return False
-        
+
         return current is not None and current != ""
 
     # =========================================================
@@ -304,7 +304,7 @@ class AmbiguityDetector:
         Обнаружение противоречий в запросе
         """
         ambiguities: List[Ambiguity] = []
-        
+
         # Проверка: указан переход, но нет двух диаметров
         if self._is_transition_without_diameters(text, card_data):
             ambiguity = Ambiguity(
@@ -315,7 +315,7 @@ class AmbiguityDetector:
                 confidence=0.9
             )
             ambiguities.append(ambiguity)
-        
+
         # Проверка: указан отвод, но нет угла
         if self._is_elbow_without_angle(text, card_data):
             ambiguity = Ambiguity(
@@ -326,7 +326,7 @@ class AmbiguityDetector:
                 confidence=0.9
             )
             ambiguities.append(ambiguity)
-        
+
         # Проверка: указана задвижка, но нет PN
         if self._is_valve_without_pn(text, card_data):
             ambiguity = Ambiguity(
@@ -337,7 +337,7 @@ class AmbiguityDetector:
                 confidence=0.9
             )
             ambiguities.append(ambiguity)
-        
+
         return ambiguities
 
     def _is_transition_without_diameters(self, text: str, card_data: Dict[str, Any]) -> bool:
@@ -348,12 +348,12 @@ class AmbiguityDetector:
         is_transition = bool(re.search(r'\b(?:переход|тройник)\b', text.lower()))
         if not is_transition:
             return False
-        
+
         # Проверяем по card_data
         geometry = card_data.get('geometry', {})
         has_d1 = geometry.get('d1') is not None
         has_d2 = geometry.get('d2') is not None
-        
+
         return not (has_d1 and has_d2)
 
     def _is_elbow_without_angle(self, text: str, card_data: Dict[str, Any]) -> bool:
@@ -364,11 +364,11 @@ class AmbiguityDetector:
         is_elbow = bool(re.search(r'\b(?:отвод|окш|ог)\b', text.lower()))
         if not is_elbow:
             return False
-        
+
         # Проверяем по card_data
         geometry = card_data.get('geometry', {})
         has_angle = geometry.get('angle') is not None
-        
+
         return not has_angle
 
     def _is_valve_without_pn(self, text: str, card_data: Dict[str, Any]) -> bool:
@@ -379,11 +379,11 @@ class AmbiguityDetector:
         is_valve = bool(re.search(r'\b(?:задвижка|заглушка)\b', text.lower()))
         if not is_valve:
             return False
-        
+
         # Проверяем по card_data
         pressure = card_data.get('pressure', {})
         has_pn = pressure.get('pn') is not None
-        
+
         return not has_pn
 
     # =========================================================
@@ -413,7 +413,7 @@ class AmbiguityDetector:
         Получить неоднозначности высокого приоритета
         """
         return [amb for amb in ambiguities if amb.severity in [
-            AmbiguitySeverity.HIGH, 
+            AmbiguitySeverity.HIGH,
             AmbiguitySeverity.CRITICAL
         ]]
 
@@ -423,7 +423,7 @@ class AmbiguityDetector:
         """
         if not ambiguities:
             return "Неоднозначностей не обнаружено"
-        
+
         lines = []
         for amb in ambiguities:
             severity_icon = {
@@ -432,14 +432,14 @@ class AmbiguityDetector:
                 AmbiguitySeverity.HIGH: "🔴",
                 AmbiguitySeverity.CRITICAL: "🚨",
             }.get(amb.severity, "⚠️")
-            
+
             line = f"{severity_icon} {amb.reason}"
             if amb.values:
                 line += f" (найдено: {', '.join(amb.values)})"
             if amb.suggestion:
                 line += f"\n   💡 {amb.suggestion}"
             lines.append(line)
-        
+
         return "\n".join(lines)
 
     # =========================================================

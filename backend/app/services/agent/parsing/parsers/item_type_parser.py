@@ -1,14 +1,10 @@
 # query_parser/parsers/item_type_parser.py
 
 import re
-from typing import List, Optional, Set, Dict, Tuple
-from functools import lru_cache
-
-from rapidfuzz import fuzz
+from typing import Dict, List, Optional, Set
 
 from ..dictionaries import ITEM_TYPE_ALIASES
 from ..utils.fuzzy_utils import FuzzyMatcher
-
 
 # Маркеры «добавь деталь» (ADD_COMPONENT): перечисленные ДО маркера типы —
 # это существующие детали схемы/участка, а не фильтр поиска.
@@ -56,16 +52,16 @@ class ItemTypeParser:
     - Fuzzy-поиск для опечаток
     - Извлечение подтипов (subtype)
     """
-    
+
     # Порог для fuzzy-поиска
     FUZZY_THRESHOLD = 85
-    
+
     # Минимальная длина слова для fuzzy-поиска
     MIN_WORD_LENGTH = 4
-    
+
     # Слова, которые не должны участвовать в fuzzy-поиске
     STOP_WORDS = {"перед", "после", "около", "возле", "между", "без", "для", "на", "в", "с", "по"}
-    
+
     # Паттерны для извлечения подтипов (subtype)
     SUBTYPE_PATTERNS = [
         # Задвижки
@@ -97,7 +93,7 @@ class ItemTypeParser:
         (r'эллиптическ(?:ая|ой|ую|ие|их)', "эллиптическая"),
         (r'сферическ(?:ая|ой|ую|ие|их)', "сферическая"),
     ]
-    
+
     def __init__(self):
         self.fuzzy_matcher = FuzzyMatcher(threshold=self.FUZZY_THRESHOLD)
         self._cache: Dict[str, List[str]] = {}
@@ -110,27 +106,27 @@ class ItemTypeParser:
         """
         if not text or not text.strip():
             return []
-        
+
         # Проверка кеша
         cache_key = text.strip()
         if cache_key in self._cache:
             return self._cache[cache_key].copy()
-        
+
         text_lower = text.lower()
         found: Set[str] = set()
-        
+
         # 1. Точные совпадения с алиасами (сортировка по длине для правильного порядка)
         sorted_aliases = sorted(
             ITEM_TYPE_ALIASES.items(),
             key=lambda x: len(x[0]),
             reverse=True
         )
-        
+
         for alias, normalized in sorted_aliases:
             # Используем границы слов для точного поиска
             if re.search(rf"(?<![а-яёa-z]){re.escape(alias)}(?![а-яёa-z])", text_lower):
                 found.add(normalized)
-        
+
         # 2. Поиск через союзы (для множественных типов)
         # Разбиваем текст по союзам "и", ",", "а также"
         parts = re.split(r'\s+(?:и|,|а также|\/)\s+', text_lower)
@@ -139,15 +135,15 @@ class ItemTypeParser:
                 for alias, normalized in sorted_aliases:
                     if re.search(rf"(?<![а-яёa-z]){re.escape(alias)}(?![а-яёa-z])", part):
                         found.add(normalized)
-        
+
         # 3. Fuzzy-поиск (для опечаток и вариантов написания)
         found.update(self._fuzzy_search(text_lower))
-        
+
         # 4. Специальные случаи (контекстные)
         found.update(self._context_search(text_lower))
-        
+
         result = list(found)
-        
+
         # 5. ✅ Обозначение детали имеет приоритет над словесным типом:
         #    "заглушка ОКШ90-219x10..." - это отвод (ОКШ = отвод крутоизогнутый сварной)
         designation_type = self._detect_designation_type(text)
@@ -155,7 +151,7 @@ class ItemTypeParser:
             if designation_type in result:
                 result.remove(designation_type)
             result.insert(0, designation_type)
-        
+
         # Сохраняем в кеш
         self._cache[cache_key] = result.copy()
         return result
@@ -179,21 +175,21 @@ class ItemTypeParser:
         """
         if not text or not text.strip():
             return None
-        
+
         # Проверка кеша
         cache_key = text.strip()
         if cache_key in self._subtype_cache:
             return self._subtype_cache[cache_key]
-        
+
         text_lower = text.lower()
         subtype = None
-        
+
         # Проверяем все паттерны
         for pattern, subtype_value in self.SUBTYPE_PATTERNS:
             if re.search(pattern, text_lower):
                 subtype = subtype_value
                 break
-        
+
         # Сохраняем в кеш
         self._subtype_cache[cache_key] = subtype
         return subtype
@@ -224,24 +220,24 @@ class ItemTypeParser:
         """
         found: Set[str] = set()
         words = re.findall(r"[а-яёa-z]+", text)
-        
+
         # Собираем все алиасы для fuzzy-поиска
         all_aliases = list(ITEM_TYPE_ALIASES.keys())
-        
+
         for word in words:
             # Пропускаем слишком короткие слова и стоп-слова
             if len(word) < self.MIN_WORD_LENGTH:
                 continue
             if word in self.STOP_WORDS:
                 continue
-            
+
             # Проверяем через FuzzyMatcher
             matches = self.fuzzy_matcher.match(word, all_aliases)
             for matched_alias, score in matches:
                 if score >= self.FUZZY_THRESHOLD:
                     found.add(ITEM_TYPE_ALIASES[matched_alias])
                     break
-        
+
         return found
 
     def _context_search(self, text: str) -> Set[str]:
@@ -249,7 +245,7 @@ class ItemTypeParser:
         Поиск типов по контекстным признакам
         """
         found: Set[str] = set()
-        
+
         # Контекстные паттерны для каждого типа
         context_patterns = {
             "отвод": [
@@ -274,13 +270,13 @@ class ItemTypeParser:
                 r'изменение диаметра',
             ],
         }
-        
+
         for item_type, patterns in context_patterns.items():
             for pattern in patterns:
                 if re.search(pattern, text):
                     found.add(item_type)
                     break
-        
+
         return found
 
     # =========================================================

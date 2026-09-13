@@ -5,9 +5,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.v1.router import api_router
 from app.config import settings
-from app.core.logging import setup_logging, get_logger
 from app.core.exceptions import AppException
+from app.core.logging import get_logger, setup_logging
 
 setup_logging()
 log = get_logger("main")
@@ -48,6 +49,13 @@ def seed_default_users() -> None:
 async def lifespan(app: FastAPI):
     log.info("MTR-RAG-System starting up")
 
+    if settings.ENV == "production":
+        if settings.SECRET_KEY == "change-this-to-random-secret":
+            raise RuntimeError(
+                "Refusing to start in ENV=production with default SECRET_KEY. "
+                "Set a random SECRET_KEY via environment/.env."
+            )
+
     seed_default_users()
     log.info("Default users ensured")
 
@@ -82,8 +90,6 @@ async def app_exception_handler(request: Request, exc: AppException):
         },
     )
 
-
-from app.api.v1.router import api_router
 app.include_router(api_router, prefix="/api/v1")
 
 

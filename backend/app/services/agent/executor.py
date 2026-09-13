@@ -2,19 +2,20 @@
 
 import logging
 import time
-from typing import Optional, Any, Dict, List
+import uuid
+from typing import Any, Dict, List, Optional
 
 from langgraph.errors import GraphRecursionError
 
 from app.schemas import AgentAnswer, ParsedQuery
 
+from .answer.builder import build_answer
 from .core.config import DEFAULT_CONFIG, AgentConfig
 from .core.state import create_initial_state
 from .graph.agent_graph import get_graph
+from .llm.client import LLMClient
 from .parsing.hybrid_parser import HybridParser
 from .repository.repository_factory import get_repository
-from .answer.builder import build_answer
-from .llm.client import LLMClient
 
 log = logging.getLogger("mtr.agent.executor")
 
@@ -59,7 +60,13 @@ class AgentExecutor:
         log.info("[Executor] Execute query=%r mode=%s request_id=%s", query, mode, request_id)
 
         if mode == "llm":
-            return self._execute_llm(query, parsed, start, request_id=request_id)
+            if not self.config.use_llm and self._llm_agent is None:
+                log.warning(
+                    "[Executor] mode='llm' запрошен, но AGENT_LLM_MODE != 'on' "
+                    "и LLM-агент не инжектирован. Откат к deterministic."
+                )
+            else:
+                return self._execute_llm(query, parsed, start, request_id=request_id)
 
         if mode == "auto":
             return self._execute_auto(query, parsed, start, request_id=request_id)
@@ -101,16 +108,12 @@ class AgentExecutor:
         log.info("[Executor] Intent resolved: %s", state["context"]["intent"])
 
         config = {
-            "configurable": {"thread_id": thread_id or self.config.checkpoint_thread_id},
+            "configurable": {"thread_id": thread_id or str(uuid.uuid4())},
             "recursion_limit": self.config.recursion_limit,
         }
         graph_start = time.time()
         log.info("[Executor] Invoking graph...")
         try:
-            # print(state)
-            # print()
-            # print(config)
-            # return
             result = self.graph.invoke(state, config=config)
         except GraphRecursionError:
             log.warning("[Executor] Recursion limit exceeded (limit=%d) for query=%r",
@@ -158,7 +161,6 @@ class AgentExecutor:
         request_id: Optional[str] = None,
     ) -> AgentAnswer:
         """Режим 3 (auto): deterministic → quality gate → C1 (refine) | C2 (полный LLM)."""
-        self._auto_start = start
         if parsed is None:
             parsed = self._parse_query(query)
 
@@ -208,14 +210,15 @@ class AgentExecutor:
             )
             self._mark_review(answer, "quality_gate")
             self._log_escalation(query, request_id, mode_used="refine_skipped_no_llm",
-                                 gaps=verification.gaps, verdict=verification.verdict)
+                                 gaps=verification.gaps, verdict=verification.verdict,
+                                 start=start)
             return answer
 
         refined = self._apply_refine(query, answer, verification.gaps)
         answer.llm_tokens_used = self._llm_tokens_used() - tokens_before
         self._log_escalation(query, request_id, mode_used="refine" if refined else "refine_failed",
                              gaps=verification.gaps, verdict=verification.verdict,
-                             llm_tokens_used=answer.llm_tokens_used)
+                             llm_tokens_used=answer.llm_tokens_used, start=start)
         self._reverify_after_escalation(parsed, answer, verification)
         return answer
 
@@ -229,7 +232,8 @@ class AgentExecutor:
             )
             self._mark_review(answer, "quality_gate")
             self._log_escalation(query, request_id, mode_used="full_llm_skipped_no_llm",
-                                 gaps=verification.gaps, verdict=verification.verdict)
+                                 gaps=verification.gaps, verdict=verification.verdict,
+                                 start=start)
             return answer
 
         try:
@@ -239,7 +243,8 @@ class AgentExecutor:
             self._mark_review(answer, "quality_gate")
             self._log_escalation(query, request_id, mode_used="full_llm_failed",
                                  gaps=verification.gaps, verdict=verification.verdict,
-                                 llm_tokens_used=self._llm_tokens_used() - tokens_before)
+                                 llm_tokens_used=self._llm_tokens_used() - tokens_before,
+                                 start=start)
             return answer
 
         llm_answer.mode = "auto"
@@ -254,7 +259,7 @@ class AgentExecutor:
 
         self._log_escalation(query, request_id, mode_used="full_llm",
                              gaps=verification.gaps, verdict=verification.verdict,
-                             llm_tokens_used=llm_answer.llm_tokens_used)
+                             llm_tokens_used=llm_answer.llm_tokens_used, start=start)
         log.info(
             "[Executor][auto] C2 applied: components=%d tokens=%s",
             len(llm_answer.components or []), llm_answer.llm_tokens_used,
@@ -344,7 +349,7 @@ class AgentExecutor:
         return True
 
     def _log_escalation(self, query, request_id, mode_used, gaps, verdict,
-                        llm_tokens_used=None) -> None:
+                        llm_tokens_used=None, start: Optional[float] = None) -> None:
         """Фиксирует эскалацию в БД (auto_mode_escalations) и лог."""
         gap_types = [g.type for g in gaps]
         log.info(
@@ -364,8 +369,8 @@ class AgentExecutor:
                     mode_used=mode_used,
                     gaps=gap_types,
                     verdict=verdict,
-                    duration_ms=int((time.time() - self._auto_start) * 1000)
-                    if getattr(self, "_auto_start", None) else None,
+                    duration_ms=int((time.time() - start) * 1000)
+                    if start else None,
                     llm_tokens_used=llm_tokens_used,
                 )
                 db.add(entry)

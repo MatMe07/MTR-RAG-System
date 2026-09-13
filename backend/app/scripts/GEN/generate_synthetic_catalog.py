@@ -4,10 +4,10 @@ import argparse
 import json
 import math
 import random
+import sys
 from pathlib import Path
 from typing import Any, Iterator
-from pathlib import Path
-import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 REPO_ROOT = Path(__file__).resolve().parents[4]

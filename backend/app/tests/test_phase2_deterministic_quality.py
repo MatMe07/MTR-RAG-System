@@ -15,19 +15,21 @@ import unittest
 os.environ.setdefault("AGENT_STORAGE", "json")
 os.environ.setdefault("AGENT_LLM_MODE", "off")
 
+# ruff: noqa: E402 - импорты после намеренной установки окружения
+
 import logging
 
 logging.disable(logging.CRITICAL)
 
 from app.schemas import AgentComponent
-from app.services.agent.executor import AgentExecutor
-from app.services.agent.parsing.hybrid_parser import HybridParser
-from app.services.agent.intent.detect import enrich_parsed
-from app.services.agent.repository.json_repository import JsonRepository
 from app.services.agent.answer.status import STATUS_EXPERT, STATUS_MATCH, determine_status
-from app.services.agent.tools.core_tools import _match_score, _parsed_codes, catalog_search
-from app.services.agent.tools.analytic_tools import impact_analyzer, maintenance_planner
+from app.services.agent.executor import AgentExecutor
+from app.services.agent.intent.detect import enrich_parsed
+from app.services.agent.parsing.hybrid_parser import HybridParser
 from app.services.agent.parsing.parsers.item_type_parser import narrow_add_target_types
+from app.services.agent.repository.json_repository import JsonRepository
+from app.services.agent.tools.analytic_tools import impact_analyzer, maintenance_planner
+from app.services.agent.tools.core_tools import _match_score, _parsed_codes, catalog_search
 
 
 def _parse(text: str):

@@ -1,6 +1,9 @@
 import json
-from sqlalchemy import TypeDecorator, String, Text, Integer, BigInteger
-from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB, ARRAY as PG_ARRAY
+
+from sqlalchemy import BigInteger, Integer, String, Text, TypeDecorator
+from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
+
 from app.db.session import _is_sqlite
 
 

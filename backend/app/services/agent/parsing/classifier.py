@@ -212,7 +212,6 @@ class GroupClassifier:
         confidence = round(top_score / total, 3)
 
         # Tie между первой и второй группой (равный вес).
-        second_score = ranked[1][1] if len(ranked) > 1 else 0
         ties = [g for g, s in ranked if s == top_score]
 
         groups_out = [

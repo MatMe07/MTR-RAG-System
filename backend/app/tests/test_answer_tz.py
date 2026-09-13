@@ -14,28 +14,27 @@ from app.schemas import (
     AgentSource,
     ParsedQuery,
 )
-
-from app.services.agent.answer.status import (
-    STATUS_MATCH,
-    STATUS_ANALOG,
-    STATUS_MISMATCH,
-    STATUS_NOT_FOUND,
-    STATUS_UNCLEAR,
-    STATUS_EXPERT,
-    determine_status,
-    candidate_tz_status,
-    evaluate_candidate,
-    build_recommendations,
-    format_sources,
-)
+from app.services.agent.answer.builder import AnswerBuilder
 from app.services.agent.answer.explanation import (
+    ExplanationGenerator,
     build_explanation,
     build_explanation_prompt,
     default_generator,
     should_use_llm,
-    ExplanationGenerator,
 )
-from app.services.agent.answer.builder import AnswerBuilder
+from app.services.agent.answer.status import (
+    STATUS_ANALOG,
+    STATUS_EXPERT,
+    STATUS_MATCH,
+    STATUS_MISMATCH,
+    STATUS_NOT_FOUND,
+    STATUS_UNCLEAR,
+    build_recommendations,
+    candidate_tz_status,
+    determine_status,
+    evaluate_candidate,
+    format_sources,
+)
 from app.services.agent.answer.tz_result import (
     build_tz_result_items,
     component_to_tz_result,

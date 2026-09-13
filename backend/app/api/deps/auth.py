@@ -1,14 +1,19 @@
+from typing import Optional
+
 from fastapi import Depends, Header
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from app.core.exceptions import ForbiddenError, UnauthorizedError
 from app.core.security import decode_access_token
-from app.core.exceptions import UnauthorizedError, ForbiddenError
-from app.core.constants import UserRole
+from app.db.session import get_db
+
+
 def get_current_user(
-    authorization: str = Header(...),
+    authorization: Optional[str] = Header(default=None),
     db: Session = Depends(get_db),
 ) -> dict:
+    if not authorization:
+        raise UnauthorizedError("Missing authorization header")
     if not authorization.startswith("Bearer "):
         raise UnauthorizedError("Invalid authorization header format")
 

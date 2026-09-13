@@ -35,7 +35,9 @@ class AgentConfig:
 
     # LangGraph
     checkpoint_thread_id: str = "default"
-    checkpoint_type: str = "memory"  # memory | sqlite
+    checkpoint_type: str = "memory"  # memory | sqlite | redis
+    checkpoint_sqlite_path: str = "agent_checkpoints.db"
+    checkpoint_redis_url: str = field(default_factory=lambda: settings.REDIS_URL)
     recursion_limit: int = 50
 
     # Логирование (единый источник: settings.LOG_LEVEL)

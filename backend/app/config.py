@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=str(_REPO_ROOT / ".env"),
         env_file_encoding="utf-8",
-        extra="ignore", 
+        extra="ignore",
     )
 
     # Дефолты — локальный docker-стек (docker-compose.yml). Продакшен/облако
@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-this-to-random-secret"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 1440
+
+    # Окружение: development | production. В production запрещены дефолтные
+    # значения SECRET_KEY и учётные записи (должны задаваться через env).
+    ENV: str = "development"
 
     # Параметры агента (единый источник — подхватываются AgentConfig)
     LLM_MODEL: str = "nvidia/nemotron-3-super-120b-a12b:free"

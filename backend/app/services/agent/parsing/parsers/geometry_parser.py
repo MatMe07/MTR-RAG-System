@@ -1,9 +1,8 @@
 # query_parser/parsers/geometry_parser.py
 
 import re
-from typing import Dict, Any, Optional, List, Tuple
-from dataclasses import dataclass, field
-from functools import lru_cache
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..normalizers.normalizers import normalize_decimal, normalize_dn
 from ..utils.fuzzy_utils import FuzzyMatcher
@@ -29,7 +28,7 @@ class GeometryParser:
     - Радиус
     - Различные форматы записи (219x159, 426 на 10, DN200)
     """
-    
+
     # Паттерны для извлечения DN (условный проход)
     DN_PATTERNS = [
         # Приоритетные паттерны
@@ -38,7 +37,7 @@ class GeometryParser:
         (r'\bдиаметр(?:ом|е|а)?\s*[:]?\s*(\d+(?:[.,]\d+)?)', ['dn'], 90, "диаметр с пробелом"),
         (r'\bD\s*[:]?\s*(\d+(?:[.,]\d+)?)', ['dn'], 80, "D с пробелом"),
     ]
-    
+
     # Паттерны для извлечения диаметров для переходов/тройников
     TRANSITION_PATTERNS = [
         (r'(\d+(?:[.,]\d+)?)\s*(?:x|х|×|на)\s*(\d+(?:[.,]\d+)?)', ['d1', 'd2'], 100, "диаметр x диаметр"),
@@ -46,7 +45,7 @@ class GeometryParser:
         (r'с\s*(\d+(?:[.,]\d+)?)\s+(?:на|до)\s*(\d+(?:[.,]\d+)?)', ['d1', 'd2'], 80, "с X на Y"),
         (r'от\s*(\d+(?:[.,]\d+)?)\s+(?:до|на)\s*(\d+(?:[.,]\d+)?)', ['d1', 'd2'], 70, "от X до Y"),
     ]
-    
+
     # Паттерны для извлечения толщины стенки (словесные - применяются всегда)
     WALL_PATTERNS = [
         (r'стенк(?:а|и|ой)\s*[:]?\s*(\d+(?:[.,]\d+)?)', ['wall_thickness'], 100, "стенка X"),
@@ -56,13 +55,13 @@ class GeometryParser:
         (r'δ\s*[:]?\s*(\d+(?:[.,]\d+)?)', ['wall_thickness'], 80, "δ X"),
         (r'стенка\s+(\d+(?:[.,]\d+)?)', ['wall_thickness'], 80, "стенка X"),
     ]
-    
+
     # Числовые паттерны толщины стенки - только для труб/отводов/заглушек,
     # чтобы не конфликтовать с d1/d2 у переходов и тройников
     NUMERIC_WALL_PATTERNS = [
         (r'\b(\d+)\s+на\s+(\d+)\b', ['dn', 'wall_thickness'], 70, "X на Y"),
     ]
-    
+
     # Паттерны для извлечения углов
     ANGLE_PATTERNS = [
         # ✅ Исправлен паттерн для "отвод 90" - теперь правильно захватывает
@@ -73,14 +72,14 @@ class GeometryParser:
         (r'\b(?:окш|ог)\s*(\d{1,3})\b', ['angle'], 80, "ОКШ/ОГ X"),
         (r'поворот(?:а|ом)?\s*[:]?\s*(\d+(?:[.,]\d+)?)', ['angle'], 80, "поворот X"),
     ]
-    
+
     # Паттерны для извлечения радиуса
     RADIUS_PATTERNS = [
         (r'(?:радиус|R)\s*[:=]?\s*([0-9.,]+\s*[Dd]|[0-9.,]+)', ['radius'], 100, "радиус X"),
         (r'(?:R|r)\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*[Dd]', ['radius'], 90, "R X D"),
         (r'(\d+(?:[.,]\d+)?)\s*[Dd]\s*(?:радиус)', ['radius'], 80, "X D радиус"),
     ]
-    
+
     # Паттерны для специальных случаев (отводы с форматом "отвод 90 426 на 10")
     ELBOW_SPECIAL_PATTERNS = [
         # "ОКШ90-159x10-К48-09Г2С-УХЛ" / "ОГ90-530x8" - обозначение отвода
@@ -105,7 +104,7 @@ class GeometryParser:
         (r'\b(?:задвижк\w*|кран\w*)\s*(?:ЗКЛ\s*)?(\d+(?:[.,]\d+)?)\s*(?:x|х|×)\s*(\d+(?:[.,]\d+)?)',
          ['dn'], 90, "задвижка DNхPN (DN)"),
     ]
-    
+
     # Типы деталей для контекстного парсинга
     ITEM_TYPES = {
         'transition': ['переход', 'перехода', 'переходу', 'переходом', 'переходе'],
@@ -116,7 +115,7 @@ class GeometryParser:
         'cap': ['заглушка', 'заглушки', 'заглушку', 'заглушкой', 'заглушке'],
         'valve': ['задвижка', 'задвижки', 'задвижку', 'задвижкой', 'задвижке'],
     }
-    
+
     def __init__(self):
         self.fuzzy_matcher = FuzzyMatcher(threshold=75)
         self._cache: Dict[str, Dict[str, Any]] = {}
@@ -127,19 +126,19 @@ class GeometryParser:
         """
         if not text or not text.strip():
             return self._empty_result()
-        
+
         # Проверка кеша
         cache_key = text.strip()
         if cache_key in self._cache:
             return self._cache[cache_key].copy()
-        
+
         result = self._parse_impl(text)
 
         # Нормализация DN/d1/d2 к ряду R10 (§1E.1).
         for key in ("dn", "d1", "d2"):
             if result.get(key) is not None:
                 result[key] = normalize_dn(result[key])
-        
+
         # Сохраняем в кеш
         self._cache[cache_key] = result.copy()
         return result
@@ -150,7 +149,7 @@ class GeometryParser:
         """
         result = self._empty_result()
         normalized = text.lower()
-        
+
         # Определяем тип детали
         item_type = self._detect_item_type(normalized)
         is_transition = item_type in ['transition', 'tee']
@@ -158,61 +157,61 @@ class GeometryParser:
         is_pipe = item_type == 'pipe'
         is_cap = item_type == 'cap'
         is_valve = item_type == 'valve'
-        
+
         # 1. Специальные паттерны для отводов
         if is_elbow:
             self._apply_elbow_special_patterns(normalized, result)
-        
+
         # 2. Паттерны для переходов/тройников (d1, d2)
         if is_transition:
             self._apply_transition_patterns(normalized, result)
-        
+
         # 3. Паттерны для DN
         if result.get('dn') is None:
             self._apply_dn_patterns(normalized, result, is_transition)
-        
+
         # 4. Паттерны для толщины стенки (словесные - применяются всегда)
         self._apply_wall_patterns(normalized, result)
-        
+
         # 4a. Числовые паттерны "X на Y" и "XхY" (DN х стенка) -
         #     только для труб/отводов/заглушек (не для переходов и задвижек)
         if (is_pipe or is_elbow or is_cap) and result.get('dn') is None:
             self._apply_patterns(normalized, self.NUMERIC_WALL_PATTERNS, result)
             self._apply_patterns(normalized, self.SIZE_WALL_PATTERNS, result)
-        
+
         # 4b. Паттерны для задвижек/кранов "ЗКЛ 150х16" (DN х PN)
         if is_valve and result.get('dn') is None:
             self._apply_patterns(normalized, self.VALVE_SIZE_PATTERNS, result)
-        
+
         # 5. Паттерны для углов
         if is_elbow or result.get('angle') is None:
             self._apply_angle_patterns(normalized, result)
-        
+
         # 6. Паттерны для радиуса
         self._apply_radius_patterns(normalized, result)
-        
+
         # 7. Если DN не найден, пробуем извлечь из контекста
         if result.get('dn') is None:
             self._extract_dn_from_context(normalized, result, is_transition)
-        
+
         # 8. ✅ Если нет угла, но есть отвод - пробуем извлечь угол из контекста
         if is_elbow and result.get('angle') is None:
             self._extract_angle_from_context(normalized, result)
-        
+
         return result
 
     # =========================================================
     # ПРИМЕНЕНИЕ ПАТТЕРНОВ
     # =========================================================
 
-    def _apply_patterns(self, text: str, patterns: List[Tuple[str, List[str], int, str]], 
+    def _apply_patterns(self, text: str, patterns: List[Tuple[str, List[str], int, str]],
                         result: Dict[str, Any]) -> None:
         """
         Универсальное применение паттернов с приоритетами
         """
         # Сортируем по приоритету
         sorted_patterns = sorted(patterns, key=lambda x: x[2], reverse=True)
-        
+
         for pattern, fields, priority, _ in sorted_patterns:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
@@ -231,7 +230,7 @@ class GeometryParser:
     def _apply_dn_patterns(self, text: str, result: Dict[str, Any], is_transition: bool = False) -> None:
         """Применение паттернов для DN"""
         self._apply_patterns(text, self.DN_PATTERNS, result)
-        
+
         if is_transition and result.get('d1') is not None and result.get('dn') is None:
             result['dn'] = result['d1']
 
@@ -246,7 +245,7 @@ class GeometryParser:
     def _apply_angle_patterns(self, text: str, result: Dict[str, Any]) -> None:
         """Применение паттернов для углов"""
         self._apply_patterns(text, self.ANGLE_PATTERNS, result)
-        
+
         if result.get('angle') is None and re.search(r'\bпрямой\s+угол\b', text):
             result['angle'] = 90.0
 
@@ -273,7 +272,7 @@ class GeometryParser:
     def _extract_dn_from_context(self, text: str, result: Dict[str, Any], is_transition: bool = False) -> None:
         """Извлечение DN из контекста"""
         numbers = re.findall(r'\b(\d+)\b', text)
-        
+
         # Для заглушек и труб: первое число = DN, второе = стенка
         if len(numbers) >= 2:
             if any(keyword in text for keyword in ['заглушка', 'труба', 'труб']):
@@ -282,7 +281,7 @@ class GeometryParser:
                 if result.get('wall_thickness') is None:
                     result['wall_thickness'] = normalize_decimal(numbers[1])
                 return
-        
+
         if is_transition and result.get('d1') is not None and result.get('dn') is None:
             result['dn'] = result['d1']
 
@@ -295,7 +294,7 @@ class GeometryParser:
             potential_angle = int(angle_match.group(1))
             dn = result.get('dn')
             wall = result.get('wall_thickness')
-            
+
             # Если число не равно DN и не равно стенке, это угол
             if (dn is None or potential_angle != int(dn)) and \
                (wall is None or potential_angle != int(wall)):

@@ -17,7 +17,7 @@
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from .errors import ToolErrorCode
 

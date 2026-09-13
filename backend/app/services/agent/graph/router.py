@@ -1,8 +1,8 @@
 # agent/graph/router.py
 
 from typing import Literal
-from ..core.state import AgentState
 
+from ..core.state import AgentState
 
 # Объектный контекст: запрос говорит про участок/схему/установленные детали,
 # поэтому нужен граф объекта, а не только складской каталог.
@@ -48,43 +48,42 @@ def router(state: AgentState) -> Literal[
     parsed = state.get("parsed")
     if not parsed:
         return "catalog"
-    
-    operations = getattr(parsed, "operations", [])
+
     query = getattr(parsed, "original_query", "").lower()
     intent = state.get("context", {}).get("intent", "search")
     unit_ids = getattr(parsed, "unit_ids", [])
     component_ids = getattr(parsed, "component_ids", [])
-    
+
     # Дубли → каталог (после поиска сработает детектор дублей)
     if "дубл" in query:
         return "catalog"
-    
+
     # Замена/ремонт/ТОиР → граф + каталог + анализ + план + правила
     if intent in ["replacement", "maintenance", "repair", "plan"]:
         return "graph"
-    
+
     # Анализ влияния → сначала граф и каталог, затем анализ
     if intent == "impact_analysis":
         return "graph"
-    
+
     # Состав/документы → граф
     if intent in ["document_search", "object_configuration"]:
         return "graph"
-    
+
     # Склад/расчёт → каталог (+ граф, если есть участки или объектный контекст)
     if intent in ["inventory", "calculate"]:
         return "graph" if (unit_ids or component_ids or _has_object_context(query)) else "catalog"
-    
+
     # Рекомендации по оборудованию → каталог (+ граф, если есть объектный контекст).
     # component_ids исключены: геометрия вроде «426» ошибочно даёт COMP-*, а
     # объектный контекст всегда выражается текстом (участок/перед/после/схема).
     if intent == "equipment_guidance":
         return "graph" if (unit_ids or _has_object_context(query)) else "catalog"
-    
+
     # Есть явные участки/компоненты → граф
     if unit_ids or component_ids:
         return "graph"
-    
+
     return "catalog"
 
 
@@ -94,22 +93,22 @@ def graph_router(state: AgentState) -> Literal[
     """Роутинг после поиска в графе"""
     parsed = state.get("parsed")
     intent = state.get("context", {}).get("intent", "search")
-    
+
     # ТОиР/ремонт → планировщик работ по найденным в графе компонентам
     if intent in ["maintenance", "repair", "plan"]:
         return "maintenance"
-    
+
     # Интенты, которым нужен и граф, и каталог
     if intent in [
         "replacement", "impact_analysis", "document_search",
         "object_configuration", "inventory", "equipment_guidance",
     ]:
         return "catalog"
-    
+
     # Если есть изменения → анализ влияния
     if parsed and getattr(parsed, "proposed_changes", {}):
         return "impact"
-    
+
     return "answer"
 
 
@@ -120,17 +119,17 @@ def catalog_router(state: AgentState) -> Literal[
     candidates = state.get("candidates", [])
     intent = state.get("context", {}).get("intent", "search")
     query = getattr(state.get("parsed"), "original_query", "").lower()
-    
+
     # Дубли → детектор дублей
     if "дубл" in query:
         return "duplicates"
-    
+
     # Справочный запрос (спросили «что это / объясни параметры» без привязки
     # к объекту) → сразу нормативы: источник standard + ГОСТ-расшифровка,
     # минуя склад и правила. Двух инструментов достаточно.
     if is_reference_query(state):
         return "regulation"
-    
+
     # Если есть кандидаты
     if candidates:
         # Анализ влияния идёт сразу после каталога
@@ -145,7 +144,7 @@ def catalog_router(state: AgentState) -> Literal[
             return "stock"
         # Правила
         return "rules"
-    
+
     # Нет кандидатов
     return "answer"
 
@@ -180,30 +179,30 @@ def impact_router(state: AgentState) -> Literal[
     """Роутинг после анализа влияния"""
     parsed = state.get("parsed")
     intent = state.get("context", {}).get("intent", "search")
-    
+
     # Замена: после влияния — план работ и правила
     if intent == "replacement":
         return "maintenance"
-    
+
     # ТОиР/анализ влияния: сразу правила и нормативы
     if intent in ["maintenance", "impact_analysis"]:
         return "rules"
-    
+
     # Если есть изменения → проверяем склад
     if parsed and getattr(parsed, "proposed_changes", {}):
         return "stock"
-    
+
     return "answer"
 
 
 def maintenance_router(state: AgentState) -> Literal["catalog", "rules", "answer"]:
     """Роутинг после планировщика ТОиР"""
     intent = state.get("context", {}).get("intent", "search")
-    
+
     # Замена: планировщик завершает, дальше правила и нормативы
     if intent == "replacement":
         return "rules"
-    
+
     # Обычный ТОиР: план по найденному составу, затем каталог и правила
     return "catalog"
 

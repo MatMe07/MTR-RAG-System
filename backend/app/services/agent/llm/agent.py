@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ..core.config import DEFAULT_CONFIG, AgentConfig
 from ..core.exceptions import AgentError, LLMResponseError
-from ..tools.error_handler import ErrorHandler, REQUIRED_TOOLS
+from ..tools.error_handler import REQUIRED_TOOLS, ErrorHandler
 from ..tools.instruments import run_instrument
 from ..tools.tool_dal import ToolDAL
 from .log import get_llm_logger
@@ -102,6 +102,11 @@ class LLMAgent:
     ):
         self.config = config or DEFAULT_CONFIG
         if llm is None:
+            if not self.config.use_llm:
+                raise AgentError(
+                    "LLM-режим запрошен, но use_llm=False (AGENT_LLM_MODE != 'on'). "
+                    "Передайте клиент явно или включите LLM-режим."
+                )
             from .client import LLMClient
             llm = LLMClient(self.config)
         self._llm = llm
@@ -117,7 +122,7 @@ class LLMAgent:
     def run(self, query: str, parsed: Any = None) -> Dict[str, Any]:
         """Запуск цикла LLM. Возвращает результат, совместимый со сборщиком ответа."""
         self.iterations = 0
-        
+
         tools = self._available_tools()
         parser = LLMResponseParser(
             available_tools={t["name"] for t in tools},
@@ -127,7 +132,6 @@ class LLMAgent:
         history: List[str] = []
         tool_results: Dict[str, List[Dict[str, Any]]] = {}
         components: List[Dict[str, Any]] = []
-        sources: List[Dict[str, Any]] = []
         warnings: List[str] = []
         errors: List[Dict[str, Any]] = []
         last_repeat: List[tuple] = []
@@ -208,7 +212,6 @@ class LLMAgent:
                 return self._build_result(
                     tools_used=list(tool_results.keys()),
                     components=components,
-                    sources=sources,
                     warnings=warnings,
                     errors=errors,
                     question=action.question,
@@ -219,7 +222,6 @@ class LLMAgent:
             return self._build_result(
                 tools_used=list(tool_results.keys()),
                 components=components,
-                sources=sources,
                 warnings=warnings,
                 errors=errors,
                 final_answer=action.final_answer,
@@ -230,7 +232,6 @@ class LLMAgent:
         return self._build_result(
             tools_used=list(tool_results.keys()),
             components=components,
-            sources=sources,
             warnings=warnings,
             errors=errors,
             final_answer=_FORCED_FINISH_MESSAGE,
@@ -282,7 +283,6 @@ class LLMAgent:
         self,
         tools_used: List[str],
         components: List[Dict[str, Any]],
-        sources: List[Dict[str, Any]],
         warnings: List[str],
         errors: List[Dict[str, Any]],
         final_answer: str = "",
@@ -300,7 +300,7 @@ class LLMAgent:
         return {
             "request_id": self._request_id,
             "components": components,
-            "sources": sources,
+            "sources": [],
             "warnings": warnings,
             "missing": [],
             "review": review,

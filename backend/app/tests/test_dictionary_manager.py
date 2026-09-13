@@ -72,6 +72,7 @@ def test_get_constant_from_db(db):
 
 def test_get_validation_rule_from_db(db):
     import json
+
     from app.models.sqlalchemy.all_models import ValidationRule
 
     db.add(ValidationRule(
@@ -93,8 +94,8 @@ def test_get_validation_rule_from_db(db):
 # ---------------------------------------------------------------------------
 
 def test_admin_mutation_writes_audit_log(db):
-    from app.services.admin_service import AdminService
     from app.models.sqlalchemy.all_models import Log
+    from app.services.admin_service import AdminService
 
     svc = AdminService(db)
     created = svc.create_group_keyword(
@@ -105,18 +106,18 @@ def test_admin_mutation_writes_audit_log(db):
     svc.delete_group_keyword(created["id"], actor={"id": "admin-1"})
 
     logs = db.query(Log).order_by(Log.id).all()
-    actions = [l.action for l in logs]
+    actions = [log.action for log in logs]
     assert "admin.dictionaries.group_keywords.create" in actions
     assert "admin.dictionaries.group_keywords.update" in actions
     assert "admin.dictionaries.group_keywords.delete" in actions
-    assert all(str(l.user_id) == "admin-1" for l in logs)
+    assert all(str(log.user_id) == "admin-1" for log in logs)
 
 
 def test_admin_validation_rule_audit(db):
-    from app.services.admin_service import AdminService
-    from app.models.sqlalchemy.all_models import Log, ValidationRule
-
     import json
+
+    from app.models.sqlalchemy.all_models import Log, ValidationRule
+    from app.services.admin_service import AdminService
     db.add(ValidationRule(
         item_type="фланец",
         required_params=json.dumps(["dn"]),
@@ -130,17 +131,17 @@ def test_admin_validation_rule_audit(db):
     svc.update_validation_rule(existing.id, {"optional_params": ["pn"]}, actor={"id": "admin-2"})
     svc.delete_validation_rule(existing.id, actor={"id": "admin-2"})
 
-    actions = [l.action for l in db.query(Log).order_by(Log.id).all()]
+    actions = [log.action for log in db.query(Log).order_by(Log.id).all()]
     assert actions == ["admin.rules.rule.update", "admin.rules.rule.delete"]
 
 
 def test_constants_audit(db):
-    from app.services.admin_service import AdminService
     from app.models.sqlalchemy.all_models import Log
+    from app.services.admin_service import AdminService
 
     svc = AdminService(db)
     vc = svc.create_validation_constant({"constant_name": "beta", "value": 0.75}, actor={"id": "admin-1"})
     svc.delete_validation_constant(vc["id"], actor={"id": "admin-1"})
 
-    actions = [l.action for l in db.query(Log).order_by(Log.id).all()]
+    actions = [log.action for log in db.query(Log).order_by(Log.id).all()]
     assert actions == ["admin.rules.constants.create", "admin.rules.constants.delete"]

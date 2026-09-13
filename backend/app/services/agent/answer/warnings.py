@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.schemas import ParsedQuery
 
-
 _SCENARIOS_PATH = Path(__file__).parent / "scenario_warnings.json"
 _scenarios: Optional[List[dict]] = None
 
@@ -116,14 +115,14 @@ def build_scenario_warnings(parsed: ParsedQuery, intent: str) -> List[str]:
     """Сбор предупреждений на основе сценариев"""
     warnings = []
     ctx = _context(parsed, intent)
-    
+
     for scenario in _load_scenarios():
         if not _matches(scenario.get("when"), ctx):
             continue
         for rule in scenario.get("warnings", []):
             if _matches(rule.get("when"), ctx):
                 warnings.append(rule["text"])
-    
+
     return warnings
 
 

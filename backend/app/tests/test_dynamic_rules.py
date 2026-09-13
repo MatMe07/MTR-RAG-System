@@ -115,6 +115,7 @@ def test_db_values_override_defaults(db_env):
 def test_unavailable_db_falls_back_to_defaults(empty_db_env):
     Session = empty_db_env
     from unittest.mock import patch
+
     from app.services.agent.rules.dynamic_rules import DynamicRules
 
     # Redis-снапшот от других тестов не должен маскировать дефолты кода.
@@ -192,8 +193,8 @@ def test_admin_service_writes_respect_upsert_and_invalidation(db_env):
     db.close()
 
     svc_db = Session()
-    from app.services.admin_service import AdminService
     from app.models.sqlalchemy.all_models import SynonymRecord
+    from app.services.admin_service import AdminService
 
     svc = AdminService(svc_db)
     svc.create_synonym({"group_name": "item_type", "raw_value": "вентиль", "normalized_value": "кран"})

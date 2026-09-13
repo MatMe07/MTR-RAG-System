@@ -7,13 +7,19 @@
 """
 
 from functools import lru_cache
-from typing import Dict, List, Optional
+from typing import Dict, List
 
-try:
-    import mawo_pymorphy3 as pymorphy2
-
-    _MORPH = pymorphy2.MorphAnalyzer()
-except Exception:  # noqa: BLE001  (офлайн-окружение без словарей)
+# Цепочка бэкендов морфологического разбора: предпочитаемый mawo-pymorphy3
+# (ставится через pyproject), затем pymorphy3, затем pymorphy2. Если ни один
+# не установлен — нормализация отдаёт слово без изменений (offline-режим).
+for _backend in ("mawo_pymorphy3", "pymorphy3", "pymorphy2"):
+    try:
+        _morph_mod = __import__(_backend)
+        _MORPH = _morph_mod.MorphAnalyzer()
+        break
+    except Exception:  # noqa: BLE001  (офлайн-окружение без словарей)
+        _MORPH = None
+else:
     _MORPH = None
 
 

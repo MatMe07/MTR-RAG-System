@@ -6,14 +6,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .interfaces import IRepository
-from ..core.exceptions import RepositoryError
 
 log = logging.getLogger("mtr.json.repo")
 
 
 class JsonRepository(IRepository):
     """JSON-репозиторий (демо-данные)"""
-    
+
     def __init__(self):
         self._catalog_cache: Optional[List[Dict[str, Any]]] = None
         self._by_ksm_cache: Optional[Dict[str, Dict[str, Any]]] = None
@@ -21,11 +20,11 @@ class JsonRepository(IRepository):
         self._graph_cache: Optional[Dict[str, Any]] = None
         self._regulation_cache: Optional[Dict[str, Any]] = None
         self._components_by_unit: Optional[Dict[str, List[Dict]]] = None
-        
+
         self._catalog_path = self._get_path("data/catalog/regulated_mtr_catalog_1000.jsonl")
         self._graph_path = self._get_path("data/graph/gas_pipeline_object.json")
         self._regulation_path = self._get_path("data/regulation/regulation_matrix.json")
-    
+
     def _get_path(self, relative_path: str) -> Path:
         """Получение пути к файлу"""
         # Ищем от корня проекта
@@ -33,71 +32,71 @@ class JsonRepository(IRepository):
             path = base / relative_path
             if path.exists():
                 return path
-        
+
         # Если не найдено — создаём fallback
         fallback = Path.cwd() / relative_path
         return fallback
-    
+
     def get_catalog(self) -> List[Dict[str, Any]]:
         if self._catalog_cache is None:
             self._catalog_cache = self._load_catalog()
             self._build_indexes()
         return self._catalog_cache
-    
+
     def get_card_by_ksm(self, ksm: str) -> Optional[Dict[str, Any]]:
         if not ksm:
             return None
         if self._by_ksm_cache is None:
             self.get_catalog()
         return self._by_ksm_cache.get(ksm)
-    
+
     def get_card_by_id(self, card_id: str) -> Optional[Dict[str, Any]]:
         if not card_id:
             return None
         if self._by_id_cache is None:
             self.get_catalog()
         return self._by_id_cache.get(card_id)
-    
+
     def get_stock_quantity(self, ksm: str) -> Optional[float]:
         card = self.get_card_by_ksm(ksm)
         if not card:
             return None
         return self._prop(card, "stock_qty")
-    
+
     def get_stock_cost(self, ksm: str) -> Optional[float]:
         return None
-    
+
     def get_graph(self) -> Dict[str, Any]:
         if self._graph_cache is None:
             self._graph_cache = self._load_graph()
             self._build_graph_indexes()
         return self._graph_cache
-    
+
     def get_components_by_unit(self, unit_id: str) -> List[Dict[str, Any]]:
         if self._components_by_unit is None:
             self.get_graph()
         return self._components_by_unit.get(unit_id, [])
-    
+
     def get_regulation(self) -> Dict[str, Any]:
         if self._regulation_cache is None:
             self._regulation_cache = self._load_regulation()
         return self._regulation_cache
-    
+
     def search_candidates(self, parsed: Any, limit: int = 40) -> List[Dict[str, Any]]:
-        from ..tools.core_tools import _matches_filters, _match_score
-        
+        from ..tools.core_tools import _match_score, _matches_filters
+
         matches = []
         for card in self.get_catalog():
             if _matches_filters(card, parsed):
                 score = _match_score(card, parsed)
                 matches.append({"card": card, "score": score})
-        
+
         matches.sort(key=lambda x: x["score"], reverse=True)
         return matches[:limit]
-    
+
     def close(self) -> None:
         pass
-    
+
     def _load_catalog(self) -> List[Dict[str, Any]]:
         from app.schemas import CatalogCard  # Phase 7: валидация через Pydantic-схему
 
@@ -143,7 +142,7 @@ class JsonRepository(IRepository):
                 skipped,
             )
         return cards
-    
+
     def _load_sample_catalog(self) -> List[Dict[str, Any]]:
         """Загрузка демо-каталога для тестирования"""
         return [
@@ -192,7 +191,7 @@ class JsonRepository(IRepository):
                 "dcd": {}
             }
         ]
-    
+
     def _load_graph(self) -> Dict[str, Any]:
         try:
             if not self._graph_path.exists():
@@ -201,7 +200,7 @@ class JsonRepository(IRepository):
                 return json.load(f)
         except Exception:
             return self._load_sample_graph()
-    
+
     def _load_sample_graph(self) -> Dict[str, Any]:
         return {
             "units": [
@@ -227,7 +226,7 @@ class JsonRepository(IRepository):
                 }
             ]
         }
-    
+
     def _load_regulation(self) -> Dict[str, Any]:
         try:
             if not self._regulation_path.exists():
@@ -236,7 +235,7 @@ class JsonRepository(IRepository):
                 return json.load(f)
         except Exception:
             return self._load_sample_regulation()
-    
+
     def _load_sample_regulation(self) -> Dict[str, Any]:
         return {
             "important_limitations": [
@@ -260,30 +259,30 @@ class JsonRepository(IRepository):
                 {"standard": "ГОСТ 12345-67", "replacement": "ГОСТ 67890-12", "status": "заменён"}
             ]
         }
-    
+
     def _build_indexes(self) -> None:
         self._by_ksm_cache = {}
         self._by_id_cache = {}
-        
+
         for card in self._catalog_cache:
             card_id = card.get("card_id")
             if card_id:
                 self._by_id_cache[card_id] = card
-            
+
             ksm = (card.get("codes") or {}).get("ksm_code")
             if ksm:
                 self._by_ksm_cache[ksm] = card
-    
+
     def _build_graph_indexes(self) -> None:
         graph = self._graph_cache or {}
         components = graph.get("components", [])
-        
+
         self._components_by_unit = {}
         for comp in components:
             unit_id = comp.get("unit_id")
             if unit_id:
                 self._components_by_unit.setdefault(unit_id, []).append(comp)
-    
+
     @staticmethod
     def _prop(card: Dict[str, Any], key: str, default: Any = None) -> Any:
         p = (card.get("properties") or {}).get(key)

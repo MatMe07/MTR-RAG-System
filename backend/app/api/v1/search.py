@@ -1,14 +1,13 @@
 import logging
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
-from typing import Optional
 
-from app.db.session import get_db
 from app.api.deps.auth import get_current_user
 from app.core.exceptions import AppException
-from app.models.pydantic.schemas import SearchRequest, SearchResponse, ClarifyRequest, ClarifyResponse
+from app.db.session import get_db
+from app.models.pydantic.schemas import ClarifyRequest, ClarifyResponse, SearchRequest, SearchResponse
 from app.services.search_service import SearchService
 
 router = APIRouter()
@@ -18,16 +17,16 @@ log = logging.getLogger("mtr.search")
 @router.post("/clarify", response_model=ClarifyResponse)
 def clarify(
     body: ClarifyRequest,
-    authorization: Optional[str] = Header(None),
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Диалоговое уточнение (1G): до 3 циклов, затем REQUIRES_EXPERT."""
-    from app.services.agent.parsing.hybrid_parser import HybridParser
     from app.services.agent.intent.clarify import (
         RequireClarification,
         get_clarification_manager,
     )
     from app.services.agent.intent.detect import enrich_parsed
+    from app.services.agent.parsing.hybrid_parser import HybridParser
 
     manager = get_clarification_manager()
     try:
@@ -36,23 +35,28 @@ def clarify(
         decision = manager.process(body.session_id, parsed, body.query)
         if decision == "proceed":
             merged = manager.accumulated_text(body.session_id) or body.query
+            turn = manager.turns(body.session_id)
+            status = getattr(parsed, "status", "COMPLETE")
+            manager.reset(body.session_id)
             svc = SearchService(db)
             answer = svc.execute_search(
                 SearchRequest(query=merged, mode="deterministic"),
-                user_id=None,
+                user_id=str(current_user["id"]),
             )
             return ClarifyResponse(
                 session_id=body.session_id,
                 route="answer",
-                turn=manager.turns(body.session_id),
-                status=getattr(parsed, "status", "COMPLETE"),
+                turn=turn,
+                status=status,
                 answer=answer,
             )
         # 'expert' после max_turns (1G.4)
+        turn = manager.turns(body.session_id)
+        manager.reset(body.session_id)
         return ClarifyResponse(
             session_id=body.session_id,
             route="expert",
-            turn=manager.turns(body.session_id),
+            turn=turn,
             status="REQUIRES_EXPERT",
             message=(
                 "Недостаточно данных для выполнения запроса. "
@@ -93,21 +97,17 @@ class SearchHistoryItem(BaseModel):
 @router.post("/", response_model=SearchResponse)
 def search(
     body: SearchRequest,
-    authorization: Optional[str] = Header(None),
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    log.info("SEARCH REQUEST: query=%r mode=%s", body.query, body.mode)
-    user_id = None
-    if authorization:
-        try:
-            user = get_current_user(authorization=authorization, db=db)
-            user_id = str(user["id"])
-        except Exception:
-            log.warning("Search without valid auth; history will be anonymous")
+    log.info(
+        "SEARCH REQUEST: query=%r mode=%s user=%s",
+        body.query, body.mode, current_user["id"],
+    )
 
     try:
         svc = SearchService(db)
-        result = svc.execute_search(body, user_id=user_id)
+        result = svc.execute_search(body, user_id=str(current_user["id"]))
         log.info(
             "SEARCH RESPONSE: status=%s results=%d warnings=%d requires_expert=%s",
             result.status,
@@ -128,37 +128,39 @@ def search(
 def search_history(
     limit: int = 20,
     offset: int = 0,
-    authorization: Optional[str] = Header(None),
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if not authorization:
-        return []
     try:
         from app.models.sqlalchemy.all_models import Log
 
-        user = get_current_user(authorization=authorization, db=db)
         logs = (
             db.query(Log)
-            .filter(Log.user_id == str(user["id"]), Log.action == "search")
+            .filter(Log.user_id == str(current_user["id"]), Log.action == "search")
             .order_by(Log.created_at.desc())
             .offset(offset)
             .limit(limit)
             .all()
         )
-        results = log.data.get("results", []) if log.data else []
-        return [
-            SearchHistoryItem(
-                id=log.id,
-                request_id=str(log.request_id) if log.request_id else "",
-                query=log.data.get("query", "") if log.data else "",
-                mode=log.data.get("mode", "deterministic") if log.data else "deterministic",
-                status="ok",
-                results_count=len(results),
-                results=results,
-                warnings=log.data.get("warnings", []) if log.data else [],
-                created_at=log.created_at.isoformat() if log.created_at else None,
+        items: list[SearchHistoryItem] = []
+        for row in logs:
+            data = row.data or {}
+            results = data.get("results", [])
+            items.append(
+                SearchHistoryItem(
+                    id=row.id,
+                    request_id=str(row.request_id) if row.request_id else "",
+                    query=data.get("query", ""),
+                    mode=data.get("mode", "deterministic"),
+                    status="ok",
+                    results_count=len(results),
+                    results=results,
+                    warnings=data.get("warnings", []),
+                    created_at=row.created_at.isoformat() if row.created_at else None,
+                )
             )
-            for log in logs
-        ]
+        return items
+    except AppException:
+        raise
     except Exception:
         return []

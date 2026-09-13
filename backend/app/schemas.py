@@ -1,7 +1,8 @@
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class Geometry(BaseModel):
@@ -69,14 +70,14 @@ class ItemCard(BaseModel):
     subtype: Optional[str] = Field(None, description="Подтип или конструктивное исполнение")
     designation: Optional[str] = Field(None, description="Условное обозначение изделия")
     name: Optional[str] = Field(None, description="Человекочитаемое наименование изделия")
-    
+
     geometry: Optional[Geometry] = Field(None, description="Геометрические параметры")
     pressure: Optional[Pressure] = Field(None, description="Параметры давления")
     material: Optional[Material] = Field(None, description="Материалы и классы прочности")
     environment: Optional[Environment] = Field(None, description="Условия эксплуатации")
     coating: Optional[Coating] = Field(None, description="Покрытия")
     normative: Optional[Normative] = Field(None, description="Нормативная документация")
-    
+
     extraction: Optional[Extraction] = Field(None, description="Метаданные извлечения")
     sources: List[Source] = Field(..., description="Ссылки на источники данных")
 
@@ -130,10 +131,10 @@ class MatchResult(BaseModel):
     rule_trace: List[RuleTrace] = Field(default_factory=list, description="Сработавшие правила")
     sources: List[Source] = Field(default_factory=list, description="Источники")
     explanation: Optional[str] = Field(None, description="Объяснение результата")
-    
+
     stock_quantity: Optional[float]
     stock_cost: Optional[float]
-    
+
     @field_validator("status")
     def validate_status(cls, v):
         allowed = ["соответствует", "потенциальный аналог", "требует проверки", "низкая релевантность", "нет данных", "не соответствует"]
@@ -187,7 +188,7 @@ class ExpertReviewResponse(BaseModel):
 
 class ParsedQuery(BaseModel):
     """Результат парсинга пользовательского запроса для инженерной системы."""
-    
+
     # ===== Исходный запрос =====
     original_query: str = Field(..., description="Исходный текст запроса")
 
@@ -196,7 +197,7 @@ class ParsedQuery(BaseModel):
         default_factory=list,
         description="Список операций: search, replace, check, plan, explain, inventory, impact, assemble, calculate, document, repair"
     )
-    
+
     # ===== Целевые объекты =====
     item_types: List[str] = Field(
         default_factory=list,
@@ -210,7 +211,7 @@ class ParsedQuery(BaseModel):
         default_factory=list,
         description="ID участков: UNIT-XXX"
     )
-    
+
     # ===== Карточки =====
     card: Optional[ItemCard] = Field(
         None,
@@ -220,7 +221,7 @@ class ParsedQuery(BaseModel):
         default_factory=list,
         description="Несколько карточек (для составных запросов)"
     )
-    
+
     # ===== Фильтры для поиска =====
     technical_filters: Dict[str, Any] = Field(
         default_factory=dict,
@@ -230,7 +231,7 @@ class ParsedQuery(BaseModel):
         default_factory=dict,
         description="Складские фильтры: quantity_min, quantity_max, location, stock_category"
     )
-    
+
     # ===== Параметры количества, сроков и сортировки =====
     quantity: Optional[float] = Field(None, description="Потребность по «N штук» (по две штуки -> 2)")
     units_count: Optional[int] = Field(None, description="Количество участков (множитель), например трёх таких же участков -> 3")
@@ -241,7 +242,7 @@ class ParsedQuery(BaseModel):
     sort_by: Optional[str] = Field(None, description="Сортировка результатов: procurement_urgency, risk, priority")
     on_stock: Optional[bool] = Field(None, description="True=только в наличии, False=только отсутствующие на складе")
     not_installed: Optional[bool] = Field(None, description="True=не установлены ни на одном участке")
-    
+
     # ===== Изменения и их анализ =====
     proposed_changes: Dict[str, Any] = Field(
         default_factory=dict,
@@ -251,7 +252,7 @@ class ParsedQuery(BaseModel):
         default_factory=dict,
         description="Анализ влияния: что проверить при замене, какие детали затронуты"
     )
-    
+
     # ===== Контекст =====
     unit_context: Dict[str, Any] = Field(
         default_factory=dict,
@@ -261,19 +262,19 @@ class ParsedQuery(BaseModel):
         default_factory=dict,
         description="Контекст компонента: component_id, position, connections"
     )
-    
+
     # ===== Ссылки на нормативную базу =====
     references: List[str] = Field(
         default_factory=list,
         description="Упомянутые ГОСТы, ТУ, паспорта"
     )
-    
+
     # ===== Неоднозначности =====
     ambiguities: List[str] = Field(
         default_factory=list,
         description="Что нужно уточнить у пользователя"
     )
-    
+
     # ===== Требуемые возможности =====
     required_agents: List[str] = Field(
         default_factory=list,
@@ -283,7 +284,7 @@ class ParsedQuery(BaseModel):
         default_factory=list,
         description="Свободное описание требуемых возможностей"
     )
-    
+
     # ===== Уверенность =====
     confidence: float = Field(
         1.0,
@@ -295,7 +296,7 @@ class ParsedQuery(BaseModel):
         default_factory=dict,
         description="Детали уверенности по каждому полю"
     )
-    
+
     # ===== Интентный слой (Этап 1, §1B–1H) =====
     intents: List[str] = Field(
         default_factory=list,

@@ -5,7 +5,7 @@
 type, required, properties, items, enum, minimum, maximum, maxItems, minItems.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from .errors import ToolError, ToolErrorCode
 

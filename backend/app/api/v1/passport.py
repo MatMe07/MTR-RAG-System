@@ -1,11 +1,10 @@
-from typing import Any
 
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
 from app.core.exceptions import AppException
+from app.db.session import get_db
 from app.models.pydantic.schemas import ExtractedParam
 from app.services.passport_service import PassportService
 

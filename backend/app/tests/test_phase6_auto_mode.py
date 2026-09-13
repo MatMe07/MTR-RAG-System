@@ -1,13 +1,12 @@
 # tests/test_phase6_auto_mode.py
 """E2E-проверка Фазы 6: авто-режим (deterministic → quality gate → LLM-refine С1)."""
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from app.schemas import AgentAnswer, ParsedQuery
 from app.services.agent.executor import AgentExecutor
-from app.services.agent.verify.verifier import verify_answer
 from app.services.agent.verify.policy import escalate_type
-
+from app.services.agent.verify.verifier import verify_answer
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -49,8 +49,8 @@ class SearchService:
                 len(getattr(answer, "warnings", []) or []),
             )
 
-            from app.services.agent.answer.tz_result import build_tz_result_items
             from app.services.agent.answer.status import STATUS_NOT_FOUND, STATUS_UNCLEAR
+            from app.services.agent.answer.tz_result import build_tz_result_items
 
             answer_status = (
                 getattr(answer, "status", "") or STATUS_UNCLEAR

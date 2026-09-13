@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import NotFoundError, ValidationError
 from app.models.sqlalchemy.all_models import (
-    GroupKeyword,
     ContextualOverride,
+    GroupKeyword,
     SynonymRecord,
     ValidationConstant,
     ValidationRule,
@@ -20,7 +20,6 @@ class AdminService:
 
     @staticmethod
     def _json_str(value) -> str:
-        import json
         import json as _json
         if isinstance(value, str):
             return value

@@ -1,9 +1,8 @@
 # query_parser/parsers/normative_parser.py
 
 import re
-from typing import Optional, Dict, Any, List, Tuple
-from dataclasses import dataclass, field
-from functools import lru_cache
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
 from ..utils.fuzzy_utils import FuzzyMatcher
 
@@ -29,49 +28,49 @@ class NormativeParser:
     - Различные форматы номеров
     - Паспорта и сертификаты
     """
-    
+
     # Паттерны для извлечения ГОСТ
     GOST_PATTERNS = [
         # Полный формат: ГОСТ 12345-67
         (r'\bГОСТ\s+(\d+)\s*[-—–]\s*(\d+)(?:\s*[-—–]\s*(\d+))?\b',
          'gost_tu', 100, "ГОСТ XXXX-XX"),
-        
+
         # ГОСТ с точкой: ГОСТ 12345-67-89
         (r'\bГОСТ\s+(\d+)\s*[-—–]\s*(\d+)\s*[-—–]\s*(\d+)\b',
          'gost_tu', 95, "ГОСТ XXXX-XX-XX"),
-        
+
         # ГОСТ без дефиса: ГОСТ 1234567
         (r'\bГОСТ\s+(\d+)\b',
          'gost_tu', 85, "ГОСТ XXXXXXX"),
-        
+
         # ГОСТ с годом в скобках: ГОСТ 12345 (2005)
         (r'\bГОСТ\s+(\d+)\s*[\(（]\s*(\d+)\s*[\)）]',
          'gost_tu', 90, "ГОСТ XXXX (год)"),
-        
+
         # ГОСТ с указанием "по ГОСТ": по ГОСТ 12345-67
         (r'(?:по|согласно|согл|в соотв)\s+ГОСТ\s+(\d+)\s*[-—–]\s*(\d+)',
          'gost_tu', 90, "по ГОСТ XXXX-XX"),
     ]
-    
+
     # Паттерны для извлечения ТУ
     TU_PATTERNS = [
         # ✅ Исправлен паттерн для ТУ с точкой: ТУ 1234.567-89
         (r'\bТУ\s+(\d+)\.(\d+)\s*[-—–]\s*(\d+)\b',
          'gost_tu', 100, "ТУ XXXX.XXX-XX"),
-        
+
         # Полный формат: ТУ 1234-567-89
         (r'\bТУ\s+(\d+)\s*[-—–]\s*(\d+)\s*[-—–]\s*(\d+)\b',
          'gost_tu', 95, "ТУ XXXX-XXX-XX"),
-        
+
         # ТУ с дефисом: ТУ 1234-567
         (r'\bТУ\s+(\d+)\s*[-—–]\s*(\d+)\b',
          'gost_tu', 90, "ТУ XXXX-XXX"),
-        
+
         # ТУ простой: ТУ 1234567
         (r'\bТУ\s+(\d+)\b',
          'gost_tu', 80, "ТУ XXXXXXX"),
     ]
-    
+
     # Паттерны для извлечения СТО (стандарты организаций)
     STO_PATTERNS = [
         (r'\bСТО\s+(\d+)\s*[-—–]\s*(\d+)\b',
@@ -79,21 +78,21 @@ class NormativeParser:
         (r'\bСТО\s+(\d+)\b',
          'gost_tu', 75, "СТО XXXXX"),
     ]
-    
+
     # ✅ Исправлены паттерны для ЛНД - сохраняем префикс
     LND_PATTERNS = [
         (r'\bЛНД\s+[\d\.\-]+', 'lnd_sections', 100, "ЛНД"),
         (r'\b(?:раздел|пункт|параграф)\s+[\d\.\-]+', 'lnd_sections', 80, "раздел X"),
         (r'\b(?:глава|часть)\s+[\d\.\-]+', 'lnd_sections', 75, "глава X"),
     ]
-    
+
     # ✅ Паттерны для паспортов и сертификатов
     PASSPORT_PATTERNS = [
         (r'\bпаспорт\s+[\d\-]+(?:\.[\d\-]+)?', 'passport', 100, "паспорт"),
         (r'\bсертификат\s+[\d\-]+(?:\.[\d\-]+)?', 'certificate', 100, "сертификат"),
         (r'\b(?:свидетельство|серт)\s+[\d\-]+', 'certificate', 90, "свидетельство"),
     ]
-    
+
     # Паттерны для контекстного поиска
     CONTEXT_PATTERNS = {
         "gost_tu": [
@@ -106,10 +105,10 @@ class NormativeParser:
             (r'\bнормативн(?:ый|ая|ое)\s+документ', "ЛНД"),
         ],
     }
-    
+
     # Валидные префиксы нормативных документов
     VALID_PREFIXES = ["ГОСТ", "ТУ", "СТО", "ЛНД", "ОСТ", "РД", "СНиП", "СП"]
-    
+
     def __init__(self):
         self.fuzzy_matcher = FuzzyMatcher(threshold=75)
         self._cache: Dict[str, Dict[str, Any]] = {}
@@ -120,14 +119,14 @@ class NormativeParser:
         """
         if not text or not text.strip():
             return None
-        
+
         # Проверка кеша
         cache_key = text.strip()
         if cache_key in self._cache:
             return self._cache[cache_key].copy()
-        
+
         result = self._parse_impl(text)
-        
+
         # Сохраняем в кеш
         if result:
             self._cache[cache_key] = result.copy()
@@ -145,37 +144,37 @@ class NormativeParser:
             "sto": None,
             "other_normatives": [],
         }
-        
+
         text_upper = text.upper()
-        
+
         # 1. Извлечение ГОСТ
         self._apply_gost_patterns(text_upper, result)
-        
+
         # 2. Извлечение ТУ
         if result.get("gost_tu") is None:
             self._apply_tu_patterns(text_upper, result)
-        
+
         # 3. Извлечение СТО
         if result.get("gost_tu") is None:
             self._apply_sto_patterns(text_upper, result)
-        
+
         # 4. Извлечение ЛНД
         self._apply_lnd_patterns(text, result)
-        
+
         # 5. Извлечение паспортов и сертификатов
         self._apply_passport_patterns(text, result)
-        
+
         # 6. Контекстный поиск
         if result.get("gost_tu") is None:
             self._apply_context_patterns(text_upper, result)
-        
+
         # 7. Если ничего не найдено - возвращаем None
         if not self._has_any_data(result):
             return None
-        
+
         # 8. Нормализация
         result = self._normalize_result(result)
-        
+
         return result
 
     # =========================================================
@@ -284,15 +283,15 @@ class NormativeParser:
         # Очищаем пустые списки
         if not result.get("lnd_sections"):
             result["lnd_sections"] = []
-        
+
         # Удаляем дубликаты в lnd_sections
         if result.get("lnd_sections"):
             result["lnd_sections"] = list(dict.fromkeys(result["lnd_sections"]))
-        
+
         # Удаляем дубликаты в other_normatives
         if result.get("other_normatives"):
             result["other_normatives"] = list(dict.fromkeys(result["other_normatives"]))
-        
+
         return result
 
     def is_valid_gost_tu(self, gost_tu: str) -> bool:
@@ -316,7 +315,7 @@ class NormativeParser:
             (r'^(ГОСТ|ТУ|СТО)\s+(\d+)[-–—](\d+)$', 2),
             (r'^(ГОСТ|ТУ|СТО)\s+(\d+)$', 1),
         ]
-        
+
         for pattern, count in patterns:
             match = re.match(pattern, gost_tu)
             if match:

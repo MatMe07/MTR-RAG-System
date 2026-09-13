@@ -1,13 +1,12 @@
 import json
 import os
 import random
-import pandas as pd
-from neo4j import GraphDatabase
-from typing import List, Dict, Optional
 from pathlib import Path
 
-from app.scripts.seed_stack import GRAPH_SCHEMA_STATEMENTS, _object_graph_aliases
+import pandas as pd
+from neo4j import GraphDatabase
 
+from app.scripts.seed_stack import GRAPH_SCHEMA_STATEMENTS, _object_graph_aliases
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_GOLDEN = REPO_ROOT / "data" / "catalog" / "regulated_mtr_catalog_1000.csv"
@@ -44,10 +43,10 @@ def pick_component(item_type: str, dn_target: int, pn_target: float, medium: str
         (mtr_df['pn'] >= pn_target * 0.8)  # допуск по давлению
     ]
     if h2s_required:
-        candidates = candidates[candidates['h2s_confirmed'] == True]
+        candidates = candidates[candidates['h2s_confirmed']]
     if medium and medium != 'любая':
         candidates = candidates[candidates['medium'].str.contains(medium.split()[0], case=False, na=False)]
-    
+
     # Если нет подходящей — генерируем синтетическую (для тестов)
     if candidates.empty:
         # Берём любую деталь из MTR и меняем DN/PN на нужные (для демо)
@@ -69,7 +68,7 @@ def expand_template(template, unit_code, instance_id, base_dn):
     edges = []
     prev_ksm = None
     dn_current = base_dn
-    
+
     for step in template['pattern']:
         dn = dn_current
         if 'dn' in step and step['dn'] == 'DN_максимальный':
@@ -77,11 +76,11 @@ def expand_template(template, unit_code, instance_id, base_dn):
         elif 'dn' in step and step['dn'].startswith('DN_'):
             factor = 0.6 if 'впуска' in step['dn'] or 'насоса' in step['dn'] else 0.8
             dn = int(base_dn * factor)
-        
+
         pn_target = 25 if dn <= 200 else 16
         if 'H2S' in template['applicable_for']:
             pn_target = 40
-        
+
         ksm = pick_component(
             item_type=step['item_type'],
             dn_target=dn,
@@ -91,13 +90,13 @@ def expand_template(template, unit_code, instance_id, base_dn):
         )
         if not ksm:
             continue
-        
+
         if prev_ksm:
             if 'H2S' in template['applicable_for']:
                 conn_type = 'welded' if step['item_type'] not in ['задвижка', 'кран_обратный', 'заглушка'] else 'flanged'
             else:
                 conn_type = 'flanged' if dn <= 200 else 'welded'
-            
+
             edges.append({
                 'from': prev_ksm,
                 'to': ksm,
@@ -114,7 +113,7 @@ def expand_template(template, unit_code, instance_id, base_dn):
 # ---------- 4. Генерация 12 установок с увеличенными повторениями ----------
 def generate_all_edges():
     all_edges = []
-    
+
     # 12 установок (вместо 8)
     unit_configs = [
         {'code': 'UNIT-H2S-001', 'medium': 'H2S', 'templates': [0, 1, 3, 5]},
@@ -130,7 +129,7 @@ def generate_all_edges():
         {'code': 'UNIT-OIL-002', 'medium': 'нефть', 'templates': [0, 3, 4]},
         {'code': 'UNIT-UTILITY-001', 'medium': 'вода', 'templates': [4, 5]},
     ]
-    
+
     for unit in unit_configs:
         for template_idx in unit['templates']:
             template = templates['unit_templates'][template_idx]
@@ -141,7 +140,7 @@ def generate_all_edges():
                 base_dn = random.choice(range(dn_range[0], dn_range[1]+1, 50))
                 edges = expand_template(template, unit['code'], inst, base_dn)
                 all_edges.extend(edges)
-    
+
     # Добавляем кросс-соединения между установками (больше)
     for rule in templates['cross_connection_rules'] * 3:  # утраиваем
         units_in_rule = [u for u in unit_configs if any(t in u['templates'] for t in [0,1])]
@@ -167,12 +166,12 @@ def load_to_neo4j(edges):
     with driver.session() as session:
         session.execute_write(clear_graph)
         session.execute_write(create_constraints)
-        
+
         all_ksm = set()
         for e in edges:
             all_ksm.add(e['from'])
             all_ksm.add(e['to'])
-        
+
         for ksm in all_ksm:
             row = mtr_df[mtr_df['ksm_code'] == ksm]
             if not row.empty:
@@ -188,9 +187,9 @@ def load_to_neo4j(edges):
                         h2s_confirmed: $h2s,
                         stock_qty: $stock
                     })
-                """, ksm=ksm, item_type=row['item_type'], dn=int(row['dn']), 
-                    pn=float(row['pn']), material=row.get('steel_grade', 'unknown'), 
-                    medium=row['medium'], h2s=row.get('h2s_confirmed', False), 
+                """, ksm=ksm, item_type=row['item_type'], dn=int(row['dn']),
+                    pn=float(row['pn']), material=row.get('steel_grade', 'unknown'),
+                    medium=row['medium'], h2s=row.get('h2s_confirmed', False),
                     stock=float(row.get('stock_qty', 0)))
         for e in edges:
             session.run(
@@ -213,7 +212,7 @@ def load_to_neo4j(edges):
                 template=e.get('template', 'unknown'),
                 instance=e.get('instance', 0)
             )
-        
+
         units = set(e['unit'] for e in edges)
         for unit in units:
             session.run("CREATE (u:Unit {unit_code: $unit})", unit=unit)

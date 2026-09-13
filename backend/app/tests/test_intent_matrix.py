@@ -4,31 +4,30 @@
 
 import unittest
 
-from app.services.agent.intent.matrix import (
-    INTENT_ORDER,
-    INTENT_REQUIREMENTS,
-    INCOMPATIBLE_INTENTS,
-    PARAMETER_VALIDATION_RULES,
-    BLOCKER_FIELDS,
-)
-from app.services.agent.intent.detect import (
-    detect_intents,
-    filter_params_for_intent,
-    missing_required_for_intent,
-    params_from_parsed,
-    enrich_parsed,
-    determine_parsed_status,
-    incompatible_detected,
-    PARSED_STATUS_COMPLETE,
-    PARSED_STATUS_PARTIAL,
-    PARSED_STATUS_REQUIRES_EXPERT,
-    PARSED_STATUS_UNCLEAR,
-)
 from app.services.agent.intent.clarify import (
     ClarificationManager,
     RequireClarification,
     build_question,
 )
+from app.services.agent.intent.detect import (
+    PARSED_STATUS_COMPLETE,
+    PARSED_STATUS_REQUIRES_EXPERT,
+    PARSED_STATUS_UNCLEAR,
+    detect_intents,
+    determine_parsed_status,
+    enrich_parsed,
+    filter_params_for_intent,
+    incompatible_detected,
+    params_from_parsed,
+)
+from app.services.agent.intent.matrix import (
+    BLOCKER_FIELDS,
+    INCOMPATIBLE_INTENTS,
+    INTENT_ORDER,
+    INTENT_REQUIREMENTS,
+    PARAMETER_VALIDATION_RULES,
+)
+
 
 # Тестовые объекты ParsedQuery с полями из одного источника
 def _q(**kw):

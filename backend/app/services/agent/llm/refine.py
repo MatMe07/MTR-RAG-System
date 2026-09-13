@@ -7,9 +7,10 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any, Dict, List, Optional
+
+from .json_utils import extract_json_object
 
 log = logging.getLogger("mtr.agent.llm.refine")
 
@@ -125,19 +126,4 @@ def refine_answer(
 
 
 def _parse_json(raw: str) -> Optional[Dict[str, Any]]:
-    text = raw.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        lines = [l for l in lines if not l.strip().startswith("```")]
-        text = "\n".join(lines)
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        import re
-        m = re.search(r"\{.*\}", text, re.DOTALL)
-        if m:
-            try:
-                return json.loads(m.group())
-            except json.JSONDecodeError:
-                pass
-    return None
+    return extract_json_object(raw)

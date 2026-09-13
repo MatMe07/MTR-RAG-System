@@ -1,42 +1,50 @@
 # agent/graph/agent_graph.py
 
-from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.graph import END, StateGraph
 
+try:  # optional: langgraph-checkpoint-redis (добавлен в pyproject)
+    from langgraph.checkpoint.redis import RedisSaver
+
+    _HAS_REDIS_SAVER = True
+except Exception:  # pragma: no cover - зависимости нет (тесты/лёгкая установка)
+    RedisSaver = None
+    _HAS_REDIS_SAVER = False
+
+from ..core.config import DEFAULT_CONFIG, AgentConfig
+from ..core.state import AgentState
 from .nodes import (
-    parse_node,
+    answer_node,
     catalog_node,
-    stock_node,
-    rules_node,
+    duplicates_node,
     graph_node,
     impact_node,
-    regulation_node,
     inventory_node,
-    sufficiency_node,
     maintenance_node,
-    duplicates_node,
-    answer_node,
+    parse_node,
+    regulation_node,
+    rules_node,
+    stock_node,
+    sufficiency_node,
 )
 from .router import (
-    router,
-    graph_router,
     catalog_router,
-    stock_router,
+    graph_router,
     impact_router,
     maintenance_router,
+    router,
     rules_router,
+    stock_router,
 )
-from ..core.state import AgentState
-from ..core.config import DEFAULT_CONFIG, AgentConfig
 
 
 def build_agent_graph(config: AgentConfig = None) -> StateGraph:
     """Сборка графа агента"""
     config = config or DEFAULT_CONFIG
-    
+
     builder = StateGraph(AgentState)
-    
+
     # ============================================================
     # ДОБАВЛЯЕМ УЗЛЫ
     # ============================================================
@@ -52,12 +60,12 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
     builder.add_node("maintenance", maintenance_node)
     builder.add_node("duplicates", duplicates_node)
     builder.add_node("answer", answer_node)
-    
+
     # ============================================================
     # НАЧАЛЬНЫЙ УЗЕЛ
     # ============================================================
     builder.set_entry_point("parse")
-    
+
     # ============================================================
     # УСЛОВНЫЙ РОУТИНГ ПОСЛЕ ПАРСИНГА
     # ============================================================
@@ -77,7 +85,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
             "answer": "answer",
         }
     )
-    
+
     # ============================================================
     # РОУТИНГ ПОСЛЕ ГРАФА
     # ============================================================
@@ -91,7 +99,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
             "answer": "answer",
         }
     )
-    
+
     # ============================================================
     # РОУТИНГ ПОСЛЕ ПЛАНИРОВЩИКА ТОИР
     # ============================================================
@@ -104,7 +112,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
             "answer": "answer",
         }
     )
-    
+
     # ============================================================
     # РОУТИНГ ПОСЛЕ КАТАЛОГА
     # ============================================================
@@ -120,7 +128,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
             "answer": "answer",
         }
     )
-    
+
     # ============================================================
     # РОУТИНГ ПОСЛЕ СКЛАДА
     # ============================================================
@@ -135,7 +143,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
             "answer": "answer",
         }
     )
-    
+
     # ============================================================
     # РОУТИНГ ПОСЛЕ АНАЛИЗА ВЛИЯНИЯ
     # ============================================================
@@ -149,7 +157,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
             "answer": "answer",
         }
     )
-    
+
     # ============================================================
     # РОУТИНГ ПОСЛЕ ПРАВИЛ
     # ============================================================
@@ -161,7 +169,7 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
             "answer": "answer",
         }
     )
-    
+
     # ============================================================
     # ПРЯМЫЕ РЁБРА
     # ============================================================
@@ -173,36 +181,40 @@ def build_agent_graph(config: AgentConfig = None) -> StateGraph:
     builder.add_edge("inventory", "rules")
     # После нормативов → ответ
     builder.add_edge("regulation", "answer")
-    
+
     # Конец
     builder.add_edge("answer", END)
-    
+
     return builder
 
 
 def get_agent_graph(config: AgentConfig = None) -> StateGraph:
-    """Получение скомпилированного графа с чекпоинтами"""
+    """Получение скомпилированного графа с чекпоинтами.
+
+    checkpoint_type: memory | sqlite | redis. Граф не кешируется глобально —
+    каждый экземпляр AgentExecutor компилирует свой граф, чтобы конфиг
+    одного экспзекутора не «протекал» в другой.
+    """
     config = config or DEFAULT_CONFIG
     builder = build_agent_graph(config)
-    
+
     # Выбор чекпоинтера
+    checkpointer = MemorySaver()
     if config.checkpoint_type == "sqlite":
         import sqlite3
-        conn = sqlite3.connect("agent_checkpoints.db")
+        conn = sqlite3.connect(config.checkpoint_sqlite_path)
         checkpointer = SqliteSaver(conn)
-    else:
-        checkpointer = MemorySaver()
-    
+    elif config.checkpoint_type == "redis":
+        if not _HAS_REDIS_SAVER:
+            raise RuntimeError(
+                "checkpoint_type='redis' требует пакет langgraph-checkpoint-redis "
+                "(pip install langgraph-checkpoint-redis)."
+            )
+        checkpointer = RedisSaver(redis_url=config.checkpoint_redis_url)
+
     return builder.compile(checkpointer=checkpointer)
 
 
-# Глобальный экземпляр
-_agent_graph = None
-
-
 def get_graph(config: AgentConfig = None) -> StateGraph:
-    """Ленивая инициализация графа"""
-    global _agent_graph
-    if _agent_graph is None:
-        _agent_graph = get_agent_graph(config)
-    return _agent_graph
+    """Свежескомпилированный граф (без глобального кеша — см. get_agent_graph)."""
+    return get_agent_graph(config)

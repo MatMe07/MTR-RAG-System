@@ -1,11 +1,8 @@
 # query_parser/parsers/operation_parser.py
 
 import re
-from typing import List, Optional, Dict, Tuple, Set
 from dataclasses import dataclass, field
-from functools import lru_cache
-
-from rapidfuzz import fuzz
+from typing import Dict, List, Optional, Set
 
 from ..dictionaries import OPERATION_ALIASES
 from ..utils.fuzzy_utils import FuzzyMatcher
@@ -31,7 +28,7 @@ class OperationParser:
     - Контекстные признаки
     - Приоритеты операций
     """
-    
+
     # Приоритеты операций (чем выше, тем важнее)
     OPERATION_PRIORITY = {
         "repair": 100,
@@ -46,7 +43,7 @@ class OperationParser:
         "document": 35,
         "calculate": 30,
     }
-    
+
     # Основные ключевые слова для каждой операции
     KEYWORDS = {
         "repair": [
@@ -116,7 +113,7 @@ class OperationParser:
             "калькуляция",
         ],
     }
-    
+
     # Фразы (точные совпадения) с приоритетом выше ключевых слов
     PHRASES = [
         ("план замены", "plan"),
@@ -136,11 +133,11 @@ class OperationParser:
         ("подбери аналог", "replace"),
         ("собери комплект", "assemble"),
         ("собрать комплект", "assemble"),
-        ("какие соседние детали", "impact"),  
-        ("придётся заменить", "impact"),      
-        ("запас деталей", "inventory"),       
+        ("какие соседние детали", "impact"),
+        ("придётся заменить", "impact"),
+        ("запас деталей", "inventory"),
     ]
-    
+
     # Контекстные признаки (для уточнения операций)
     CONTEXT_PATTERNS = {
         "inventory": [
@@ -149,7 +146,7 @@ class OperationParser:
             (r'налич', 8),
             (r'пополн', 7),
             (r'закуп', 7),
-            (r'запас', 7),  
+            (r'запас', 7),
             (r'из\s+каких\s+деталей', 8),
             (r'(?:есть ли|сколько|хватает ли|достаточно ли)', 10),
         ],
@@ -188,10 +185,10 @@ class OperationParser:
             (r'изменится', 10),
             (r'последств', 10),
             (r'влияние', 8),
-            (r'заменят', 7),      
-            (r'затрон', 7),       
-            (r'соседн', 7),       
-            (r'прид[её]тся', 7),  
+            (r'заменят', 7),
+            (r'затрон', 7),
+            (r'соседн', 7),
+            (r'прид[её]тся', 7),
         ],
         "assemble": [
             (r'собер', 10),
@@ -203,17 +200,17 @@ class OperationParser:
             (r'рассчита', 10),
         ],
     }
-    
+
     # Негативный контекст (исключения)
     NEGATIVE_CONTEXT = [
         r'установлены?\s+ни\s+на\s+одном',
         r'без\s+ремонта',
     ]
-    
+
     # Пороги для fuzzy-поиска
     FUZZY_THRESHOLD = 75
     FUZZY_STRONG_THRESHOLD = 85
-    
+
     def __init__(self):
         self.fuzzy_matcher = FuzzyMatcher(threshold=self.FUZZY_THRESHOLD)
         self._cache: Dict[str, List[str]] = {}
@@ -225,41 +222,41 @@ class OperationParser:
         """
         if not text or not text.strip():
             return ["unknown"]
-        
+
         # Проверка кеша
         cache_key = text.strip()
         if cache_key in self._cache:
             return self._cache[cache_key].copy()
-        
+
         found: Set[str] = set()
         text_lower = text.lower()
-        
+
         # 1. Проверка фраз (высший приоритет)
         for phrase, operation in self.PHRASES:
             if phrase in text_lower:
                 found.add(operation)
-        
+
         # 2. Точные ключевые слова
         for operation, keywords in self.KEYWORDS.items():
             for keyword in keywords:
                 if self._contains_keyword(text_lower, keyword):
                     found.add(operation)
                     break
-        
+
         # 3. Алиасы из словаря
         for alias, operation in OPERATION_ALIASES.items():
             if self._contains_keyword(text_lower, alias):
                 found.add(operation)
-        
+
         # 4. Fuzzy-поиск (для опечаток)
         found.update(self._fuzzy_search(text))
-        
+
         # 5. Контекстные признаки
         found.update(self._context_search(text_lower))
-        
+
         # 6. Удаляем ложные срабатывания
         found = self._filter_false_positives(found, text_lower)
-        
+
         # Если ничего не найдено - unknown
         if not found:
             result = ["unknown"]
@@ -270,7 +267,7 @@ class OperationParser:
                 key=lambda op: self.OPERATION_PRIORITY.get(op, 0),
                 reverse=True
             )
-        
+
         # Сохраняем в кеш
         self._cache[cache_key] = result.copy()
         return result
@@ -301,18 +298,18 @@ class OperationParser:
         """
         found: Set[str] = set()
         words = re.findall(r"[а-яёa-z]+", text.lower())
-        
+
         # Собираем все ключевые слова для fuzzy-поиска
         all_keywords = {}
         for operation, keywords in self.KEYWORDS.items():
             for keyword in keywords:
                 if len(keyword) >= 4:
                     all_keywords[keyword] = operation
-        
+
         for word in words:
             if len(word) < 4:
                 continue
-            
+
             matches = self.fuzzy_matcher.match(word, list(all_keywords.keys()))
             for matched_keyword, score in matches:
                 if score >= self.FUZZY_STRONG_THRESHOLD:
@@ -320,7 +317,7 @@ class OperationParser:
                     break
                 elif score >= self.FUZZY_THRESHOLD:
                     found.add(all_keywords[matched_keyword])
-        
+
         return found
 
     def _context_search(self, text: str) -> Set[str]:
@@ -328,18 +325,18 @@ class OperationParser:
         Поиск операций по контекстным признакам
         """
         found: Set[str] = set()
-        
+
         # Проверяем негативный контекст
         for neg_pattern in self.NEGATIVE_CONTEXT:
             if re.search(neg_pattern, text):
                 pass
-        
+
         for operation, patterns in self.CONTEXT_PATTERNS.items():
             for pattern, _ in patterns:
                 if re.search(pattern, text):
                     found.add(operation)
                     break
-        
+
         return found
 
     def _filter_false_positives(self, operations: Set[str], text: str) -> Set[str]:
@@ -347,7 +344,7 @@ class OperationParser:
         Фильтрация ложных срабатываний
         """
         result = operations.copy()
-        
+
         if "inventory" in result:
             # Поиск дублей — это search/check, а не инвентаризация
             if re.search(r'дубл', text):
@@ -356,14 +353,14 @@ class OperationParser:
             elif re.search(r'(?:установлены?\s+ни\s+на\s+одном|не\s+установлены)', text) \
                     and not re.search(r'остат|склад|запас', text):
                 result.discard("inventory")
-        
+
         if "repair" in result:
             if re.search(r'без\s+ремонта', text):
                 result.discard("repair")
             # "подтверждены" похоже на "повреждены" при fuzzy-сравнении
             if re.search(r'подтвержд', text):
                 result.discard("repair")
-        
+
         if "document" in result:
             has_document_words = any(
                 word in text for word in ["паспорт", "документ", "лнд"]
@@ -371,7 +368,7 @@ class OperationParser:
             has_gost = bool(re.search(r'(?:гост|ту)\s+[\d\-]+', text))
             if not has_document_words and not has_gost:
                 result.discard("document")
-        
+
         if "plan" in result:
             # "состоит"/'поставить' похожи на "составить" при fuzzy-сравнении
             plan_signals = re.search(r'план|обслужив|перечисл|комплект|порядок\s+работ|список\s+деталей', text)
@@ -379,12 +376,12 @@ class OperationParser:
                 result.discard("plan")
             if re.search(r'поставить', text) and not plan_signals:
                 result.discard("plan")
-        
+
         if "assemble" in result:
             # Safety stock: "комплект должен оставаться на складе" — не сборка
             if re.search(r'комплект.*?(?:оставаться|остается|остаётся|должен)', text):
                 result.discard("assemble")
-        
+
         return result
 
     # =========================================================

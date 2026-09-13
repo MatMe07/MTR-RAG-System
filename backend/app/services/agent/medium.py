@@ -7,6 +7,7 @@
 - medium_match — совпадение сред (в т.ч. канон CORR ↔ «коррозионно-активная среда»).
 """
 
+import re
 from typing import Any, Dict, Optional
 
 # Ключевые слова среды -> коды участков графа (для которого узел/компонент валиден).
@@ -24,28 +25,65 @@ MEDIUM_UNIT_CODES: Dict[str, set] = {
     "вод": {"process_water"},
 }
 
+# Токены-префиксы, при которых распознавание НЕ происходит (ложные среды и их
+# словоформы): H2SO4/H2SO3 — не «сероводород»; «водород*» (водород, водородом,
+# водородная) — не «вода».
+_MEDIUM_PREFIX_EXCLUDES: Dict[str, set] = {
+    "h2s": {"h2so4", "h2so3", "h2sio3"},
+    "вод": {"водород", "водоросль"},
+}
+
+_TOKEN_RE = re.compile(r"[a-zа-яё0-9]+", re.IGNORECASE)
+
+
+def _tokens(text: Any) -> list:
+    return [t.lower() for t in _TOKEN_RE.findall(str(text or "").lower())]
+
+
+def _kw_hits(tokens: list, kw: str) -> bool:
+    """Ключ равен токену или является его началом; существенно непохожие
+    ложные токены (по префиксу) исключены."""
+    excludes = _MEDIUM_PREFIX_EXCLUDES.get(kw, set())
+    for tok in tokens:
+        if tok == kw:
+            return True
+        if tok.startswith(kw) and not any(tok.startswith(ex) for ex in excludes):
+            return True
+    return False
+
+
+def medium_keyword_in(text: Any) -> Optional[str]:
+    """Первый ключ среды из MEDIUM_UNIT_CODES, встречающийся в тексте (или None)."""
+    tokens = _tokens(text)
+    for kw in MEDIUM_UNIT_CODES:
+        if _kw_hits(tokens, kw):
+            return kw
+    return None
+
 
 def medium_unit_codes(medium: Any) -> set:
     """Коды участков графа, релевантные упомянутой среде."""
-    m = str(medium or "").lower()
+    tokens = _tokens(medium)
     codes: set = set()
     for kw, cs in MEDIUM_UNIT_CODES.items():
-        if kw in m:
+        if _kw_hits(tokens, kw):
             codes |= cs
     return codes
 
 
 def medium_match(want: Any, got: Any) -> bool:
-    """Совпадение среды: подстрока в обе стороны + общий код участка графа.
+    """Совпадение среды: множества токенов (подстрока слов) + общий код графа.
 
     Покрывает канон CORR: канон «CORR» не является подстрокой
     «коррозионно-активная среда», но оба дают код corrosive_medium.
+    Токен-логика исключает ложные среды: H2S ≠ H2SO4, «вода» ≠ «водород».
     """
     w = str(want or "").strip().lower()
     g = str(got or "").strip().lower()
     if not w or not g:
         return False
-    if w == g or w in g or g in w:
+    w_tokens, g_tokens = set(_tokens(w)), set(_tokens(g))
+    if w_tokens and g_tokens and (w_tokens <= g_tokens or g_tokens <= w_tokens):
         return True
     w_codes = medium_unit_codes(want)
     g_codes = medium_unit_codes(got)

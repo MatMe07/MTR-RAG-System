@@ -1,9 +1,8 @@
 import uuid
 from datetime import date, datetime
-from typing import Any, Generic, List, Optional, TypeVar
+from typing import Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
-
 
 T = TypeVar("T")
 
@@ -253,6 +252,9 @@ class SearchRequest(BaseModel):
 
     query: str
     mode: str = "deterministic"
+    # Резерв на будущее: сейчас пайплайн агента (deterministic/llm) работает по
+    # каталогам и графу без top-k ретрива; поля приняты контрактом, но не
+    # влияют на результат (см. services/search_service.py:execute_search).
     top_k: int = 20
     filters: Optional[dict] = None
 

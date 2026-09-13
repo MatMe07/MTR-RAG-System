@@ -8,7 +8,6 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_CATALOG = (
     REPO_ROOT / "data" / "catalog" / "regulated_mtr_catalog_1000.jsonl"

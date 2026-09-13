@@ -9,8 +9,8 @@
 import re
 from typing import Any, Dict, List, Tuple
 
-from .matrix import INTENT_ORDER, INTENT_REQUIREMENTS, INCOMPATIBLE_INTENTS
 from ..parsing.utils.replacement_utils import has_explicit_dn_replacement
+from .matrix import INCOMPATIBLE_INTENTS, INTENT_ORDER, INTENT_REQUIREMENTS
 
 PARSED_STATUS_COMPLETE = "COMPLETE"
 PARSED_STATUS_PARTIAL = "PARTIAL"
@@ -22,7 +22,7 @@ _PN_CHANGE_RE = re.compile(r"pn\s*(\d+)[\w\s]{0,25}(?:вместо|на)\s*(?:pn
 _STOP_WORDS = {
     "какой", "какая", "какие", "найди", "найти", "подбери", "подобрать",
     "замени", "заменить", "помоги", "нужно", "нужна", "для", "деталь",
-    "изделия", "нужна", "выдать", "покажи", "дай", "и", "мне", "задвижку",
+    "изделия", "выдать", "покажи", "дай", "мне", "задвижку",
     "приемлемо", "пожалуйста", "расскажи", "объясни",
 }
 
@@ -119,7 +119,7 @@ def _det_CHECK_SUFFICIENCY(parsed):
     if not uc:
         return False
     return any(w in _q(parsed) for w in (
-        "хватит", "хватает", "достаточн", "по ", "штук",
+        "хватит", "хватает", "достаточн", "штук",
         "sufficien", "enough",
     ))
 

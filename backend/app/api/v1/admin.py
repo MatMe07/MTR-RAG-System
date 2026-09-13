@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
 from app.api.deps.auth import require_role
-from app.core.exceptions import AppException
 from app.core.constants import UserRole
+from app.core.exceptions import AppException
+from app.db.session import get_db
 from app.services.admin_service import AdminService
 
 router = APIRouter()

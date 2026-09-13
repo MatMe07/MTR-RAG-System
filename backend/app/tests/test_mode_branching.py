@@ -3,8 +3,6 @@
 
 import json
 
-import pytest
-
 from app.schemas import ParsedQuery
 from app.services.agent.answer.builder import build_answer
 from app.services.agent.executor import AgentExecutor

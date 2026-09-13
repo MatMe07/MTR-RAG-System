@@ -1,17 +1,19 @@
 # agent/llm/client.py
 
-from typing import Optional, Any, Dict
 import hashlib
 import time
+from typing import Any, Dict, Optional
 
-from .cache import get_llm_cache
+import httpx
+
 from ..core.config import DEFAULT_CONFIG, AgentConfig
 from ..core.exceptions import LLMError, LLMTimeoutError
+from .cache import get_llm_cache
 
 
 class LLMClient:
     """LLM-клиент с кешем и метриками"""
-    
+
     def __init__(self, config: Optional[AgentConfig] = None):
         self.config = config or DEFAULT_CONFIG
         self.cache = get_llm_cache()
@@ -29,15 +31,15 @@ class LLMClient:
             "prompt_tokens": 0,
             "completion_tokens": 0,
         }
-    
+
     @property
     def client(self):
         """Ленивая инициализация LLM-клиента"""
         if self._client is None:
             try:
-                from langchain_openai import ChatOpenAI
-                
                 import os
+
+                from langchain_openai import ChatOpenAI
                 api_key = (
                     self.config.llm_api_key
                     or os.getenv("OPENROUTER_API_KEY")
@@ -61,35 +63,35 @@ class LLMClient:
                         return self
                 self._client = DummyLLM()
         return self._client
-    
+
     def invoke(self, prompt: str, use_cache: bool = True) -> str:
         """Вызов LLM с кешированием"""
         cache_key = f"llm:{hashlib.sha1(prompt.encode('utf-8')).hexdigest()}"
-        
+
         if use_cache:
             cached = self.cache.get(cache_key)
             if cached is not None:
                 self._metrics["cache_hits"] += 1
                 return cached
-        
+
         self._metrics["cache_misses"] += 1
         self._metrics["total_calls"] += 1
-        
+
         start = time.time()
         try:
             response = self.client.invoke(prompt)
             content = getattr(response, "content", str(response))
-            
+
             duration = (time.time() - start) * 1000
             self._metrics["total_duration_ms"] += duration
             self._metrics.update(self._consume_usage(response))
-            
+
             if use_cache and content:
                 self.cache.set(cache_key, content)
-            
+
             return content
-            
-        except TimeoutError as e:
+
+        except httpx.TimeoutException as e:
             duration = (time.time() - start) * 1000
             self._metrics["errors"] += 1
             raise LLMTimeoutError(self.config.llm_timeout) from e
@@ -97,7 +99,7 @@ class LLMClient:
             duration = (time.time() - start) * 1000
             self._metrics["errors"] += 1
             raise LLMError(f"LLM ошибка: {e}") from e
-    
+
     def clear_cache(self) -> None:
         self.cache.clear()
 

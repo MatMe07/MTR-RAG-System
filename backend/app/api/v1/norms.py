@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
 from app.core.exceptions import AppException
+from app.db.session import get_db
 from app.services.norms_service import NormsService
 
 router = APIRouter()

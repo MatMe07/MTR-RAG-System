@@ -3,10 +3,9 @@
 import os
 from typing import Optional
 
+from .db_repository import DbRepository
 from .interfaces import IRepository
 from .json_repository import JsonRepository
-from .db_repository import DbRepository
-
 
 _repository: Optional[IRepository] = None
 
@@ -14,12 +13,12 @@ _repository: Optional[IRepository] = None
 def get_repository(storage: Optional[str] = None) -> IRepository:
     """Фабрика репозитория с кешированием"""
     global _repository
-    
+
     if _repository is not None:
         return _repository
-    
+
     storage = storage or os.environ.get("AGENT_STORAGE", "auto").strip().lower()
-    
+
     if storage == "json":
         _repository = JsonRepository()
     elif storage == "db":
@@ -34,7 +33,7 @@ def get_repository(storage: Optional[str] = None) -> IRepository:
             _repository.get_catalog()
         except Exception:
             _repository = JsonRepository()
-    
+
     return _repository
 
 

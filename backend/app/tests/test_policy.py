@@ -4,7 +4,7 @@
 
 import unittest
 
-from app.services.agent.verify.policy import should_full_llm, should_refine, escalate_type
+from app.services.agent.verify.policy import escalate_type, should_full_llm, should_refine
 from app.services.agent.verify.verifier import Gap
 
 

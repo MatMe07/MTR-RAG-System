@@ -1,9 +1,10 @@
 from typing import Any
 
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 
 from app.models.sqlalchemy.all_models import MtrItem
+
+_SEARCH_FIELDS = ("gost_tu", "standard", "name")
 
 
 class NormsService:
@@ -16,18 +17,19 @@ class NormsService:
         limit: int = 20,
         document_type: str | None = None,
     ) -> list[dict[str, Any]]:
-        q = self.db.query(MtrItem).filter(
-            or_(
-                MtrItem.gost_tu.ilike(f"%{query}%"),
-                MtrItem.standard.ilike(f"%{query}%"),
-                MtrItem.name.ilike(f"%{query}%"),
-            )
-        )
-
+        q = self.db.query(MtrItem)
         if document_type:
             q = q.filter(MtrItem.item_type == document_type)
 
-        items = q.limit(limit).all()
+        # Регистронезависимый поиск делаем в Python: SQLite LOWER() не
+        # приводит кириллицу, поэтому ilike('...') не матчит «Отвод» и «отвод».
+        items = q.all()
+        needle = (query or "").strip().lower()
+        if needle:
+            items = [
+                it for it in items
+                if any(needle in (getattr(it, f, None) or "").lower() for f in _SEARCH_FIELDS)
+            ]
 
         return [
             {
@@ -39,5 +41,5 @@ class NormsService:
                 "gost_tu": item.gost_tu,
                 "standard": item.standard,
             }
-            for item in items
+            for item in items[:limit]
         ]

@@ -1,14 +1,15 @@
 # agent/repository/db_repository.py
 
 import logging
+from contextlib import contextmanager
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional
-from contextlib import contextmanager
+
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
-from app.models.sqlalchemy.all_models import MtrItem, CandidateItem, MtrItemHistory
-from app.services.agent.tools.core_tools import _matches_filters, _match_score
+from app.models.sqlalchemy.all_models import CandidateItem, MtrItem, MtrItemHistory
+from app.services.agent.tools.core_tools import _match_score, _matches_filters
 
 from .interfaces import IRepository
 from .json_repository import JsonRepository

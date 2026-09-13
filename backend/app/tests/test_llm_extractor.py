@@ -6,13 +6,12 @@ import json
 import unittest
 from unittest.mock import patch
 
-from app.services.agent.parsing.llm_extractor import (
-    get_llm_extractor,
-    reset_llm_extractor,
-    LLMExtractor,
-)
-from app.services.agent.intent.detect import enrich_parsed
 from app.schemas import ParsedQuery
+from app.services.agent.intent.detect import enrich_parsed
+from app.services.agent.parsing.llm_extractor import (
+    LLMExtractor,
+    reset_llm_extractor,
+)
 
 
 class FakeClient:

@@ -5,10 +5,9 @@ catalog + standard, review pass. Запросы с объектным конте
 остаются на тяжёлом маршруте.
 """
 import json
-import os
 import sys
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -23,7 +22,7 @@ OBJECT_CASES = ("AQ023",)
 
 def _load_cases():
     with open(DATA_FILE, encoding="utf-8") as fh:
-        return {c["case_id"]: c for c in (json.loads(l) for l in fh if l.strip())}
+        return {c["case_id"]: c for c in (json.loads(line) for line in fh if line.strip())}
 
 
 class TestReferenceRouting(unittest.TestCase):

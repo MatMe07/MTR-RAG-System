@@ -1,6 +1,6 @@
 # agent/core/exceptions.py
 
-from typing import Optional, List
+from typing import List, Optional
 
 
 class AgentError(Exception):

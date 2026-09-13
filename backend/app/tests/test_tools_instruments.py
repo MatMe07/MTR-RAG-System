@@ -8,9 +8,6 @@ from app.services.agent.tools.errors import ToolError, ToolErrorCode
 from app.services.agent.tools.instruments import (
     INTENT_TOOLS,
     PASSPORT_WEIGHTS,
-    execute_check_compatibility_batch,
-    execute_check_stock,
-    execute_search_catalog,
     run_instrument,
 )
 from app.services.agent.tools.registry import (

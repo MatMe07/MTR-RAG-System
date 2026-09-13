@@ -1,11 +1,17 @@
 # backend/app/services/ocr_service.py
 
 import os
-from typing import List, Dict, Any, Optional
-from docling.document_converter import DocumentConverter
-from docling.datamodel.pipeline_options import (PdfPipelineOptions, AcceleratorOptions,
-    AcceleratorDevice, EasyOcrOptions, TesseractOcrOptions, DoctrOcrOptions)
+from typing import Any, Dict, List, Optional
+
 from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import (
+    AcceleratorDevice,
+    AcceleratorOptions,
+    DoctrOcrOptions,
+    EasyOcrOptions,
+    PdfPipelineOptions,
+    TesseractOcrOptions,
+)
 from docling.document_converter import DocumentConverter, PdfFormatOption
 
 # Поддерживаемые OCR-движки (значение настройки OCR_ENGINE -> опции Docling).

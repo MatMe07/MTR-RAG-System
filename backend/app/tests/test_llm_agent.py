@@ -7,7 +7,6 @@ import pytest
 
 from app.services.agent.llm.agent import (
     LLMAgent,
-    _stop_criteria_hint,
 )
 from app.services.agent.repository.json_repository import JsonRepository
 from app.services.agent.tools.tool_dal import ToolDAL

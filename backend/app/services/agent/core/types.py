@@ -1,8 +1,8 @@
 # agent/core/types.py
 
-from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class NodeStatus(str, Enum):
@@ -30,7 +30,7 @@ class ToolResult:
     status: ToolStatus = ToolStatus.SUCCESS
     error: Optional[str] = None
     duration_ms: float = 0.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "text": self.text,

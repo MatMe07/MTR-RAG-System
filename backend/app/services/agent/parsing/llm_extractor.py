@@ -130,6 +130,10 @@ class LLMExtractor:
         try:
             content = client.invoke(prompt)
             data = extract_json_object(content)
+            if data is None:
+                self._bump("errors")
+                logger.warning("LLM-экстрактор (§1F): в ответе LLM нет валидного JSON")
+                return {}
         except (LLMError, LLMTimeoutError, ValueError, json.JSONDecodeError) as e:
             self._bump("errors")
             logger.warning("LLM-экстрактор (§1F): %s", e)

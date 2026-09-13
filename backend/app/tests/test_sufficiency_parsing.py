@@ -1,8 +1,8 @@
 # tests/test_sufficiency_parsing.py
 """«по N штук» → parsed.quantity → units_count → CHECK_SUFFICIENCY (план §7.1)."""
 
-from app.services.agent.parsing.hybrid_parser import HybridParser
 from app.services.agent.intent.detect import enrich_parsed
+from app.services.agent.parsing.hybrid_parser import HybridParser
 
 
 class TestSufficiencyParsing:

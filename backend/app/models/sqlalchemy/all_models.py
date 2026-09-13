@@ -1,16 +1,24 @@
+import uuid
+from datetime import datetime, timezone
+
 from sqlalchemy import (
-    Integer, String, Float, Boolean, DateTime, Text, Date,
-    ForeignKey, Index, UniqueConstraint,
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
-from datetime import datetime, timezone
-import uuid
 
 from app.db.session import Base
 from app.models.sqlalchemy.compat import (
-    JSONBCompat, PKColType,
+    JSONBCompat,
+    PKColType,
 )
-
 
 JSONCol = JSONBCompat
 

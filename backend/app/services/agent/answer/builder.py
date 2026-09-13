@@ -3,22 +3,23 @@
 from typing import Any, Callable, Dict, List, Optional
 
 from app.schemas import AgentAnswer, AgentComponent, AgentSource, ParsedQuery
+
+from ..tools.stock_filters import passes_stock_filter
 from .explanation import ExplanationGenerator, build_explanation
+from .reviewer import auto_review
+from .status import (
+    STATUS_EXPERT,
+    STATUS_UNCLEAR,
+    _request_present,
+    build_recommendations,
+    determine_status,
+    expert_review_id,
+)
 from .warnings import (
     build_scenario_warnings,
     evaluate_parameter_rules,
     filter_by_intent,
     group_warnings,
-)
-from .reviewer import auto_review
-from ..tools.stock_filters import passes_stock_filter
-from .status import (
-    determine_status,
-    build_recommendations,
-    expert_review_id,
-    _request_present,
-    STATUS_EXPERT,
-    STATUS_UNCLEAR,
 )
 
 
@@ -454,7 +455,7 @@ class AnswerBuilder:
             "критично", "рассчитан", "рекомендуется закуп",
             "дата", "план работ", "остаток", "нет позиций",
         ))
-    
+
     def _purchase_recommendation(self, rows: List[Dict]) -> Optional[str]:
         """Итоговая сводка по закупке из компонентов inventory_calculator.
 
@@ -494,7 +495,7 @@ class AnswerBuilder:
             for r in rows
             if isinstance(r, dict)
         ]
-    
+
     def _template_explanation(self, status: str, components: List) -> Optional[str]:
         """Шаблонное объяснение для штатных ответов (ЭТАП 5, 5A.3 template).
 

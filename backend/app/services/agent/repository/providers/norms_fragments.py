@@ -3,7 +3,6 @@
 + выдержка ЛНД). Используется провайдером норм для индексации в Qdrant.
 """
 
-import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 

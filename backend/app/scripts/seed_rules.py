@@ -9,8 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from app.db.session import SessionLocal
-from app.services.agent.rules.seed import seed_rules
 from app.services.agent.rules.dynamic_rules import get_dynamic_rules
+from app.services.agent.rules.seed import seed_rules
 
 
 def cmd_sync() -> int:

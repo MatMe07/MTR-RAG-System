@@ -2,19 +2,17 @@
 
 import logging
 import re
-from typing import Any, Dict, List, Optional
 import time
+from typing import Any, Dict, List, Optional
 
-from .registry import register_tool
+from ..answer.status import candidate_tz_status, evaluate_candidate
 from ..core.state import AgentState
-from ..answer.status import evaluate_candidate, candidate_tz_status
-from .stock_filters import apply_stock_filters, describe_stock_filter
 from ..medium import (
-    MEDIUM_UNIT_CODES,
     medium_match,
     medium_unit_codes,
     steel_h2s_status,
 )
+from .stock_filters import apply_stock_filters, describe_stock_filter
 
 log = logging.getLogger("mtr.agent.tools")
 
@@ -40,21 +38,20 @@ def _matching_tolerances() -> Dict[str, float]:
 
 def _query_medium(state: AgentState) -> str:
     """Среда из запроса: фильтры > id участка > текст вопроса."""
+    from ..medium import medium_keyword_in
+
     parsed = state.get("parsed")
     tf = getattr(parsed, "technical_filters", {}) or {}
     medium = tf.get("medium")
     if medium:
         return str(medium)
     for uid in (getattr(parsed, "unit_ids", []) or []):
-        u = str(uid).lower()
-        for kw in MEDIUM_UNIT_CODES:
-            if kw in u:
-                return kw
-    q = str(getattr(parsed, "original_query", None) or "").lower()
-    for kw in MEDIUM_UNIT_CODES:
-        if kw in q:
+        kw = medium_keyword_in(str(uid).lower())
+        if kw:
             return kw
-    return ""
+    q = str(getattr(parsed, "original_query", None) or "").lower()
+    kw = medium_keyword_in(q)
+    return kw or ""
 
 
 # Карта «марка стали → h2s_suitability» из regulation_matrix.json (кеш).

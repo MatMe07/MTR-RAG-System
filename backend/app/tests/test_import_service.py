@@ -20,8 +20,8 @@ def db():
 
 
 def test_import_catalog_creates_items(db):
-    from app.services.import_service import ImportService
     from app.models.sqlalchemy.all_models import CandidateItem, MtrItem
+    from app.services.import_service import ImportService
 
     result = ImportService(db).import_catalog(
         [
@@ -49,8 +49,8 @@ def test_import_catalog_creates_items(db):
 
 
 def test_import_catalog_update_writes_history(db):
-    from app.services.import_service import ImportService
     from app.models.sqlalchemy.all_models import MtrItem, MtrItemHistory
+    from app.services.import_service import ImportService
 
     svc = ImportService(db)
     svc.import_catalog([{"codes": {"mtr_code": "MTR-1"}, "item_type": "отвод", "name": "Отвод 90", "properties": {"dn": 50}}])
@@ -87,8 +87,8 @@ def test_import_catalog_errors_on_invalid_rows(db):
 
 
 def test_import_catalog_suggests_draft_validation_rules(db):
-    from app.services.import_service import ImportService
     from app.models.sqlalchemy.all_models import ValidationRule
+    from app.services.import_service import ImportService
 
     svc = ImportService(db)
     result = svc.import_catalog(
@@ -121,8 +121,8 @@ def test_import_catalog_suggests_draft_validation_rules(db):
 
 
 def test_import_stock_updates_quantities(db):
-    from app.services.import_service import ImportService
     from app.models.sqlalchemy.all_models import CandidateItem
+    from app.services.import_service import ImportService
 
     svc = ImportService(db)
     svc.import_catalog([{"codes": {"mtr_code": "MTR-1", "ksm_code": "KSM-1"}, "item_type": "фланец", "name": "Фланец"}])
@@ -145,8 +145,8 @@ def test_import_stock_unknown_ksm_errors(db):
 
 
 def test_import_graph_edges(db):
-    from app.services.import_service import ImportService
     from app.models.sqlalchemy.all_models import PipelineEdge
+    from app.services.import_service import ImportService
 
     result = ImportService(db).import_graph(
         {
