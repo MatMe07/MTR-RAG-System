@@ -157,6 +157,90 @@ class TestClarify:
 
 
 # ----------------------------------------------------------------- compare
+class TestAgentContinue:
+    """POST /api/v1/agent/continue — stateless продолжение после offer_full_llm."""
+
+    def test_continue_requires_auth(self, client):
+        body = {"session_id": "s1", "query": "нужен отвод", "proceed": True}
+        assert client.post("/api/v1/agent/continue", json=body).status_code == 401
+
+    def test_continue_proceed_false_returns_deterministic(self, client, user_token):
+        r = client.post(
+            "/api/v1/agent/continue",
+            json={"session_id": "s1", "query": "нужен отвод DN50", "proceed": False},
+            headers=_auth(user_token),
+        )
+        assert r.status_code == 200, r.text
+        body = r.json()
+        for key in ("request_id", "query", "status", "results"):
+            assert key in body
+        assert body["query"] == "нужен отвод DN50"
+
+    def test_continue_proceed_true_falls_back_when_llm_off(self, client, user_token):
+        """LLM выключен (conftest) → proceed=true корректно обрабатывается без сети."""
+        r = client.post(
+            "/api/v1/agent/continue",
+            json={"session_id": "s1", "query": "нужен отвод DN50", "proceed": True},
+            headers=_auth(user_token),
+        )
+        assert r.status_code == 200, r.text
+        assert r.json()["query"] == "нужен отвод DN50"
+
+    def test_continue_missing_fields_422(self, client, user_token):
+        r = client.post(
+            "/api/v1/agent/continue",
+            json={"session_id": "s1"},
+            headers=_auth(user_token),
+        )
+        assert r.status_code == 422
+
+
+# ----------------------------------------------------------------- compare
+class TestContinueService:
+    """SearchService.execute_continue: routing proceed → mode."""
+
+    def test_proceed_true_runs_llm(self, monkeypatch):
+        from app.models.pydantic.schemas import ContinueRequest
+        from app.services.search_service import SearchService
+
+        captured = {}
+
+        def fake_execute(self, req, user_id=None):
+            captured["mode"] = req.mode
+            captured["query"] = req.query
+            return req
+
+        monkeypatch.setattr(SearchService, "execute_search", fake_execute)
+        svc = SearchService(db=None)
+        out = svc.execute_continue(
+            ContinueRequest(session_id="s1", query="нужен отвод", proceed=True),
+            user_id="1",
+        )
+        assert captured["mode"] == "llm"
+        assert captured["query"] == "нужен отвод"
+        assert out.mode == "llm"
+
+    def test_proceed_false_runs_deterministic(self, monkeypatch):
+        from app.models.pydantic.schemas import ContinueRequest
+        from app.services.search_service import SearchService
+
+        captured = {}
+
+        def fake_execute(self, req, user_id=None):
+            captured["mode"] = req.mode
+            return req
+
+        monkeypatch.setattr(SearchService, "execute_search", fake_execute)
+        svc = SearchService(db=None)
+        out = svc.execute_continue(
+            ContinueRequest(session_id="s1", query="нужен отвод", proceed=False),
+            user_id="1",
+        )
+        assert captured["mode"] == "deterministic"
+        assert out.mode == "deterministic"
+
+
+# ----------------------------------------------------------------- compare
 class TestCompare:
     def test_compare_ok(self, client):
         r = client.post("/api/v1/compare/",

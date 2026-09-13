@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.admin import router as admin_router
+from app.api.v1.agent import router as agent_router
 from app.api.v1.audit import router as audit_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.compare import router as compare_router
@@ -14,6 +15,7 @@ api_router = APIRouter()
 
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_router.include_router(search_router, prefix="/search", tags=["search"])
+api_router.include_router(agent_router, prefix="/agent", tags=["agent"])
 api_router.include_router(passport_router, prefix="/passport", tags=["passport"])
 api_router.include_router(component_router, prefix="/component", tags=["component"])
 api_router.include_router(compare_router, prefix="/compare", tags=["compare"])

@@ -20,6 +20,18 @@ class SearchService:
     def __init__(self, db: Session):
         self.db = db
 
+    def execute_continue(self, request, user_id: str | None = None) -> SearchResponse:
+        """Stateless продолжение после offer_full_llm (вариант a).
+
+        proceed=True  → повтор запроса в mode="llm" (полный C2-анализ, свежий парсинг);
+        proceed=False → остановиться на достигнутом: повтор детерминированного ответа.
+        """
+        mode = "llm" if request.proceed else "deterministic"
+        log.info("[SearchService] Continue: session_id=%r query=%r proceed=%s mode=%s",
+                 request.session_id, request.query, request.proceed, mode)
+        req = SearchRequest(query=request.query, mode=mode)
+        return self.execute_search(req, user_id=user_id)
+
     def execute_search(self, request: SearchRequest, user_id: str | None = None) -> SearchResponse:
         from app.services.agent.executor import AgentExecutor
         from app.services.audit_service import AuditService
@@ -66,6 +78,9 @@ class SearchService:
                 recommendations=getattr(answer, "recommendations", None) or [],
                 requires_expert=answer.human_review_required,
                 expert_review_id=getattr(answer, "expert_review_id", None),
+                offer_full_llm=getattr(answer, "offer_full_llm", False),
+                offer_question=getattr(answer, "offer_question", "") or "",
+                offer_endpoint=getattr(answer, "offer_endpoint", None),
                 execution_time_ms=elapsed,
                 raw_agent_answer=_to_json_safe(answer.model_dump(mode="json")),
             )

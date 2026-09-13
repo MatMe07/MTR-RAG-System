@@ -295,8 +295,31 @@ class SearchResponse(BaseModel):
     recommendations: list = Field(default_factory=list)
     requires_expert: bool = False
     expert_review_id: Optional[str] = Field(None, description="Идентификатор запроса на экспертную проверку")
+    offer_full_llm: bool = Field(
+        False,
+        description="True если auto-режим исчерпал C1+ и предлагает пользователю продолжить C2 (полный LLM)",
+    )
+    offer_question: str = Field(
+        "", description="Вопрос/приглашение для согласования C2 (при offer_full_llm=True)"
+    )
+    offer_endpoint: Optional[str] = Field(
+        None,
+        description="Эндпоинт продолжения (POST): /api/v1/agent/continue",
+    )
     execution_time_ms: float = 0.0
     raw_agent_answer: Optional[dict] = Field(
         None,
         description="Полный JSON-дамп AgentAnswer (как выводит app_console)",
     )
+
+
+class ContinueRequest(BaseModel):
+    """Продолжение диалога после offer_full_llm (stateless, вариант a).
+
+    proceed=True  → повторить запрос в mode="llm" (полный C2-анализ);
+    proceed=False → пользователь остановился на достигнутом (повтор детерминированного ответа).
+    """
+
+    session_id: str = Field(..., description="Идентификатор диалога (из исходного ответа)")
+    query: str = Field(..., description="Исходный запрос пользователя")
+    proceed: bool = Field(True, description="True — продолжить полным LLM; False — остановиться")

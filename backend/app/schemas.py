@@ -438,6 +438,17 @@ class AgentAnswer(BaseModel):
     llm_tokens_used: Optional[int] = Field(
         None, description="Потрачено токенов на LLM-эскалацию (C1/C2) в рамках запроса"
     )
+    offer_full_llm: bool = Field(
+        False,
+        description="True если C1+ исчерпан и ответ предлагает пользователю продолжить C2 (полный LLM)",
+    )
+    offer_question: str = Field(
+        "", description="Вопрос/приглашение для согласования C2 (при offer_full_llm=True)"
+    )
+    offer_endpoint: Optional[str] = Field(
+        None,
+        description="Эндпоинт продолжения (POST) для выбора C2, напр. /api/v1/agent/continue",
+    )
 
 
 class DocumentInfo(BaseModel):

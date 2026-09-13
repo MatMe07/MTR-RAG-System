@@ -343,4 +343,5 @@ class AutoModeEscalation(Base):
     verdict: Mapped[str | None] = mapped_column(String(16))
     duration_ms: Mapped[int | None] = mapped_column(Integer)
     llm_tokens_used: Mapped[int | None] = mapped_column(Integer)
+    details: Mapped[dict | list | None] = mapped_column(JSONCol())
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))

@@ -19,6 +19,33 @@ from .repository.repository_factory import get_repository
 
 log = logging.getLogger("mtr.agent.executor")
 
+_CONTINUE_ENDPOINT = "/api/v1/agent/continue"
+_OFFER_FULL_LLM_QUESTION = (
+    "Полный LLM-анализ может закрыть оставшиеся недостатки ответа. "
+    "Продолжить? Это займёт больше времени и требует доступа к OpenRouter."
+)
+
+_ALTER_ATTEMPTED = False
+
+
+def _ensure_details_column(db) -> None:
+    """Best-effort ADD COLUMN details в auto_mode_escalations (для существующих БД).
+
+    Для новых БД колонка создаётся через Base.metadata.create_all.
+    """
+    global _ALTER_ATTEMPTED
+    if _ALTER_ATTEMPTED:
+        return
+    _ALTER_ATTEMPTED = True
+    try:
+        from sqlalchemy import text
+
+        db.execute(text("ALTER TABLE auto_mode_escalations ADD COLUMN details TEXT"))
+        db.commit()
+        log.info("[Executor][auto] added column 'details' to auto_mode_escalations")
+    except Exception:  # колонка уже есть или БД недоступна
+        db.rollback()
+
 
 class AgentExecutor:
     """Исполнитель агента — точка входа"""
@@ -160,7 +187,11 @@ class AgentExecutor:
         start: float,
         request_id: Optional[str] = None,
     ) -> AgentAnswer:
-        """Режим 3 (auto): deterministic → quality gate → C1 (refine) | C2 (полный LLM)."""
+        """Режим 3 (auto): deterministic → quality gate → C1+ (цикл с инструментами).
+
+        После 3 неудачных итераций C1+ (или LLM-ошибки) — возврат ответа с
+        предложением C2 пользователю (offer_full_llm), НЕ автоматической перезапуск.
+        """
         if parsed is None:
             parsed = self._parse_query(query)
 
@@ -182,26 +213,42 @@ class AgentExecutor:
             log.info("[Executor][auto] verdict=pass, no LLM escalation needed")
             return answer
 
-        from .verify.policy import escalate_type
-
-        escalation = escalate_type(verification.gaps)
         log.info(
-            "[Executor][auto] verdict=%s reasons=%s escalation=%s",
+            "[Executor][auto] verdict=%s reasons=%s",
             verification.verdict,
             verification.reasons,
-            escalation,
         )
-
-        if escalation == "none":
-            log.info("[Executor][auto] escalation 'none', returning review answer")
-            self._mark_review(answer, "quality_gate")
-            return answer
 
         tokens_before = self._llm_tokens_used()
 
-        if escalation == "full_llm":
-            return self._auto_full_llm(query, parsed, start, request_id,
-                                       answer, verification, tokens_before)
+        from .llm.refine_loop import run_refine_loop
+
+        loop = run_refine_loop(
+            llm_client=self.llm,
+            query=query,
+            parsed=parsed,
+            answer=answer,
+            gaps=verification.gaps,
+            repository=self.repository,
+            request_id=request_id,
+        )
+        answer.llm_tokens_used = loop.llm_tokens_used or (self._llm_tokens_used() - tokens_before)
+
+        self._log_loop_iterations(query, request_id, loop, verification, start)
+
+        if loop.passed:
+            log.info(
+                "[Executor][auto] C1+ loop passed after %d iterations",
+                len(loop.iterations),
+            )
+            answer.mode_refined = "auto_llm_refine"
+            answer.llm_refine_failed = False
+            self._reverify_after_escalation(parsed, answer, verification)
+            self._log_escalation(query, request_id, mode_used="refine_loop",
+                                 gaps=verification.gaps, verdict=verification.verdict,
+                                 llm_tokens_used=answer.llm_tokens_used,
+                                 details=self._loop_details(loop), start=start)
+            return answer
 
         if self.llm is None:
             log.warning(
@@ -209,62 +256,33 @@ class AgentExecutor:
                 "Помечаем ответ как требующий проверки (fallback deterministic)."
             )
             self._mark_review(answer, "quality_gate")
-            self._log_escalation(query, request_id, mode_used="refine_skipped_no_llm",
+            self._log_escalation(query, request_id, mode_used="refine_loop_skipped_no_llm",
                                  gaps=verification.gaps, verdict=verification.verdict,
                                  start=start)
             return answer
 
-        refined = self._apply_refine(query, answer, verification.gaps)
-        answer.llm_tokens_used = self._llm_tokens_used() - tokens_before
-        self._log_escalation(query, request_id, mode_used="refine" if refined else "refine_failed",
+        # 3 неудачные итерации → предложить C2 пользователю (без авто-перехода).
+        answer.llm_refine_failed = True
+        self._mark_review(answer, "quality_gate")
+        if loop.llm_error:
+            answer.offer_full_llm = False
+            answer.offer_question = ""
+            mode_used = "refine_loop_llm_error"
+            log.warning("[Executor][auto] C1+ loop LLM error: %s", loop.llm_error)
+        else:
+            answer.offer_full_llm = True
+            answer.offer_question = _OFFER_FULL_LLM_QUESTION
+            answer.offer_endpoint = _CONTINUE_ENDPOINT
+            mode_used = "refine_loop_failed_offer_c2"
+        self._log_escalation(query, request_id, mode_used=mode_used,
                              gaps=verification.gaps, verdict=verification.verdict,
-                             llm_tokens_used=answer.llm_tokens_used, start=start)
-        self._reverify_after_escalation(parsed, answer, verification)
-        return answer
-
-    def _auto_full_llm(self, query, parsed, start, request_id, answer, verification,
-                       tokens_before: int) -> AgentAnswer:
-        """C2: полный перезапуск LLMAgent; результат полностью заменяет answer."""
-        if self.llm is None:
-            log.warning(
-                "[Executor][auto] C2 запрошен, но LLM недоступен. "
-                "Помечаем ответ как требующий проверки (fallback deterministic)."
-            )
-            self._mark_review(answer, "quality_gate")
-            self._log_escalation(query, request_id, mode_used="full_llm_skipped_no_llm",
-                                 gaps=verification.gaps, verdict=verification.verdict,
-                                 start=start)
-            return answer
-
-        try:
-            llm_answer = self._execute_llm(query, parsed, start, request_id=request_id)
-        except Exception as e:  # noqa: BLE001
-            log.warning("[Executor][auto] C2 full-LLM failed: %s", e)
-            self._mark_review(answer, "quality_gate")
-            self._log_escalation(query, request_id, mode_used="full_llm_failed",
-                                 gaps=verification.gaps, verdict=verification.verdict,
-                                 llm_tokens_used=self._llm_tokens_used() - tokens_before,
-                                 start=start)
-            return answer
-
-        llm_answer.mode = "auto"
-        llm_answer.mode_refined = "auto_llm_full"
-        for r in list(getattr(answer, "human_review_reasons", None) or []):
-            if r not in (llm_answer.human_review_reasons or []):
-                llm_answer.human_review_reasons.append(r)
-        llm_answer.human_review_required = bool(llm_answer.human_review_reasons)
-        llm_answer.llm_tokens_used = self._llm_tokens_used() - tokens_before
-
-        self._reverify_after_escalation(parsed, llm_answer, verification)
-
-        self._log_escalation(query, request_id, mode_used="full_llm",
-                             gaps=verification.gaps, verdict=verification.verdict,
-                             llm_tokens_used=llm_answer.llm_tokens_used, start=start)
+                             llm_tokens_used=answer.llm_tokens_used,
+                             details=self._loop_details(loop), start=start)
         log.info(
-            "[Executor][auto] C2 applied: components=%d tokens=%s",
-            len(llm_answer.components or []), llm_answer.llm_tokens_used,
+            "[Executor][auto] mode_refined=%s offer_full_llm=%s iterations=%d",
+            answer.mode_refined, answer.offer_full_llm, len(loop.iterations),
         )
-        return llm_answer
+        return answer
 
     def _reverify_after_escalation(self, parsed: ParsedQuery, answer: AgentAnswer,
                                    original_verification) -> None:
@@ -318,7 +336,11 @@ class AgentExecutor:
         return 0
 
     def _apply_refine(self, query: str, answer: AgentAnswer, gaps: List) -> bool:
-        """Выполняет LLM-дооформление (С1). Возвращает True если успешно."""
+        """Выполняет LLM-дооформление (С1). Возвращает True если успешно.
+
+        Устаревший одношаговый refine (формат answer_text/confidence_gate);
+        в _execute_auto заменён циклом C1+ (refine_loop). Оставлен для совместимости.
+        """
         from .llm.refine import refine_answer
 
         gaps_dict = [{"type": g.type, "detail": g.detail, "severity": g.severity} for g in gaps]
@@ -348,8 +370,41 @@ class AgentExecutor:
         )
         return True
 
+    def _log_loop_iterations(self, query, request_id, loop, verification, start) -> None:
+        """Пишет сводку итераций C1+-цикла в лог; детали — в auto_mode_escalations."""
+        log.info(
+            "[Executor][auto] C1+ loop finished: passed=%s iterations=%d "
+            "final_answer_len=%d verdict=%s",
+            loop.passed, len(loop.iterations), len(loop.final_answer or ""),
+            verification.verdict,
+        )
+        for it in loop.iterations:
+            log.info(
+                "[Executor][auto]   it#%d action=%s tool=%s error=%r verdict=%s (%.0fms)",
+                it.n, it.action, it.tool_name, it.error, it.verdict, it.duration_ms,
+            )
+
+    @staticmethod
+    def _loop_details(loop) -> Optional[list]:
+        """Сериализация итераций C1+-цикла для details (auto_mode_escalations)."""
+        if not loop.iterations:
+            return None
+        return [
+            {
+                "n": it.n,
+                "action": it.action,
+                "tool_name": it.tool_name,
+                "tool_input": it.tool_input,
+                "error": it.error,
+                "verdict": it.verdict,
+                "gaps": it.gaps,
+                "duration_ms": it.duration_ms,
+            }
+            for it in loop.iterations
+        ]
+
     def _log_escalation(self, query, request_id, mode_used, gaps, verdict,
-                        llm_tokens_used=None, start: Optional[float] = None) -> None:
+                        llm_tokens_used=None, details=None, start: Optional[float] = None) -> None:
         """Фиксирует эскалацию в БД (auto_mode_escalations) и лог."""
         gap_types = [g.type for g in gaps]
         log.info(
@@ -363,6 +418,7 @@ class AgentExecutor:
 
             db = SessionLocal()
             try:
+                _ensure_details_column(db)
                 entry = AutoModeEscalation(
                     request_id=str(request_id) if request_id else None,
                     query=query,
@@ -372,6 +428,7 @@ class AgentExecutor:
                     duration_ms=int((time.time() - start) * 1000)
                     if start else None,
                     llm_tokens_used=llm_tokens_used,
+                    details=details,
                 )
                 db.add(entry)
                 db.commit()

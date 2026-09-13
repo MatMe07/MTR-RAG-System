@@ -65,7 +65,7 @@ def _answer(components=None, answer_text="", explanation="", recommendations=Non
 
 
 class _FakeLLM:
-    """LLM-заглушка для C1: возвращает JSON дооформления (refine-формат)."""
+    """LLM-заглушка для C1+ (refine_loop): каждый вызов возвращает finish с текстом."""
     def __init__(self, refined_text="Уточнённый ответ"):
         self._refined_text = refined_text
         self.calls = []
@@ -74,10 +74,23 @@ class _FakeLLM:
         self.calls.append(prompt)
         import json
         return json.dumps({
-            "answer_text": self._refined_text,
-            "explanation": "LLM дооформил ответ.",
-            "extra_recommendations": ["доп рекомендация от LLM"],
-            "confidence_gate": "pass",
+            "action": "finish",
+            "final_answer": self._refined_text,
+        }, ensure_ascii=False)
+
+
+class _AskUserLLM:
+    """LLM-заглушка, нарушающая контракт C1+: просит уточнение (запрещено)."""
+
+    def __init__(self):
+        self.calls = []
+
+    def invoke(self, prompt):
+        self.calls.append(prompt)
+        import json
+        return json.dumps({
+            "action": "ask_user",
+            "question": "Укажите DN.",
         }, ensure_ascii=False)
 
 
@@ -311,8 +324,8 @@ class TestExecutorAutoE2E:
         assert fake_llm.calls == []
 
     @patch("app.services.agent.executor.get_graph")
-    def test_auto_c2_full_llm_closes_gap_passes(self, mock_get_graph):
-        """C2: quantity_unmet HIGH → полный LLM; LLM дал вердикт → re-verify PASS."""
+    def test_auto_c1_loop_finish_closes_gap_passes(self, mock_get_graph):
+        """C1+: finish дал вердикт по достаточности → re-verify PASS, без C2."""
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = _graph_result(
             [_comp("Задвижка DN100", item_type="задвижка", quantity=0,
@@ -331,14 +344,15 @@ class TestExecutorAutoE2E:
         assert answer.verification_verdict == "pass"
         assert answer.verification_reasons == []
         assert answer.mode == "auto"
-        assert answer.mode_refined == "auto_llm_full"
+        assert answer.mode_refined == "auto_llm_refine"
         assert answer.human_review_required is False
+        assert answer.offer_full_llm is False
         assert "Не хватает" in (answer.explanation or "")
-        assert fake_llm.calls, "C2 должен был вызвать LLM"
+        assert fake_llm.calls, "C1+ должен был вызвать LLM"
 
     @patch("app.services.agent.executor.get_graph")
-    def test_auto_c2_full_llm_not_closed_reviews(self, mock_get_graph):
-        """C2: LLM не дал verdict по достаточности → review остаётся."""
+    def test_auto_c1_loop_failed_three_times_offers_c2(self, mock_get_graph):
+        """C1+: 3 неудачные итерации → НЕ авто-C2, а offer_full_llm пользователю."""
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = _graph_result(
             [_comp("Задвижка DN100", item_type="задвижка", quantity=0,
@@ -355,12 +369,16 @@ class TestExecutorAutoE2E:
             "хватает ли задвижек по две штуки", parsed=parsed, mode="auto")
 
         assert answer.verification_verdict == "review"
-        assert answer.mode_refined == "auto_llm_full"
+        assert answer.mode_refined == "auto"
         assert answer.human_review_required is True
+        assert answer.llm_refine_failed is True
+        assert answer.offer_full_llm is True, "после 3 итераций — предложение C2"
+        assert answer.offer_question
+        assert len(fake_llm.calls) == 3, "ровно MAX_ITERATIONS вызовов"
 
     @patch("app.services.agent.executor.get_graph")
-    def test_auto_c2_ask_user_never_passes(self, mock_get_graph):
-        """C2 вернул уточняющий вопрос вместо ответа → НЕ pass, review."""
+    def test_auto_c1_loop_ask_user_blocked_then_offers(self, mock_get_graph):
+        """C1+: ask_user запрещён — итерации сгорают, после 3 — предложение C2."""
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = _graph_result(
             [_comp("Задвижка DN100", item_type="задвижка", quantity=0,
@@ -368,8 +386,7 @@ class TestExecutorAutoE2E:
             answer_text="Задвижка: отсутствует.")
         mock_get_graph.return_value = mock_graph
 
-        fake_llm = _ActionLLM(
-            final_answer="Для подбора деталей необходимы параметры. Пожалуйста, укажите DN.")
+        fake_llm = _AskUserLLM()
         executor = self._make_executor(fake_llm)
         parsed = _parsed(query="хватает ли задвижек по две штуки",
                          item_types=["задвижка"], units_count=2,
@@ -378,11 +395,12 @@ class TestExecutorAutoE2E:
             "хватает ли задвижек по две штуки", parsed=parsed, mode="auto")
 
         assert answer.verification_verdict == "review"
-        assert answer.mode_refined == "auto_llm_full"
-        assert answer.human_review_required is True
+        assert answer.mode_refined == "auto"
+        assert answer.offer_full_llm is True
+        assert len(fake_llm.calls) == 3
 
     @patch("app.services.agent.executor.get_graph")
-    def test_auto_c1_refine_preserves_expert_data_review(self, mock_get_graph):
+    def test_auto_c1_loop_preserves_expert_data_review(self, mock_get_graph):
         """Разведение причин: gate pass, но 'expert_data' (review из графа) сохраняется."""
         mock_graph = MagicMock()
         result = _graph_result(
@@ -406,7 +424,7 @@ class TestExecutorAutoE2E:
         assert answer.human_review_reasons == ["expert_data"]
 
     @patch("app.services.agent.executor.get_graph")
-    def test_auto_c1_refine_plain_pass_clears_review(self, mock_get_graph):
+    def test_auto_c1_loop_plain_pass_clears_review(self, mock_get_graph):
         """Разведение причин: pass без expert_data → human_review снимается."""
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = _graph_result(
@@ -427,8 +445,9 @@ class TestExecutorAutoE2E:
         assert answer.human_review_reasons == []
 
     @patch("app.services.agent.executor.get_graph")
-    def test_auto_c1_refine_review_marks_quality_gate(self, mock_get_graph):
-        """Разведение причин: gate остаётся review → причина 'quality_gate'."""
+    def test_auto_c1_loop_failed_marks_quality_gate_and_offers(self, mock_get_graph):
+        """Gate остаётся review → причина 'quality_gate' + предложение C2."""
+
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = _graph_result(
             [_comp("Задвижка DN100", item_type="задвижка", quantity=5)],
@@ -446,10 +465,12 @@ class TestExecutorAutoE2E:
         assert answer.verification_verdict == "review"
         assert "quality_gate" in answer.human_review_reasons
         assert answer.human_review_required is True
+        assert answer.offer_full_llm is True
+        assert answer.mode_refined == "auto"
 
     @patch("app.services.agent.executor.get_graph")
-    def test_auto_c1_refine_applies_for_med_gap(self, mock_get_graph):
-        """C1: scope_mismatch MED → дооформление (mode_refined=auto_llm_refine)."""
+    def test_auto_c1_loop_med_gap_offers_after_max_iterations(self, mock_get_graph):
+        """C1+: scope_mismatch MED не закрылся → после 3 итераций предложение C2."""
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = _graph_result(
             [_comp("Задвижка DN100", item_type="задвижка", quantity=5)],
@@ -464,13 +485,13 @@ class TestExecutorAutoE2E:
         answer = executor.execute("найди трубы и задвижки", parsed=parsed, mode="auto")
 
         assert answer.verification_verdict == "review"
-        assert answer.mode_refined == "auto_llm_refine"
-        assert "Найдены" in (answer.explanation or "")
-        assert fake_llm.calls, "C1 должен был вызвать LLM"
+        assert answer.mode_refined == "auto"
+        assert answer.offer_full_llm is True
+        assert len(fake_llm.calls) == 3, "C1+ должен был исчерпать итерации"
 
     @patch("app.services.agent.executor.get_graph")
-    def test_auto_c1_refine_closes_scope_passes(self, mock_get_graph):
-        """C1: refine перечислил все запрошенные типы → re-verify PASS."""
+    def test_auto_c1_loop_closes_scope_passes(self, mock_get_graph):
+        """C1+: finish перечисляет все запрошенные типы → re-verify PASS."""
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = _graph_result(
             [_comp("Труба DN100", item_type="труба", quantity=5)],
@@ -490,8 +511,8 @@ class TestExecutorAutoE2E:
         assert answer.human_review_required is False
 
     @patch("app.services.agent.executor.get_graph")
-    def test_auto_c2_llm_failure_falls_back(self, mock_get_graph):
-        """C2: LLM падает → fallback на deterministic review, human_review_required=True."""
+    def test_auto_c1_loop_llm_failure_falls_back(self, mock_get_graph):
+        """C1+: LLM падает → fallback на deterministic review, C2 не предлагается."""
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = _graph_result(
             [_comp("Задвижка DN100", item_type="задвижка", quantity=0,
@@ -508,7 +529,8 @@ class TestExecutorAutoE2E:
 
         assert answer.verification_verdict == "review"
         assert answer.human_review_required is True
-        assert answer.mode_refined == "auto"  # C2 упал, остался deterministic-ответ
+        assert answer.mode_refined == "auto"  # C1+ упал, остался deterministic-ответ
+        assert answer.offer_full_llm is False
 
     @patch("app.services.agent.executor.get_graph")
     def test_auto_review_no_llm_marks_human_review(self, mock_get_graph):
