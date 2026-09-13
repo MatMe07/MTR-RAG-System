@@ -137,5 +137,52 @@ class H2SOutOfStockE2E(unittest.TestCase):
             f"отсутствуют источники: {sorted(missing_sources)}")
 
 
+class H2STransparencyE2E(unittest.TestCase):
+    """AQ010: прозрачность H2S-совместимости в ТЗ-метаданных кандидатов.
+
+    Кандидаты, не пригодные для H2S-среды (09ГСФ = requires_verification),
+    несут расхождение «H2S-совместимость стали» в mismatched_params и пониженный
+    score; 13ХФА (suitable) — тот же параметр в matched_params.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.case = _load_case("AQ010")
+        ex = AgentExecutor(AgentConfig(use_llm=False, storage="json"))
+        cls.answer = ex.execute(cls.case["question"], mode="auto")
+        cls.by_steel: dict = {}
+        for c in cls.answer.components:
+            name = c.name or ""
+            steel = next(
+                (s for s in ("09ГСФ", "13ХФА") if s in name), None
+            )
+            if steel:
+                cls.by_steel.setdefault(steel, []).append(c)
+
+    def test_09gsf_has_h2s_suitability_mismatch(self):
+        comps = self.by_steel.get("09ГСФ", [])
+        self.assertTrue(comps, "нет кандидата 09ГСФ в ответе")
+        for c in comps:
+            self.assertIn("H2S-совместимость стали", c.mismatched_params, c.name)
+            self.assertNotIn("H2S-совместимость стали", c.matched_params, c.name)
+            self.assertLess(c.match_score, 1.0,
+                            f"{c.name}: H2S-мисматч должен снижать score")
+
+    def test_13xfa_has_h2s_suitability_match(self):
+        comps = self.by_steel.get("13ХФА", [])
+        self.assertTrue(comps, "нет кандидата 13ХФА в ответе")
+        for c in comps:
+            self.assertIn("H2S-совместимость стали", c.matched_params, c.name)
+            self.assertNotIn("H2S-совместимость стали", c.mismatched_params, c.name)
+
+    def test_candidates_scored_consistently_with_params(self):
+        # 09ГСФ не может иметь score выше пригодных кандидатов того же ряда.
+        gsf, xfa = self.by_steel.get("09ГСФ", []), self.by_steel.get("13ХФА", [])
+        self.assertTrue(gsf and xfa)
+        best_gsf = max(c.match_score for c in gsf)
+        worst_xfa = min(c.match_score for c in xfa)
+        self.assertLessEqual(best_gsf, worst_xfa)
+
+
 if __name__ == "__main__":
     unittest.main()

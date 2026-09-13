@@ -142,7 +142,9 @@ def _card_component(card: Dict, score: float = 0.0, reason: str = "") -> Dict[st
 
 def _enrich_component(comp: Dict[str, Any], card: Dict, score: float, parsed: Any) -> Dict[str, Any]:
     """Добавляет ТЗ-метаданные кандидата (ЭТАП 5)."""
-    matched, mismatched, missing = evaluate_candidate(card, parsed)
+    matched, mismatched, missing = evaluate_candidate(
+        card, parsed, h2s_rules=_h2s_steel_rules()
+    )
     if score is not None:
         percent = round(score * 100)
         comp["match_score"] = score

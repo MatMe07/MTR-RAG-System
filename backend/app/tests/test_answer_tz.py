@@ -172,6 +172,77 @@ class EvaluateCandidateTest(unittest.TestCase):
         matched, mismatched, _ = evaluate_candidate(card, parsed)
         self.assertIn("DN", matched)
 
+    def test_h2s_non_suitable_steel_in_mismatched(self):
+        # 09ГСФ не «suitable» для H2S: расхождение обязано быть видно.
+        card = self._card(
+            {
+                "dn": {"value": 426.0},
+                "wall_thickness": {"value": 10.0},
+                "angle": {"value": 90.0},
+                "steel_grade": {"value": "09ГСФ"},
+            }
+        )
+        parsed = _parsed()
+        parsed.technical_filters = {
+            "item_type": "отвод",
+            "dn": 426,
+            "wall_thickness": 10,
+            "angle": 90,
+            "medium": "H2S",
+            "h2s_confirmed": True,
+        }
+        parsed.item_types = ["отвод"]
+        matched, mismatched, _ = evaluate_candidate(card, parsed)
+        self.assertIn("H2S-совместимость стали", mismatched)
+        self.assertNotIn("H2S-совместимость стали", matched)
+
+    def test_h2s_suitable_steel_in_matched(self):
+        card = self._card(
+            {
+                "dn": {"value": 426.0},
+                "steel_grade": {"value": "13ХФА"},
+            }
+        )
+        parsed = _parsed()
+        parsed.technical_filters = {"item_type": "отвод", "dn": 426, "medium": "H2S"}
+        parsed.item_types = ["отвод"]
+        matched, mismatched, _ = evaluate_candidate(card, parsed)
+        self.assertIn("H2S-совместимость стали", matched)
+        self.assertNotIn("H2S-совместимость стали", mismatched)
+
+    def test_h2s_no_steel_in_missing(self):
+        card = self._card({"dn": {"value": 426.0}})
+        parsed = _parsed()
+        parsed.technical_filters = {
+            "item_type": "отвод",
+            "dn": 426,
+            "medium": "среда с сероводородом",
+        }
+        parsed.item_types = ["отвод"]
+        _, _, missing = evaluate_candidate(card, parsed)
+        self.assertIn("H2S-совместимость стали", missing)
+
+    def test_h2s_rules_override_defaults(self):
+        card = self._card({"steel_grade": {"value": "09ГСФ"}})
+        parsed = _parsed()
+        parsed.technical_filters = {"item_type": "отвод", "medium": "H2S"}
+        parsed.item_types = ["отвод"]
+        matched, mismatched, _ = evaluate_candidate(
+            card, parsed, h2s_rules={"09ГСФ": "suitable"}
+        )
+        self.assertIn("H2S-совместимость стали", matched)
+        self.assertNotIn("H2S-совместимость стали", mismatched)
+
+    def test_h2s_not_active_no_extra_check(self):
+        card = self._card({"dn": {"value": 426.0}, "steel_grade": {"value": "20"}})
+        parsed = _parsed()
+        parsed.technical_filters = {"item_type": "отвод", "dn": 426, "medium": "природный газ"}
+        parsed.item_types = ["отвод"]
+        matched, mismatched, missing = evaluate_candidate(card, parsed)
+        self.assertNotIn("H2S-совместимость стали", matched)
+        self.assertNotIn("H2S-совместимость стали", mismatched)
+        self.assertNotIn("H2S-совместимость стали", missing)
+
 
 class ExplanationTest(unittest.TestCase):
     def test_match_explanation(self):

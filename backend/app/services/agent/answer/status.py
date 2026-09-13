@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.schemas import AgentComponent, AgentSource
 
-from ..medium import medium_match
+from ..medium import medium_match, steel_h2s_status
 
 STATUS_MATCH = "соответствует"
 STATUS_ANALOG = "потенциальный аналог"
@@ -53,6 +53,10 @@ PARAM_LABELS = {
 
 _NUMERIC_TOLERANCE = 0.1
 
+# Метка проверки H2S-совместимости марки стали (AQ002): при активной H2S-среде
+# пригодность стали учитывается в скоринге и не должна оставаться скрытой.
+H2S_SUITABILITY_LABEL = "H2S-совместимость стали"
+
 
 def _param_labels() -> Dict[str, str]:
     """Лейблы параметров: БД (param_labels) поверх дефолта кода."""
@@ -91,22 +95,26 @@ def candidate_tz_status(match_percent: Optional[float]) -> str:
 def evaluate_candidate(
     card: Dict[str, Any],
     parsed: Any,
+    h2s_rules: Optional[Dict[str, str]] = None,
 ) -> Tuple[List[str], List[str], List[str]]:
     """Сравнивает запрошенные параметры с карточкой.
 
     Возвращает (matched, mismatched, missing) — человекочитаемые имена
     параметров. Числовые значения сравниваются с допуском 10%.
+    h2s_rules — карта «марка стали → h2s_suitability» (из regulation_matrix.json);
+    при активной H2S-среде добавляется прозрачная проверка пригодности стали
+    (AQ002), синхронизированная со скорингом _match_score.
     """
     matched: List[str] = []
     mismatched: List[str] = []
     missing: List[str] = []
 
     props = card.get("properties", {}) or {}
-    tf = getattr(parsed, "technical_filters", {}) or {}
+    raw_tf = getattr(parsed, "technical_filters", {}) or {}
     labels = _param_labels()
     # Только пользовательские параметры: служебные ключи парсера
     # (raw_value, h2s_confirmed и т.п.) не участвуют в сравнении.
-    tf = {k: v for k, v in tf.items() if k in labels}
+    tf = {k: v for k, v in raw_tf.items() if k in labels}
     item_types = getattr(parsed, "item_types", []) or []
 
     def prop_val(key: str) -> Any:
@@ -154,6 +162,22 @@ def evaluate_candidate(
             ok = str(got).strip().lower() == str(want).strip().lower()
 
         (matched if ok else mismatched).append(label)
+
+    # H2S-совместимость марки (AQ002): при активной H2S-среде пригодность стали
+    # учитывается скорингом, поэтому её расхождение видно в списке (иначе у
+    # кандидата с пониженным score mismatched_params оставался пустым).
+    medium_raw = str(raw_tf.get("medium") or "").lower()
+    h2s_active = bool(raw_tf.get("h2s_confirmed")) or (
+        bool(medium_raw) and ("h2s" in medium_raw or "сероводород" in medium_raw)
+    )
+    if h2s_active:
+        steel = prop_val("steel_grade")
+        if steel is None or not str(steel).strip():
+            missing.append(H2S_SUITABILITY_LABEL)
+        elif steel_h2s_status(steel, h2s_rules) != "suitable":
+            mismatched.append(H2S_SUITABILITY_LABEL)
+        else:
+            matched.append(H2S_SUITABILITY_LABEL)
 
     return matched, mismatched, missing
 
