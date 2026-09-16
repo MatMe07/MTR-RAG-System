@@ -70,7 +70,7 @@ class _FakeLLM:
         self._refined_text = refined_text
         self.calls = []
 
-    def invoke(self, prompt):
+    def invoke(self, prompt, **kwargs):
         self.calls.append(prompt)
         import json
         return json.dumps({
@@ -85,7 +85,7 @@ class _AskUserLLM:
     def __init__(self):
         self.calls = []
 
-    def invoke(self, prompt):
+    def invoke(self, prompt, **kwargs):
         self.calls.append(prompt)
         import json
         return json.dumps({
@@ -100,7 +100,7 @@ class _ActionLLM:
         self._final_answer = final_answer
         self.calls = []
 
-    def invoke(self, prompt):
+    def invoke(self, prompt, **kwargs):
         self.calls.append(prompt)
         import json
         return json.dumps({
@@ -115,7 +115,7 @@ class _BrokenLLM:
         self._exc = exc or RuntimeError("LLM недоступен")
         self.calls = []
 
-    def invoke(self, prompt):
+    def invoke(self, prompt, **kwargs):
         self.calls.append(prompt)
         raise self._exc
 

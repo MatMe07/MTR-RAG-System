@@ -19,6 +19,7 @@ from typing import Any, Dict, Optional, Set
 from ..core.exceptions import LLMError, LLMTimeoutError
 from ..llm.cache import get_llm_cache
 from ..llm.client import get_llm_client
+from ..llm.prompts import build_extraction_prompt
 from ..llm.response_parser import extract_json_object
 from .normalizers import (
     normalize_climate,
@@ -52,24 +53,6 @@ NORMALIZERS: Dict[str, Any] = {
 }
 
 ALL_FIELDS: Set[str] = NUMERIC_FIELDS | STRING_FIELDS
-
-_TYPES_RU = {
-    "dn": "диаметр DN (число)",
-    "pn": "давление PN (число)",
-    "angle": "угол отвода (число)",
-    "wall_thickness": "толщина стенки (число)",
-    "d1": "диаметр 1 перехода (число)",
-    "d2": "диаметр 2 перехода (число)",
-    "medium": "среда",
-    "material": "материал/марка стали",
-    "steel_grade": "марка стали",
-    "strength_class": "класс прочности на разрыв",
-    "climate": "климатическое исполнение (У/УХЛ/ХЛ/Т)",
-    "gost_tu": "ГОСТ или ТУ",
-    "item_type": "тип детали (отвод/задвижка/заглушка/переход/тройник/труба/кран)",
-    "unit_id": "идентификатор участка",
-    "component_id": "идентификатор компонента",
-}
 
 
 class LLMExtractor:
@@ -118,7 +101,7 @@ class LLMExtractor:
             return {}
 
         target = self._target_fields(intent, missing)
-        prompt = self._build_prompt(intent, query, target, known)
+        prompt = build_extraction_prompt(intent, query, target, known)
         cache_key = f"extract:{intent}:{hash((query or '').strip().lower())}"
 
         cached = self._cache.get(cache_key)
@@ -128,7 +111,7 @@ class LLMExtractor:
 
         self._bump("calls")
         try:
-            content = client.invoke(prompt)
+            content = client.invoke(prompt, stage="extract")
             data = extract_json_object(content)
             if data is None:
                 self._bump("errors")
@@ -158,29 +141,6 @@ class LLMExtractor:
                     if f in ALL_FIELDS and f not in target:
                         target.append(f)
         return target
-
-    @classmethod
-    def _build_prompt(cls, intent: str, query: str, target: list, known: Dict[str, Any]) -> str:
-        lines = [f"Интент: {intent}", f"Запрос: {query}", "", "Целевые поля (верни только их):"]
-        for f in target:
-            hint = _TYPES_RU.get(f, f)
-            lines.append(f"- {f}: {hint}")
-        if known:
-            lines.append("")
-            lines.append("Уже точно известно (НЕ переопределяй): " + ", ".join(
-                f"{k}={v}" for k, v in known.items() if v is not None
-            ))
-        lines.extend([
-            "",
-            "Правила:",
-            "1. Верни ТОЛЬКО JSON-объект вида {\"key\": value} без пояснений.",
-            "2. Указывай только те целевые поля, которые можно уверенно извлечь из запроса.",
-            "3. Не выдумывай значения. Нет данных — пропусти поле (или пустой объект {}).",
-            "4. Не включай поля из «уже известно».",
-            "5. Числа — числами (например \"dn\": 50), строки — строками как в запросе.",
-            "Формат: json",
-        ])
-        return "\n".join(lines)
 
     @staticmethod
     def _validate(data: Any, target: list, known: Dict[str, Any]) -> Dict[str, Any]:

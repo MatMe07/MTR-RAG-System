@@ -186,6 +186,87 @@ class ExpertReviewResponse(BaseModel):
     message: str
     review_id: int
 
+class ParserDiagnostics(BaseModel):
+    """Диагностика парсинга запроса (гибридный пайплайн rule + Natasha + LLM §1F).
+
+    Кладётся в ParsedQuery.parser_diagnostics и сериализуется в raw_agent_answer,
+    чтобы в транскриптах (compose_check/query.md) было видно, КАК парсер работал:
+    какая ветка гибрида сработала, сколько занял каждый этап, вызывался ли LLM.
+    """
+
+    parse_ms: float = Field(0.0, description="Полное время парсинга, мс")
+    strategy: Optional[str] = Field(
+        None, description="Ветка гибрида: enrich (rule conf>=0.8) | merge | rule_only"
+    )
+    rule_confidence: Optional[float] = Field(
+        None, description="Уверенность rule-based парсера до гибридного слияния"
+    )
+    natasha_used: bool = Field(False, description="Использовались ли результаты Natasha")
+    stages_ms: Dict[str, float] = Field(
+        default_factory=dict, description="Замеры этапов: {'rule': ms, 'natasha': ms, 'merge': ms}"
+    )
+    llm_extractor: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="§1F LLM-доизвлечение: {'enabled': bool, 'calls': n, 'hits': n, "
+                    "'errors': n, 'tokens': n} (дельта метрик LLMClient на время парсинга)",
+    )
+
+
+class LLMCallRecord(BaseModel):
+    """Одна запись вызова LLM в рамках запроса (для диагностики)."""
+
+    stage: str = Field("", description="Фаза: parse|extract|refine|agent|explain|continue")
+    mode: Optional[str] = Field(None, description="Режим исполнения на момент вызова")
+    prompt_tokens: int = Field(0, description="Токены промпта (prompt_tokens)")
+    completion_tokens: int = Field(0, description="Токены ответа (completion_tokens)")
+    total_tokens: int = Field(0, description="Суммарные токены (total_tokens)")
+    duration_ms: float = Field(0.0, description="Длительность вызова, мс")
+    cache_hit: bool = Field(False, description="Ответ взят из кэша LLM")
+    error: Optional[str] = Field(None, description="Текст ошибки, если вызов упал")
+    ts: Optional[str] = Field(None, description="Метка времени вызова (ISO)")
+
+
+class RefineIterationRecord(BaseModel):
+    """Одна итерация C1+-цикла (auto-режим) — то, что раньше уходило только в БД."""
+
+    n: int = Field(0, description="Номер итерации")
+    action: str = Field("", description="call_tool | finish | invalid | llm_error")
+    tool_name: Optional[str] = Field(None, description="Вызванный инструмент")
+    tool_input: Optional[Any] = Field(None, description="Параметры вызова инструмента")
+    error: Optional[str] = Field(None, description="Ошибка итерации")
+    verdict: str = Field("pending", description="Результат повторной верификации: pass | review")
+    gaps: List[Dict[str, Any]] = Field(default_factory=list, description="Незакрытые gaps после итерации")
+    duration_ms: int = Field(0, description="Длительность итерации, мс")
+
+
+class LLMDiagnostics(BaseModel):
+    """Диагностика LLM по запросу (кладётся в AgentAnswer.llm).
+
+    Заменяет «голое» поле llm_tokens_used: видно, доступен ли LLM, вызывался ли,
+    почему нет токенов (verdict=pass/deterministic), разбивка prompt/completion,
+    кэш, задержки и список вызовов.
+    """
+
+    available: bool = Field(False, description="LLM-клиент доступен (use_llm != off)")
+    used: bool = Field(False, description="Были ли реальные вызовы LLM в рамках запроса")
+    reason: Optional[str] = Field(None, description="Почему used=True/False (человекочитаемо)")
+    model: Optional[str] = Field(None, description="Модель (LLM_MODEL)")
+    total_calls: int = Field(0, description="Всего вызовов (включая кэш-хиты)")
+    cache_hits: int = Field(0, description="Вызовов, закрытых кэшем")
+    cache_misses: int = Field(0, description="Call'ов до реального провайдера")
+    prompt_tokens: int = Field(0, description="Всего токенов промпта по запросу")
+    completion_tokens: int = Field(0, description="Всего токенов ответа по запросу")
+    total_tokens: int = Field(0, description="Всего токенов (prompt+completion)")
+    duration_ms: float = Field(0.0, description="Суммарное время вызовов LLM, мс")
+    cost_estimate_usd: Optional[float] = Field(None, description="Оценка стоимости (если модель в прайсе)")
+    refine_iterations: List[RefineIterationRecord] = Field(
+        default_factory=list, description="Итерации C1+-цикла (auto с эскалацией)"
+    )
+    calls: List[LLMCallRecord] = Field(
+        default_factory=list, description="Поименные записи вызовов LLM"
+    )
+
+
 class ParsedQuery(BaseModel):
     """Результат парсинга пользовательского запроса для инженерной системы."""
 
@@ -324,6 +405,13 @@ class ParsedQuery(BaseModel):
                     "[{'group': 'СКЛАД', 'score': 3, 'confidence': 0.9, 'matched': [...]}]"
     )
 
+    # ===== Диагностика парсинга =====
+    parser_diagnostics: Optional[ParserDiagnostics] = Field(
+        None,
+        description="Как парсер работал: ветка гибрида, тайминги этапов, "
+                    "LLM-доизвлечение §1F (для транскриптов compose_check/*.md)",
+    )
+
 
 class AgentRequest(BaseModel):
     """Запрос к агентскому слою."""
@@ -448,6 +536,11 @@ class AgentAnswer(BaseModel):
     offer_endpoint: Optional[str] = Field(
         None,
         description="Эндпоинт продолжения (POST) для выбора C2, напр. /api/v1/agent/continue",
+    )
+    llm: Optional[LLMDiagnostics] = Field(
+        None,
+        description="Диагностика LLM-запросов: доступность, причины отсутствия вызовов, "
+                    "токены (prompt/completion/total), кэш, задержки, вызовы и итерации C1+",
     )
 
 

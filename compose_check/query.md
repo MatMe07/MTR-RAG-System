@@ -1,24 +1,33 @@
+2026-09-15 23:54:14,172 INFO    | pymorphy2.opencorpora_dict.wrapper | Loading dictionaries from /home/artur/.local/lib/python3.14/site-packages/pymorphy2_dicts_ru/data
+2026-09-15 23:54:14,197 INFO    | pymorphy2.opencorpora_dict.wrapper | format: 2.4, revision: 417127, updated: 2020-10-11T15:05:51.070345
 Запрос: Метод поиска (0 - deterministic, 1 - llm, 2 - auto): 
 >>> Режим: auto
 
-2026-09-13 13:25:15,143 INFO    | mtr.agent.executor               | [Executor] Execute query='Сколько отводов 90 426 на 10 есть на складе и какие из них подходят для H2S' mode=auto request_id=None
-2026-09-13 13:25:15,143 INFO    | mtr.agent.executor               | [Executor] No parsed query, running HybridParser...
-2026-09-13 13:25:15,491 INFO    | mtr.agent.executor               | [Executor] Parsed: confidence=0.97 operations=['inventory', 'check'] item_types=['отвод'] technical_filters={'item_type': 'отвод', 'dn': 426.0, 'wall_thickness': 10.0, 'angle': 90.0, 'medium': 'H2S', 'h2s_confirmed': True} ambiguities=[] (348ms)
-2026-09-13 13:25:15,504 INFO    | mtr.agent.executor               | [Executor] Parsed enriched: status=COMPLETE intents=['FIND_BY_PARAMS', 'CHECK_STOCK'] missing={'FIND_BY_PARAMS': [], 'CHECK_STOCK': []}
-2026-09-13 13:25:15,513 INFO    | mtr.agent.executor               | [Executor] Intent resolved: inventory
-2026-09-13 13:25:15,513 INFO    | mtr.agent.executor               | [Executor] Invoking graph...
-2026-09-13 13:25:15,661 INFO    | mtr.repository                   | DbRepository: loaded 1000 MTR items from DB
-2026-09-13 13:25:15,675 INFO    | mtr.repository                   | DbRepository: loaded 1000 CandidateItems for stock lookup
-2026-09-13 13:25:15,734 INFO    | mtr.repository                   | DbRepository: catalog built with 1000 cards
-2026-09-13 13:25:15,736 INFO    | mtr.agent.tools                  | [catalog_search] Loaded 1000 cards from repository
-2026-09-13 13:25:15,750 INFO    | mtr.agent.tools                  | [catalog_search] Found 4 candidates (from 1000 cards) in 14ms
-2026-09-13 13:25:15,770 INFO    | mtr.agent.tools                  | [stock_query] Checked 4 items (kept 4) in 19ms
-2026-09-13 13:25:15,772 INFO    | mtr.agent.tools                  | [rules_engine] Scored 4 candidates in 0ms
-2026-09-13 13:25:15,776 INFO    | mtr.agent.tools                  | [regulation_lookup] Checked 1 regulations in 3ms
-2026-09-13 13:25:15,780 INFO    | mtr.agent.executor               | [Executor] Graph finished in 267ms: components=4 sources=23 warnings=2 tools_used=['catalog_search', 'stock_query', 'inventory_calculator', 'rules_engine', 'regulation_lookup'] completed=True
-2026-09-13 13:25:15,780 INFO    | mtr.agent.executor               | [Executor] Answer found in state, returning directly
-2026-09-13 13:25:15,808 INFO    | mtr.agent.verify                 | [Verifier] verdict=pass gaps=0 max_severity=none reasons=[]
-2026-09-13 13:25:15,808 INFO    | mtr.agent.executor               | [Executor][auto] verdict=pass, no LLM escalation needed
+2026-09-15 23:54:14,726 INFO    | mtr.agent.executor               | [Executor] Execute query='Сколько отводов 90 426 на 10 есть на складе и какие из них подходят для H2S' mode=auto request_id=297fd908-60ce-4e3f-ba5e-12a30a81e5ae
+2026-09-15 23:54:14,726 INFO    | mtr.agent.executor               | [Executor] No parsed query, running HybridParser...
+2026-09-15 23:54:14,749 INFO    | pymorphy2.opencorpora_dict.wrapper | Loading dictionaries from /home/artur/.local/lib/python3.14/site-packages/pymorphy2_dicts_ru/data
+2026-09-15 23:54:14,773 INFO    | pymorphy2.opencorpora_dict.wrapper | format: 2.4, revision: 417127, updated: 2020-10-11T15:05:51.070345
+2026-09-15 23:54:15,568 WARNING | mtr.agent.dynamic_rules          | DynamicRules: БД недоступна, дефолты кода: (psycopg2.OperationalError) could not translate host name "db" to address: Name or service not known
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-09-15 23:54:15,604 WARNING | mtr.repository.redis_cache       | RedisCache: Redis недоступен, кеш отключён: Error -2 connecting to redis:6379. Name or service not known.
+2026-09-15 23:54:15,696 INFO    | mtr.agent.executor               | [Executor] Parsed: confidence=0.97 operations=['inventory', 'check'] item_types=['отвод'] technical_filters={'item_type': 'отвод', 'dn': 426.0, 'wall_thickness': 10.0, 'angle': 90.0, 'medium': 'H2S', 'h2s_confirmed': True} ambiguities=[] (969ms)
+2026-09-15 23:54:15,712 INFO    | mtr.agent.executor               | [Executor] Parsed enriched: status=COMPLETE intents=['FIND_BY_PARAMS', 'CHECK_STOCK'] missing={'FIND_BY_PARAMS': [], 'CHECK_STOCK': []}
+2026-09-15 23:54:15,722 INFO    | mtr.agent.executor               | [Executor] Intent resolved: inventory
+2026-09-15 23:54:15,722 INFO    | mtr.agent.executor               | [Executor] Invoking graph...
+2026-09-15 23:54:15,890 WARNING | mtr.repository                   | DbRepository.get_catalog failed: (psycopg2.OperationalError) could not translate host name "db" to address: Name or service not known
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8), using JSON fallback
+2026-09-15 23:54:16,162 INFO    | mtr.repository                   | JsonRepository fallback loaded 1000 cards
+2026-09-15 23:54:16,162 INFO    | mtr.agent.tools                  | [catalog_search] Loaded 1000 cards from repository
+2026-09-15 23:54:16,177 INFO    | mtr.agent.tools                  | [catalog_search] Found 4 candidates (from 1000 cards) in 15ms
+2026-09-15 23:54:16,275 INFO    | mtr.agent.tools                  | [stock_query] Checked 4 items (kept 4) in 96ms
+2026-09-15 23:54:16,277 INFO    | mtr.agent.tools                  | [rules_engine] Scored 4 candidates in 0ms
+2026-09-15 23:54:16,281 INFO    | mtr.agent.tools                  | [regulation_lookup] Checked 1 regulations in 3ms
+2026-09-15 23:54:16,287 INFO    | mtr.agent.executor               | [Executor] Graph finished in 565ms: components=4 sources=37 warnings=2 tools_used=['catalog_search', 'stock_query', 'inventory_calculator', 'rules_engine', 'regulation_lookup'] completed=True
+2026-09-15 23:54:16,287 INFO    | mtr.agent.executor               | [Executor] Answer found in state, returning directly
+2026-09-15 23:54:16,319 INFO    | mtr.agent.verify                 | [Verifier] verdict=pass gaps=0 max_severity=none reasons=[]
+2026-09-15 23:54:16,319 INFO    | mtr.agent.executor               | [Executor][auto] verdict=pass, no LLM escalation needed
 
 ========================================================================
 >>> ОТВЕТ (как возвращает агент):
@@ -44,8 +53,8 @@
       "item_type": "отвод",
       "quantity": 58.0,
       "status": "совпадает по параметрам",
-      "detail": "на складе: 58.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000249",
+      "detail": "на складе: 58; оценка правил",
+      "source_id": "SYN-REG-CARD-000249",
       "unit_id": null,
       "match_score": 1.0,
       "match_percent": 100,
@@ -55,7 +64,8 @@
         "DN",
         "стенка",
         "угол",
-        "среда"
+        "среда",
+        "H2S-совместимость стали"
       ],
       "mismatched_params": [],
       "missing_params": []
@@ -67,8 +77,8 @@
       "item_type": "отвод",
       "quantity": 52.0,
       "status": "совпадает по параметрам",
-      "detail": "на складе: 52.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000330",
+      "detail": "на складе: 52; оценка правил",
+      "source_id": "SYN-REG-CARD-000330",
       "unit_id": null,
       "match_score": 1.0,
       "match_percent": 100,
@@ -78,7 +88,8 @@
         "DN",
         "стенка",
         "угол",
-        "среда"
+        "среда",
+        "H2S-совместимость стали"
       ],
       "mismatched_params": [],
       "missing_params": []
@@ -90,8 +101,8 @@
       "item_type": "отвод",
       "quantity": 26.0,
       "status": "совпадает по параметрам",
-      "detail": "на складе: 26.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000372",
+      "detail": "на складе: 26; оценка правил",
+      "source_id": "SYN-REG-CARD-000372",
       "unit_id": null,
       "match_score": 1.0,
       "match_percent": 100,
@@ -101,7 +112,8 @@
         "DN",
         "стенка",
         "угол",
-        "среда"
+        "среда",
+        "H2S-совместимость стали"
       ],
       "mismatched_params": [],
       "missing_params": []
@@ -113,8 +125,8 @@
       "item_type": "отвод",
       "quantity": 71.0,
       "status": "совпадает по параметрам",
-      "detail": "на складе: 71.0; оценка правил",
-      "source_id": "MTR-SYN-REG-000323",
+      "detail": "на складе: 71; оценка правил",
+      "source_id": "SYN-REG-CARD-000323",
       "unit_id": null,
       "match_score": 0.8333333333333334,
       "match_percent": 83,
@@ -126,7 +138,9 @@
         "угол",
         "среда"
       ],
-      "mismatched_params": [],
+      "mismatched_params": [
+        "H2S-совместимость стали"
+      ],
       "missing_params": []
     }
   ],
@@ -164,63 +178,123 @@
   "sources": [
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000249",
+      "id": "SYN-REG-CARD-000249",
       "fragment": "ОКШ 90-426x10 13ХФА"
     },
     {
+      "kind": "standard",
+      "id": "RST-GOST-17375-2001",
+      "fragment": "Бесшовные приварные отводы из углеродистой и низколегированной стали типа 3D с R=1,5 DN; область применения определяется совместно с ГОСТ 17380-2001."
+    },
+    {
+      "kind": "standard",
+      "id": "RST-GOST-17380-2001",
+      "fragment": "Общие технические условия для отводов, тройников, переходов и заглушек при PN до 16 МПа и температуре от -70 до +450 °C. Конкретные условия применения задаются проектной или конструкторской документацией с учётом транспортируемого вещества и внешней среды."
+    },
+    {
+      "kind": "standard",
+      "id": "RST-GOST-28338-89",
+      "fragment": "Устанавливает ряды значений номинальных диаметров DN и их обозначения для соединений трубопроводов и арматуры."
+    },
+    {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000249",
+      "id": "SYN-REG-CARD-000249",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000330",
+      "id": "SYN-REG-CARD-000330",
       "fragment": "ОКШ 90-426x10 13ХФА"
     },
     {
+      "kind": "standard",
+      "id": "RST-GOST-17375-2001",
+      "fragment": "Бесшовные приварные отводы из углеродистой и низколегированной стали типа 3D с R=1,5 DN; область применения определяется совместно с ГОСТ 17380-2001."
+    },
+    {
+      "kind": "standard",
+      "id": "RST-GOST-17380-2001",
+      "fragment": "Общие технические условия для отводов, тройников, переходов и заглушек при PN до 16 МПа и температуре от -70 до +450 °C. Конкретные условия применения задаются проектной или конструкторской документацией с учётом транспортируемого вещества и внешней среды."
+    },
+    {
+      "kind": "standard",
+      "id": "RST-GOST-28338-89",
+      "fragment": "Устанавливает ряды значений номинальных диаметров DN и их обозначения для соединений трубопроводов и арматуры."
+    },
+    {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000330",
+      "id": "SYN-REG-CARD-000330",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000372",
+      "id": "SYN-REG-CARD-000372",
       "fragment": "ОКШ 90-426x10 13ХФА"
     },
     {
+      "kind": "standard",
+      "id": "RST-GOST-17375-2001",
+      "fragment": "Бесшовные приварные отводы из углеродистой и низколегированной стали типа 3D с R=1,5 DN; область применения определяется совместно с ГОСТ 17380-2001."
+    },
+    {
+      "kind": "standard",
+      "id": "RST-GOST-17380-2001",
+      "fragment": "Общие технические условия для отводов, тройников, переходов и заглушек при PN до 16 МПа и температуре от -70 до +450 °C. Конкретные условия применения задаются проектной или конструкторской документацией с учётом транспортируемого вещества и внешней среды."
+    },
+    {
+      "kind": "standard",
+      "id": "RST-GOST-28338-89",
+      "fragment": "Устанавливает ряды значений номинальных диаметров DN и их обозначения для соединений трубопроводов и арматуры."
+    },
+    {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000372",
+      "id": "SYN-REG-CARD-000372",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "catalog",
-      "id": "MTR-SYN-REG-000323",
+      "id": "SYN-REG-CARD-000323",
       "fragment": "ОКШ 90-426x10 09ГСФ"
     },
     {
+      "kind": "standard",
+      "id": "RST-GOST-17375-2001",
+      "fragment": "Бесшовные приварные отводы из углеродистой и низколегированной стали типа 3D с R=1,5 DN; область применения определяется совместно с ГОСТ 17380-2001."
+    },
+    {
+      "kind": "standard",
+      "id": "RST-GOST-17380-2001",
+      "fragment": "Общие технические условия для отводов, тройников, переходов и заглушек при PN до 16 МПа и температуре от -70 до +450 °C. Конкретные условия применения задаются проектной или конструкторской документацией с учётом транспортируемого вещества и внешней среды."
+    },
+    {
+      "kind": "standard",
+      "id": "RST-GOST-28338-89",
+      "fragment": "Устанавливает ряды значений номинальных диаметров DN и их обозначения для соединений трубопроводов и арматуры."
+    },
+    {
       "kind": "passport_or_tu",
-      "id": "MTR-SYN-REG-000323",
+      "id": "SYN-REG-CARD-000323",
       "fragment": "паспорт изделия/ТУ: подтверждение применимости (в МВП документы не хранятся)"
     },
     {
       "kind": "stock",
       "id": "KSM-SYN-REG-000249",
-      "fragment": "остаток: 58.0"
+      "fragment": "остаток: 58"
     },
     {
       "kind": "stock",
       "id": "KSM-SYN-REG-000330",
-      "fragment": "остаток: 52.0"
+      "fragment": "остаток: 52"
     },
     {
       "kind": "stock",
       "id": "KSM-SYN-REG-000372",
-      "fragment": "остаток: 26.0"
+      "fragment": "остаток: 26"
     },
     {
       "kind": "stock",
       "id": "KSM-SYN-REG-000323",
-      "fragment": "остаток: 71.0"
+      "fragment": "остаток: 71"
     },
     {
       "kind": "matching_rules",
@@ -271,6 +345,16 @@
       "kind": "standard",
       "id": "RST-GOST-17375-2001",
       "fragment": "Детали трубопроводов. Отводы крутоизогнутые типа 3D. Конструкция"
+    },
+    {
+      "kind": "standard",
+      "id": "RST-GOST-28338-89",
+      "fragment": "Соединения трубопроводов и арматура. Номинальные диаметры. Ряды"
+    },
+    {
+      "kind": "standard",
+      "id": "RST-GOST-17380-2001",
+      "fragment": "Детали трубопроводов бесшовные приварные. Общие технические условия"
     },
     {
       "kind": "regulation",
@@ -524,7 +608,25 @@
         "confidence": 0.0,
         "matched": []
       }
-    ]
+    ],
+    "parser_diagnostics": {
+      "parse_ms": 91.04156494140625,
+      "strategy": "enrich",
+      "rule_confidence": 0.97,
+      "natasha_used": true,
+      "stages_ms": {
+        "rule": 61.310529708862305,
+        "natasha": 29.584169387817383,
+        "merge": 0.13709068298339844
+      },
+      "llm_extractor": {
+        "enabled": true,
+        "calls": 0,
+        "hits": 0,
+        "errors": 0,
+        "tokens": 0
+      }
+    }
   },
   "review_verdict": "pass",
   "review_issues": [],
@@ -532,8 +634,27 @@
   "verification_reasons": [],
   "mode_refined": "auto",
   "llm_refine_failed": null,
-  "llm_tokens_used": null
+  "llm_tokens_used": null,
+  "offer_full_llm": false,
+  "offer_question": "",
+  "offer_endpoint": null,
+  "llm": {
+    "available": true,
+    "used": false,
+    "reason": "LLM не вызывался: детерминированный auto-ответ прошёл quality gate (verdict=pass)",
+    "model": "inclusionai/ling-3.0-flash-vl:free",
+    "total_calls": 0,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "duration_ms": 0.0,
+    "cost_estimate_usd": 0.0,
+    "refine_iterations": [],
+    "calls": []
+  }
 }
 ========================================================================
 
->>> Время выполнения: 665 мс
+>>> Время выполнения: 1593 мс

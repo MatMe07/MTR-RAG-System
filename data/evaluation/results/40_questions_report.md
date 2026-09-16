@@ -1,48 +1,48 @@
 # Автопроверка 40 вопросов
 
-- Дата: 2026-09-13T10:36:41.425933+00:00
+- Дата: 2026-09-16T09:28:23.468231+00:00
 - Режим LLM: off
-- tools: 40/40, sources: 39/40, warnings: 40/40, review pass: 40/40
+- tools: 40/40, sources: 39/40, warnings: 40/40, review pass: 40/40, intent match: 35/40
 
-| case | tools | sources | warning | review |
-|---|---|---|---|---|
-| AQ001 | True | True | True | True |
-| AQ002 | True | True | True | True |
-| AQ003 | True | True | True | True |
-| AQ004 | True | True | True | True |
-| AQ005 | True | True | True | True |
-| AQ006 | True | True | True | True |
-| AQ007 | True | True | True | True |
-| AQ008 | True | True | True | True |
-| AQ009 | True | True | True | True |
-| AQ010 | True | True | True | True |
-| AQ011 | True | True | True | True |
-| AQ012 | True | True | True | True |
-| AQ013 | True | True | True | True |
-| AQ014 | True | True | True | True |
-| AQ015 | True | False | True | True |
-| AQ016 | True | True | True | True |
-| AQ017 | True | True | True | True |
-| AQ018 | True | True | True | True |
-| AQ019 | True | True | True | True |
-| AQ020 | True | True | True | True |
-| AQ021 | True | True | True | True |
-| AQ022 | True | True | True | True |
-| AQ023 | True | True | True | True |
-| AQ024 | True | True | True | True |
-| AQ025 | True | True | True | True |
-| AQ026 | True | True | True | True |
-| AQ027 | True | True | True | True |
-| AQ028 | True | True | True | True |
-| AQ029 | True | True | True | True |
-| AQ030 | True | True | True | True |
-| AQ031 | True | True | True | True |
-| AQ032 | True | True | True | True |
-| AQ033 | True | True | True | True |
-| AQ034 | True | True | True | True |
-| AQ035 | True | True | True | True |
-| AQ036 | True | True | True | True |
-| AQ037 | True | True | True | True |
-| AQ038 | True | True | True | True |
-| AQ039 | True | True | True | True |
-| AQ040 | True | True | True | True |
+| case | intent | tools | sources | warning | review |
+|---|---|---|---|---|---|
+| AQ001 | replacement | True | True | True | True |
+| AQ002 | replacement | True | True | True | True |
+| AQ003 | maintenance | True | True | True | True |
+| AQ004 | replacement | True | True | True | True |
+| AQ005 | replacement | True | True | True | True |
+| AQ006 | replacement | True | True | True | True |
+| AQ007 | replacement | True | True | True | True |
+| AQ008 | inventory | True | True | True | True |
+| AQ009 | inventory | True | True | True | True |
+| AQ010 | inventory | True | True | True | True |
+| AQ011 | inventory | True | True | True | True |
+| AQ012 | inventory | True | True | True | True |
+| AQ013 | inventory | True | True | True | True |
+| AQ014 | inventory | True | True | True | True |
+| AQ015 | inventory | True | False | True | True |
+| AQ016 | maintenance | True | True | True | True |
+| AQ017 | maintenance | True | True | True | True |
+| AQ018 | maintenance | True | True | True | True |
+| AQ019 | maintenance | True | True | True | True |
+| AQ020 | maintenance | True | True | True | True |
+| AQ021 | equipment_guidance | True | True | True | True |
+| AQ022 | equipment_guidance | True | True | True | True |
+| AQ023 | inventory | True | True | True | True |
+| AQ024 | equipment_guidance | True | True | True | True |
+| AQ025 | equipment_guidance | True | True | True | True |
+| AQ026 | maintenance | True | True | True | True |
+| AQ027 | inventory | True | True | True | True |
+| AQ028 | object_configuration | True | True | True | True |
+| AQ029 | inventory | True | True | True | True |
+| AQ030 | maintenance | True | True | True | True |
+| AQ031 | maintenance | True | True | True | True |
+| AQ032 | maintenance | True | True | True | True |
+| AQ033 | maintenance | True | True | True | True |
+| AQ034 | maintenance | True | True | True | True |
+| AQ035 | maintenance | True | True | True | True |
+| AQ036 | impact_analysis | True | True | True | True |
+| AQ037 | impact_analysis | True | True | True | True |
+| AQ038 | impact_analysis | True | True | True | True |
+| AQ039 | document_search | True | True | True | True |
+| AQ040 | document_search | True | True | True | True |

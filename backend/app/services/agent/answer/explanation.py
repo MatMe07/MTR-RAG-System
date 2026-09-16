@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from app.services.agent.intent.matrix import BLOCKER_FIELDS
 
+from ..llm.prompts import build_explanation_prompt
 from .status import (
     PARAM_LABELS,
     STATUS_ANALOG,
@@ -77,19 +78,33 @@ def _critical_param_labels(
 def _components_for_prompt(components: List[Any]) -> str:
     if not components:
         return "—"
+
+    # Сортировка: сначала с наибольшим процентом совпадения
     scored = [c for c in components if _comp_get(c, "match_percent") is not None]
     scored.sort(key=lambda c: _comp_get(c, "match_percent") or 0, reverse=True)
     aux = [c for c in components if _comp_get(c, "match_percent") is None]
     ordered = scored + aux
+
     lines = []
-    for c in ordered[:5]:
-        name = _comp_get(c, "name") or _comp_get(c, "ksm_code") or _comp_get(c, "mtr_code")
+    for c in ordered[:10]:  # Лучше расширить лимит хотя бы до 8–10 кандидатов
+        code = _comp_get(c, "mtr_code") or _comp_get(c, "ksm_code") or "Б/К"
+        name = _comp_get(c, "name") or "Без наименования"
+        qty = _comp_get(c, "quantity")
         pct = _comp_get(c, "match_percent")
-        state = _comp_get(c, "tz_status") or _comp_get(c, "status")
+        status = _comp_get(c, "tz_status") or _comp_get(c, "status") or "неизвестно"
+
+        qty_str = f", кол-во: {qty}" if qty is not None else ""
+
         if pct is not None:
-            lines.append(f"- {name or '?'}: {pct}% ({state or ''})".strip())
+            # Собираем несовпадающие или ключевые параметры, если они есть
+            matched = _comp_get(c, "matched_params") or []
+            params_str = f" [совпало: {', '.join(matched)}]" if matched else ""
+            lines.append(f"- [{code}] {name} {qty_str} | Совпадение: {pct}% ({status}){params_str}")
         else:
-            lines.append(f"- {name or '?'}: {state or ''}".strip())
+            detail = _comp_get(c, "detail")
+            detail_str = f" ({detail})" if detail else ""
+            lines.append(f"- [{code}] {name} {qty_str} | Статус: {status}{detail_str}")
+
     return "\n".join(lines) or "—"
 
 
@@ -109,32 +124,6 @@ def _compat_for_prompt(components: List[Any]) -> str:
     return "; ".join(parts) if parts else "—"
 
 
-def build_explanation_prompt(context: Dict[str, Any]) -> str:
-    """Промпт LLM-режима 5A.3 (адаптация под структуру AgentAnswer)."""
-    return (
-        "Ты — технический эксперт по МТР. На основе следующих данных составь "
-        "понятное объяснение для инженера.\n\n"
-        f"Статус обработки запроса: {context.get('status') or '—'}\n"
-        f"Критические параметры (нельзя менять, они должны совпадать): "
-        f"{context.get('critical_params') or '—'}\n"
-        f"Запрос: {context.get('query') or ''}\n"
-        f"Найденные детали:\n{context.get('candidates') or '—'}\n"
-        f"Результаты проверок: {context.get('compatibility') or '—'}\n"
-        f"Рекомендации: {context.get('recommendations') or '—'}\n"
-        f"Предупреждения: {context.get('warnings') or '—'}\n"
-        f"Ошибки: {context.get('errors') or '—'}\n\n"
-        "Твой ответ должен быть:\n"
-        "1. Кратким (3–5 предложений).\n"
-        "2. Содержать рекомендацию (какую деталь выбрать, что проверить).\n"
-        "3. Если есть риски — указать их.\n"
-        "4. Не повторять сухие технические данные — переформулировать их.\n"
-        "5. Если хотя бы один критический параметр не совпал — явно указать это.\n"
-        "6. Использовать только данные из этого контекста: не выдумывать коды, "
-        "остатки или факты, которых здесь нет.\n\n"
-        "Ответ:"
-    )
-
-
 def build_llm_context(
     *,
     status: str,
@@ -144,10 +133,13 @@ def build_llm_context(
     warnings: List[str],
     errors: Optional[List[Any]],
     recommendations: List[str],
+    intent: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Контекст RawResponse для генератора объяснения (5A.3)."""
+
     return {
         "status": status,
+        "intent": intent,
         "query": query,
         "critical_params": _critical_param_labels(components, warnings),
         "candidates": _components_for_prompt(components),
@@ -178,9 +170,12 @@ def default_generator(context: Dict[str, Any]) -> Optional[str]:
         if client is None:
             return None
 
-        promt_context = build_explanation_prompt(context)
-
-        text = client.invoke(promt_context)
+        promt_context = build_explanation_prompt(
+            context, task=(context.get("intent") or "equipment_guidance")
+        )
+        # print("[explanation] LLM prompt:\n", promt_context)  # DEBUG
+        # return None
+        text = client.invoke(promt_context, stage="explain")
         return (text or "").strip() or None
     except Exception as e:  # noqa: BLE001
         log.warning("[explanation] LLM explanation failed, fallback to template: %s", e)
@@ -212,10 +207,12 @@ class ExplanationGenerator:
         warnings: Optional[List[str]] = None,
         errors: Optional[List[Any]] = None,
         recommendations: Optional[List[str]] = None,
+        intent: Optional[str] = None,
     ) -> Optional[str]:
         """Только при триггере; любой сбой → None (fallback на шаблоны)."""
         if mode == "llm" or not self.available(status, query):
             return None
+
         context = build_llm_context(
             status=status,
             query=query,
@@ -224,7 +221,9 @@ class ExplanationGenerator:
             warnings=warnings or [],
             errors=errors,
             recommendations=recommendations or [],
+            intent=intent,
         )
+
         try:
             return self._generator(context) or None
         except Exception as e:  # noqa: BLE001

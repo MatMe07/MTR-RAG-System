@@ -326,9 +326,9 @@ class ExplanationGeneratorLlmTest(unittest.TestCase):
                 "errors": [],
             }
         )
-        self.assertIn("Критические параметры", prompt)
-        self.assertIn("PN", prompt)
-        self.assertIn("не совпал", prompt)
+        self.assertIn("Критические параметры", str(prompt))
+        self.assertIn("PN", str(prompt))
+        self.assertIn("не совпал", str(prompt))
 
     def test_default_generator_off_without_key(self):
         import os

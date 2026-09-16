@@ -24,6 +24,13 @@ from ..tools.error_handler import REQUIRED_TOOLS, ErrorHandler
 from ..tools.instruments import run_instrument
 from ..tools.tool_dal import ToolDAL
 from .log import get_llm_logger
+from .prompts import (
+    FORCED_FINISH_MESSAGE,
+    STOP_HINT_TEMPLATES,
+    build_llm_agent_initial_prompt,
+    build_llm_agent_turn_prompt,
+    summarize_tool_result,
+)
 from .response_parser import LLMResponseParser
 
 log = logging.getLogger("mtr.agent.llm_agent")
@@ -37,55 +44,6 @@ MAX_REPEAT = 2  # не более 2 повторных вызовов одног
 STOP_MATCH_SCORE = 0.95
 STOP_CANDIDATE_SCORE = 0.80
 STOP_CANDIDATE_COUNT = 3
-
-_STOP_HINT_TEMPLATES = {
-    "match": (
-        "Стоп-критерий достигнут: найдена деталь с совпадением >= 95% "
-        "(«{name}», совпадение {score:.0%}). Если данных достаточно — "
-        "заверши цикл действием finish."
-    ),
-    "candidates": (
-        "Стоп-критерий достигнут: найдено {count} кандидата с совпадением "
-        ">= 80%. Если данных достаточно — заверши цикл действием finish."
-    ),
-}
-
-_FORCED_FINISH_MESSAGE = (
-    "Достигнут лимит попыток. Попробуйте детерминированный режим или уточните запрос."
-)
-
-_INSTRUCTION = (
-    "Ты — инженерный агент MTR. Выбери одно действие и верни строго JSON:\n"
-    '- {"action": "call_tool", "tool_name": "...", "input": {...}}\n'
-    '- {"action": "ask_user", "question": "..."}\n'
-    '- {"action": "finish", "final_answer": "..."}\n\n'
-    "Правила:\n"
-    "- Используй инструменты из списка ниже, когда нужно получить данные.\n"
-    "- Если данных не хватает и они могут быть у пользователя — action=ask_user.\n"
-    "- Когда ответ готов — action=finish с итоговым текстом.\n"
-    "- Завершай цикл (action=finish), если найдена деталь с совпадением >= 95% "
-    "или 3+ кандидата с совпадением >= 80%.\n"
-    "\n"
-    "Контракт ответа (action=finish):\n"
-    "- Отвечай прямо на вопрос пользователя: если спросили «хватает ли N штук» — "
-    "да/нет и число; если «покажи все/какие» — перечисли позиции.\n"
-    "- Дай рекомендацию (какую деталь выбрать / что проверить); если есть риски — укажи их.\n"
-    "- НЕ выдумывай числа и факты: используй только данные из результатов инструментов. "
-    "Если данных не хватает — вопрос через ask_user либо явно укажи в final_answer, чего не хватает.\n"
-    "- Не добавляй позиции, которых нет в результате поиска по каталогу.\n"
-    "\n"
-    "Примеры действий (JSON-структура, значения условные):\n"
-    '- call_tool: {"action": "call_tool", "tool_name": "search_catalog", "input": {"query": "отвод DN80 PN16"}}\n'
-    '- ask_user: {"action": "ask_user", "question": "Укажите материал детали"}\n'
-    '- finish: {"action": "finish", "final_answer": "В каталоге есть отвод DN80 PN16; остаток 12 шт. Рекомендация: уточнить материал перед заказом."}\n'
-    "\n"
-    "Эффективность:\n"
-    "- Минимизируй число вызовов инструментов; не вызывай один и тот же инструмент "
-    "с одинаковым входом повторно.\n"
-    "- Если нужные данные уже получены — не запрашивай их снова, переходи к finish.\n"
-    "- Справочные запросы («что это», «объясни параметры», «чем отличается») обычно "
-    "требуют не более 1–2 инструментов.\n"
-)
 
 
 class LLMAgent:
@@ -137,7 +95,7 @@ class LLMAgent:
         last_repeat: List[tuple] = []
         forced_reason: Optional[str] = None
 
-        history.append(_build_initial_prompt(query, parsed, tools))
+        history.append(build_llm_agent_initial_prompt(query, parsed, tools))
         start = time.monotonic()
 
         while True:
@@ -150,10 +108,10 @@ class LLMAgent:
                 break
 
             self.iterations += 1
-            prompt = _build_turn_prompt(history)
+            prompt = build_llm_agent_turn_prompt(history)
             iter_start = time.monotonic()
             try:
-                llm_text = self._llm.invoke(prompt)
+                llm_text = self._llm.invoke(prompt, stage="agent")
             except AgentError as e:
                 warnings.append(f"Ошибка LLM: {e}")
                 self._logger.record(prompt, {"error": str(e)}, _ms(time.monotonic() - iter_start),
@@ -189,7 +147,7 @@ class LLMAgent:
                     warnings.append(
                         f"Инструмент «{action.tool_name}» повторялся с одинаковыми параметрами."
                     )
-                    forced_reason = _FORCED_FINISH_MESSAGE
+                    forced_reason = FORCED_FINISH_MESSAGE
                     break
 
                 outcome, tool_error = self._execute_instrument(action, self._request_id)
@@ -205,7 +163,7 @@ class LLMAgent:
                     hint = _stop_criteria_hint(rows)
                     if hint:
                         history.append(hint)
-                history.append(_summarize_tool(action, outcome, tool_error))
+                history.append(summarize_tool_result(action.tool_name, outcome, tool_error))
                 continue
 
             if action.action == "ask_user":
@@ -234,8 +192,8 @@ class LLMAgent:
             components=components,
             warnings=warnings,
             errors=errors,
-            final_answer=_FORCED_FINISH_MESSAGE,
-            forced_reason=forced_reason or _FORCED_FINISH_MESSAGE,
+            final_answer=FORCED_FINISH_MESSAGE,
+            forced_reason=forced_reason or FORCED_FINISH_MESSAGE,
             elapsed_ms=_ms(time.monotonic() - start),
         )
 
@@ -313,64 +271,6 @@ class LLMAgent:
         }
 
 
-# ---------------------------------------------------------------------------
-# Промпты
-# ---------------------------------------------------------------------------
-
-def _build_initial_prompt(query: str, parsed: Any, tools: List[Dict[str, Any]]) -> str:
-    lines = [_INSTRUCTION]
-    if tools:
-        lines.append("Доступные инструменты (JSON Schema для input):")
-        for t in tools:
-            lines.append("- {name}: {desc}; input_schema={schema}".format(
-                name=t.get("name"),
-                desc=t.get("description"),
-                schema=json.dumps(t.get("input_schema", {}), ensure_ascii=False),
-            ))
-        lines.append(
-            "Каждый инструмент возвращает структурированный результат (поле result): "
-            "ищи в нём имена, коды (mtr_code/ksm_code), остатки, параметры. "
-            "Используй только реальные данные из result — не додумывай. "
-            "Если поиск ничего не нашёл — так и напиши в final_answer, не выдумывай "
-            "позиции и не выдавай совпадения без проверки каталога."
-        )
-    if parsed is not None:
-        lines.append("Разобранный запрос (контекст):")
-        lines.append(json.dumps(_parsed_context(parsed), ensure_ascii=False, default=str))
-    lines.append("Запрос пользователя: " + query)
-    return "\n".join(lines)
-
-
-def _build_turn_prompt(history: List[str]) -> str:
-    return "\n\n".join(history) + "\n\nВыбери следующее действие (JSON)."
-
-
-def _summarize_tool(action: Any, outcome: Dict[str, Any], tool_error: Optional[Dict[str, Any]]) -> str:
-    if tool_error:
-        return (
-            f"Результат {action.tool_name}: ОШИБКА {tool_error.get('code')} — "
-            f"{tool_error.get('message')}"
-        )
-    payload = outcome.get("result")
-    if isinstance(payload, dict) and "value" in payload:
-        payload = payload["value"]
-    try:
-        text = json.dumps(payload, ensure_ascii=False, default=str)[:2000]
-    except TypeError:
-        text = str(payload)[:2000]
-    return f"Результат {action.tool_name}: {text}"
-
-
-def _parsed_context(parsed: Any) -> Dict[str, Any]:
-    return {
-        "item_types": getattr(parsed, "item_types", []),
-        "technical_filters": getattr(parsed, "technical_filters", {}),
-        "component_ids": getattr(parsed, "component_ids", []),
-        "unit_ids": getattr(parsed, "unit_ids", []),
-        "operations": getattr(parsed, "operations", []),
-    }
-
-
 def _normalize_result(outcome: Dict[str, Any], tool_name: str) -> List[Dict[str, Any]]:
     """Преобразует результат инструмента в строки-компоненты для сборщика."""
     payload = outcome.get("result")
@@ -428,7 +328,7 @@ def _stop_criteria_hint(rows: List[Dict[str, Any]]) -> Optional[str]:
             if best is None or float(score) > best[1]:
                 best = (row, float(score))
     if best is not None and best[1] >= STOP_MATCH_SCORE:
-        return _STOP_HINT_TEMPLATES["match"].format(
+        return STOP_HINT_TEMPLATES["match"].format(
             name=best[0].get("name") or "деталь",
             score=best[1],
         )
@@ -438,5 +338,5 @@ def _stop_criteria_hint(rows: List[Dict[str, Any]]) -> Optional[str]:
         if isinstance(row.get("match_score"), (int, float)) and float(row["match_score"]) >= STOP_CANDIDATE_SCORE
     )
     if count >= STOP_CANDIDATE_COUNT:
-        return _STOP_HINT_TEMPLATES["candidates"].format(count=count)
+        return STOP_HINT_TEMPLATES["candidates"].format(count=count)
     return None

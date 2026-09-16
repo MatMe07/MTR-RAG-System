@@ -24,7 +24,7 @@ class FakeClient:
         }
         self.calls = []
 
-    def invoke(self, prompt, use_cache=True):
+    def invoke(self, prompt, use_cache=True, stage=""):
         self.calls.append(prompt)
         return self.payload
 
@@ -150,7 +150,7 @@ class EnrichHookTest(unittest.TestCase):
         class Boom:
             _metrics = {"extractor_calls": 0, "extractor_hits": 0, "extractor_errors": 0}
 
-            def invoke(self, prompt, use_cache=True):
+            def invoke(self, prompt, use_cache=True, stage=""):
                 raise RuntimeError("llm down")
 
         ex = LLMExtractor(client=Boom())

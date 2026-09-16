@@ -5,6 +5,10 @@
 required_tools, required_sources, mandatory_warning, human_review_required.
 Результаты пишутся в data/evaluation/results/40_questions_report.json и .md.
 
+Мягкий чек (без assert): соответствие answer.intent категории запроса
+(INTENT_BY_CATEGORY) попадает в отчёт как intent_match — для контроля
+сходимости интентов с TASK_RULES/_intent_label, но не ломает тест.
+
 Жёсткие инварианты (не должны нарушаться никогда):
 - все 40 запросов выполняются без исключений;
 - каждый ответ не пуст и идёт по маршруту agent;
@@ -32,6 +36,18 @@ RESULTS_DIR = _REPO_ROOT / "data" / "evaluation" / "results"
 MIN_TOOLS_COVERAGE = int(os.getenv("AGENT_EVAL_MIN_TOOLS", "35"))
 STRICT = os.environ.get("AGENT_EVAL_STRICT") == "1"
 
+# Ожидаемые интенты по категории (мягкий чек для отчёта, без assert).
+INTENT_BY_CATEGORY = {
+    "replacement": {"replacement"},
+    "inventory": {"inventory"},
+    "toir": {"maintenance"},
+    "equipment_guidance": {"equipment_guidance"},
+    "object_configuration": {"object_configuration"},
+    "composite_replacement": {"replacement", "maintenance"},
+    "impact_analysis": {"impact_analysis"},
+    "document_search": {"document_search"},
+}
+
 
 def _load_cases():
     with open(DATA_FILE, encoding="utf-8") as fh:
@@ -51,6 +67,9 @@ def _run_case(case):
         "category": case.get("category"),
         "question": case["question"],
         "intent": answer.intent,
+        "intent_match": answer.intent in INTENT_BY_CATEGORY.get(
+            case.get("category"), set()
+        ),
         "tools": answer.tools_used,
         "tools_ok": req_tools.issubset(have_tools),
         "missing_tools": sorted(req_tools - have_tools),
@@ -73,6 +92,7 @@ def _write_report(results):
         "sources_ok": sum(1 for r in results if r["sources_ok"]),
         "warnings_ok": sum(1 for r in results if r["warning_ok"]),
         "review_pass": sum(1 for r in results if r["review_pass"]),
+        "intent_match": sum(1 for r in results if r["intent_match"]),
     }
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -91,14 +111,15 @@ def _write_report(results):
              f"- tools: {summary['tools_ok']}/{summary['total']}, "
              f"sources: {summary['sources_ok']}/{summary['total']}, "
              f"warnings: {summary['warnings_ok']}/{summary['total']}, "
-             f"review pass: {summary['review_pass']}/{summary['total']}",
-             "", "| case | tools | sources | warning | review |", "|---|---|---|---|---|"]
+             f"review pass: {summary['review_pass']}/{summary['total']}, "
+             f"intent match: {summary['intent_match']}/{summary['total']}",
+             "", "| case | intent | tools | sources | warning | review |", "|---|---|---|---|---|---|"]
     for r in results:
         flags = "P" if r["tools_ok"] else "F"
         flags += "P" if r["sources_ok"] else "F"
         flags += "P" if r["warning_ok"] else "F"
         flags += "P" if r["review_pass"] else "F"
-        lines.append(f"| {r['case_id']} | {r['tools_ok']} | {r['sources_ok']} | {r['warning_ok']} | {r['review_pass']} |")
+        lines.append(f"| {r['case_id']} | {r['intent']} | {r['tools_ok']} | {r['sources_ok']} | {r['warning_ok']} | {r['review_pass']} |")
     (RESULTS_DIR / "40_questions_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return report
 

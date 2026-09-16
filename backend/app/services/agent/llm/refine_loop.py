@@ -25,145 +25,18 @@ from ..core.exceptions import LLMResponseError
 from ..tools.error_handler import REQUIRED_TOOLS, ErrorHandler
 from ..tools.instruments import run_instrument
 from ..tools.tool_dal import ToolDAL
+from .prompts import (
+    build_refine_loop_initial_prompt,
+    build_refine_loop_turn_prompt,
+    refine_feedback,
+    summarize_tool_result,
+)
 from .response_parser import LLMResponseParser
 
 log = logging.getLogger("mtr.agent.llm.refine_loop")
 
 MAX_ITERATIONS = 3
 MAX_TOTAL_SECONDS = 60.0
-
-
-_LOOP_INSTRUCTION = (
-    "Ты — инженерный агент MTR, режим дооформления ответа (C1+). "
-    "Детерминированный пайплайн уже собрал структурированный ответ "
-    "(components/sources/warnings) и черновой текст. Твоя задача — инструментами "
-    "проверить и уточнить факты, затем итоговым текстом закрыть перечисленные ниже "
-    "недостатки ответа. Структуру components НЕ меняй: ты влияешь только на текст.\n"
-    "\n"
-    "Возможные действия (верни строго один JSON):\n"
-    '- {"action": "call_tool", "tool_name": "...", "input": {...}}\n'
-    '- {"action": "finish", "final_answer": "..."}\n'
-    "\n"
-    "Запрещено действие ask_user: в этом режиме нельзя спрашивать пользователя. "
-    "Если данных не хватает — честно напиши об этом в final_answer.\n"
-    "\n"
-    "Правила:\n"
-    "- Используй ТОЛЬКО данные из структурированного ответа и результатов "
-    "инструментов: не выдумывай коды, остатки, параметры, позиции.\n"
-    "- Отвечай прямо на запрос (да/нет и число для «хватает ли», перечень для "
-    "«покажи все», вердикт для складских интентов).\n"
-    "- Сначала получай недостающие данные инструментами (call_tool), затем "
-    "завершай цикл качественным текстом (finish). Если инструменты не помогают — "
-    "finish с указанием, чего не хватает.\n"
-    "- Не вызывай один и тот же инструмент с одинаковыми параметрами повторно.\n"
-)
-
-
-def _format_gaps(gaps: List[Any]) -> str:
-    lines = []
-    for g in gaps:
-        if isinstance(g, dict):
-            severity, gtype, detail = g.get("severity", "?"), g.get("type", "?"), g.get("detail", "")
-        else:
-            severity, gtype, detail = g.severity, g.type, g.detail
-        lines.append(f"- [{severity}] {gtype}: {detail}")
-    return "\n".join(lines) if lines else "- нет явных недостатков"
-
-
-def _format_structured_answer(answer: Any) -> str:
-    parts = []
-    for c in (answer.components or [])[:10]:
-        name = getattr(c, "name", None) or (c.get("name") if isinstance(c, dict) else None) or "?"
-        status = getattr(c, "status", "") or (c.get("status") if isinstance(c, dict) else "")
-        qty = getattr(c, "quantity", None)
-        if isinstance(c, dict):
-            qty = c.get("quantity")
-        parts.append(f"  - {name}: {status} (кол-во: {qty})")
-    if getattr(answer, "review_verdict", None):
-        issues = getattr(answer, "review_issues", None) or []
-        parts.append(
-            f"  Проверка качества: {answer.review_verdict} "
-            + (f"({'; '.join(issues[:3])})" if issues else "")
-        )
-    warnings = getattr(answer, "warnings", None) or []
-    if warnings:
-        parts.append(f"  Предупреждения: {'; '.join(warnings[:5])}")
-    return "\n".join(parts) if parts else "  (пусто)"
-
-
-def _parsed_context(parsed: Any) -> Dict[str, Any]:
-    return {
-        "item_types": getattr(parsed, "item_types", []),
-        "technical_filters": getattr(parsed, "technical_filters", {}),
-        "component_ids": getattr(parsed, "component_ids", []),
-        "unit_ids": getattr(parsed, "unit_ids", []),
-        "operations": getattr(parsed, "operations", []),
-        "units_count": getattr(parsed, "units_count", None),
-        "intents": getattr(parsed, "intents", []),
-    }
-
-
-def _build_initial_prompt(
-    query: str,
-    parsed: Any,
-    answer: Any,
-    gaps: List[Any],
-    tools: List[Dict[str, Any]],
-) -> str:
-    lines = [_LOOP_INSTRUCTION]
-    if tools:
-        lines.append("Доступные инструменты (input_schema):")
-        for t in tools:
-            lines.append("- {name}: {desc}; input_schema={schema}".format(
-                name=t.get("name"),
-                desc=t.get("description"),
-                schema=json.dumps(t.get("input_schema", {}), ensure_ascii=False),
-            ))
-    if parsed is not None:
-        lines.append("Разобранный запрос (контекст):")
-        lines.append(json.dumps(_parsed_context(parsed), ensure_ascii=False, default=str))
-    lines.append("Запрос пользователя: " + query)
-    lines.append("Структурированный ответ (НЕ менять components):")
-    lines.append(_format_structured_answer(answer))
-    lines.append("Недостатки, которые нужно закрыть (gaps):")
-    lines.append(_format_gaps(gaps))
-    return "\n".join(lines)
-
-
-def _build_turn_prompt(history: List[str], feedback: Optional[str] = None) -> str:
-    turn = "\n\n".join(history)
-    if feedback:
-        turn += "\n\n" + feedback
-    return turn + "\n\nВыбери следующее действие (JSON)."
-
-
-def _summarize_tool(
-    tool_name: str,
-    outcome: Dict[str, Any],
-    tool_error: Optional[Dict[str, Any]],
-) -> str:
-    if tool_error:
-        return (
-            f"Результат {tool_name}: ОШИБКА {tool_error.get('code')} — "
-            f"{tool_error.get('message')}"
-        )
-    payload = outcome.get("result")
-    if isinstance(payload, dict) and "value" in payload:
-        payload = payload["value"]
-    try:
-        text = json.dumps(payload, ensure_ascii=False, default=str)[:2000]
-    except TypeError:
-        text = str(payload)[:2000]
-    return f"Результат {tool_name}: {text}"
-
-
-def _gap_feedback(gaps: List[Any]) -> str:
-    if not gaps:
-        return "Повторная проверка после шага: гейт пройден (verdict=pass)."
-    return (
-        "Повторная проверка после шага: гейт НЕ пройден. Оставшиеся недостатки:\n"
-        + _format_gaps(gaps)
-    )
 
 
 @dataclass
@@ -256,7 +129,7 @@ def run_refine_loop(
     history: List[str] = []
 
     def build_turn(feedback: Optional[str] = None) -> str:
-        return _build_turn_prompt(history, feedback)
+        return build_refine_loop_turn_prompt(history, feedback)
 
     def record_and_verify(it: IterationRecord) -> None:
         """Логирует итерацию и запускает повторную верификацию (гейт)."""
@@ -278,7 +151,7 @@ def run_refine_loop(
             )
         result.iterations.append(it)
 
-    history.append(_build_initial_prompt(query, parsed, answer, gaps, _available_tools()))
+    history.append(build_refine_loop_initial_prompt(query, parsed, answer, gaps, _available_tools()))
     used_signatures: set = set()
     start = time.monotonic()
     tokens_start = _llm_tokens_used(llm_client)
@@ -291,7 +164,7 @@ def run_refine_loop(
         it = IterationRecord(n=n)
         iter_start = time.monotonic()
         try:
-            llm_text = llm_client.invoke(build_turn())
+            llm_text = llm_client.invoke(build_turn(), stage="refine")
         except Exception as e:  # noqa: BLE001
             it.action = "llm_error"
             it.error = str(e)
@@ -314,7 +187,7 @@ def run_refine_loop(
             record_and_verify(it)
             if result.passed:
                 break
-            history.append(_gap_feedback(it.gaps))
+            history.append(refine_feedback(it.gaps))
             continue
 
         it.action = action.action
@@ -330,7 +203,7 @@ def run_refine_loop(
             record_and_verify(it)
             if result.passed:
                 break
-            history.append(_gap_feedback(it.gaps))
+            history.append(refine_feedback(it.gaps))
             continue
 
         if action.action == "call_tool":
@@ -347,7 +220,7 @@ def run_refine_loop(
                 record_and_verify(it)
                 if result.passed:
                     break
-                history.append(_gap_feedback(it.gaps))
+                history.append(refine_feedback(it.gaps))
                 continue
             used_signatures.add(signature)
             try:
@@ -364,7 +237,7 @@ def run_refine_loop(
         record_and_verify(it)
         if result.passed:
             break
-        history.append(_gap_feedback(it.gaps))
+        history.append(refine_feedback(it.gaps))
 
     result.final_answer = answer.explanation
     result.llm_tokens_used = max(0, _llm_tokens_used(llm_client) - tokens_start)
@@ -396,4 +269,4 @@ def _run_instrument_step(
     )
     tool_error = outcome.get("error")
     it.error = tool_error.get("message") if tool_error else None
-    history.append(_summarize_tool(action.tool_name, outcome, tool_error))
+    history.append(summarize_tool_result(action.tool_name, outcome, tool_error))

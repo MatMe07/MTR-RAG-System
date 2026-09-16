@@ -1,14 +1,15 @@
 {
-  "generated_at": "2026-09-13T10:36:41.425933+00:00",
+  "generated_at": "2026-09-16T09:28:23.468231+00:00",
   "mode": "off",
   "strict": false,
-  "min_tools_coverage": 20,
+  "min_tools_coverage": 35,
   "summary": {
     "total": 40,
     "tools_ok": 40,
     "sources_ok": 39,
     "warnings_ok": 40,
-    "review_pass": 40
+    "review_pass": 40,
+    "intent_match": 35
   },
   "cases": [
     {
@@ -16,6 +17,7 @@
       "category": "replacement",
       "question": "Найди замену задвижке DN150 PN40 для участка с H2S, исходной задвижки на складе нет",
       "intent": "replacement",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -41,6 +43,7 @@
       "category": "replacement",
       "question": "Какой аналог отвода 90 426 на 10 подойдет для H2S, покажи сначала то, что есть на складе",
       "intent": "replacement",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -66,6 +69,7 @@
       "category": "replacement",
       "question": "У меня сломался отвод 90 426 на 10 на участке с H2S, предложи план замены и список деталей для ремонта",
       "intent": "maintenance",
+      "intent_match": false,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -90,6 +94,7 @@
       "category": "replacement",
       "question": "Нужна замена бесшовной трубы 108 на 6 из стали 20 на участке с H2S, подбери варианты и скажи, что проверить",
       "intent": "replacement",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -115,6 +120,7 @@
       "category": "replacement",
       "question": "На складе нет задвижки DN200 PN63, найди подходящую замену и проверь, подойдет ли она к соседним деталям",
       "intent": "replacement",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -140,6 +146,7 @@
       "category": "replacement",
       "question": "Подбери переход с 219 на 159 для газа с CO2, нужен вариант из наличия и с объяснением отличий",
       "intent": "replacement",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -165,6 +172,7 @@
       "category": "replacement",
       "question": "Найди замену заглушке 426 на 12 из стали 09ГСФ для коррозионного участка, покажи варианты на складе",
       "intent": "replacement",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -190,6 +198,7 @@
       "category": "inventory",
       "question": "Покажи все детали для H2S, которых сейчас нет на складе, и расставь их по срочности закупки",
       "intent": "inventory",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -214,6 +223,7 @@
       "category": "inventory",
       "question": "На следующей неделе ремонт участка с H2S, проверь хватает ли труб, отводов, переходов, задвижек, заглушек и тройников по две штуки",
       "intent": "inventory",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -238,6 +248,7 @@
       "category": "inventory",
       "question": "Сколько отводов 90 426 на 10 есть на складе и какие из них подходят для H2S",
       "intent": "inventory",
+      "intent_match": true,
       "tools": [
         "catalog_search",
         "stock_query",
@@ -261,6 +272,7 @@
       "category": "inventory",
       "question": "Выбери десять самых важных позиций для пополнения склада перед ремонтом газопровода с H2S",
       "intent": "inventory",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -285,6 +297,7 @@
       "category": "inventory",
       "question": "Посчитай запас деталей для ремонта трех таких же участков как UNIT-SYN-GAS-001, один полный комплект должен всегда оставаться на складе",
       "intent": "inventory",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -309,6 +322,7 @@
       "category": "inventory",
       "question": "Найди на складе одинаковые по параметрам детали с разными кодами КСМ и покажи возможные дубли",
       "intent": "inventory",
+      "intent_match": true,
       "tools": [
         "catalog_search",
         "duplicate_detector",
@@ -333,6 +347,7 @@
       "category": "inventory",
       "question": "Покажи позиции с остатком больше пятидесяти штук, которые не установлены ни на одном тестовом участке",
       "intent": "inventory",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -357,6 +372,7 @@
       "category": "inventory",
       "question": "Собери заявку на пополнение склада для участка с CO2, включи только позиции с остатком меньше трех штук",
       "intent": "inventory",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -383,6 +399,7 @@
       "category": "toir",
       "question": "Составь план обслуживания участка UNIT-SYN-H2S-001 на следующий месяц и перечисли нужные запчасти",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -407,6 +424,7 @@
       "category": "toir",
       "question": "На участке с H2S отказала задвижка COMP-SYN-010, распиши что проверить до снятия и что подготовить для замены",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -431,6 +449,7 @@
       "category": "toir",
       "question": "На трубе 108 на 6 участка с H2S нашли утечку, предложи порядок ремонта и проверь наличие материалов",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -455,6 +474,7 @@
       "category": "toir",
       "question": "Подготовь список деталей и документов для плановой замены задвижки DN200 PN63 на UNIT-SYN-GAS-001",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -479,6 +499,7 @@
       "category": "toir",
       "question": "Выбери пять деталей с самым высоким риском для ремонта коррозионного участка и объясни почему они важны",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -503,6 +524,7 @@
       "category": "equipment_guidance",
       "question": "Расскажи простыми словами про задвижку KSM-SYN-REG-000591 и объясни все ее параметры",
       "intent": "equipment_guidance",
+      "intent_match": true,
       "tools": [
         "catalog_search",
         "regulation_lookup"
@@ -523,6 +545,7 @@
       "category": "equipment_guidance",
       "question": "Объясни что означает отвод 90 426 на 10 и где такую деталь используют",
       "intent": "equipment_guidance",
+      "intent_match": true,
       "tools": [
         "catalog_search",
         "regulation_lookup"
@@ -543,6 +566,7 @@
       "category": "equipment_guidance",
       "question": "Что нужно поставить перед задвижкой DN200 PN63 на газопроводе и какие детали проверить рядом с ней",
       "intent": "inventory",
+      "intent_match": false,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -567,6 +591,7 @@
       "category": "equipment_guidance",
       "question": "Расскажи чем переход отличается от отвода и покажи по одному примеру из нашего каталога",
       "intent": "equipment_guidance",
+      "intent_match": true,
       "tools": [
         "catalog_search",
         "regulation_lookup"
@@ -587,6 +612,7 @@
       "category": "equipment_guidance",
       "question": "Объясни параметры трубы KSM-SYN-REG-000004 и скажи какие из них важнее всего при подборе замены",
       "intent": "equipment_guidance",
+      "intent_match": true,
       "tools": [
         "catalog_search",
         "regulation_lookup"
@@ -607,6 +633,7 @@
       "category": "object_configuration",
       "question": "Собери список деталей для нового участка DN150 PN40 с газом H2S длиной сто метров",
       "intent": "maintenance",
+      "intent_match": false,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -631,6 +658,7 @@
       "category": "object_configuration",
       "question": "Покажи из каких деталей состоит UNIT-SYN-H2S-001 и что стоит до и после задвижки COMP-SYN-010",
       "intent": "inventory",
+      "intent_match": false,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -655,6 +683,7 @@
       "category": "object_configuration",
       "question": "В схеме есть труба, отвод, переход, заглушка и тройник, добавь деталь для перекрытия потока и подбери ее параметры",
       "intent": "object_configuration",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -678,6 +707,7 @@
       "category": "object_configuration",
       "question": "Проверь весь участок UNIT-SYN-CO2-001 и покажи какие детали подходят по размерам, но еще не подтверждены для CO2",
       "intent": "inventory",
+      "intent_match": false,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -702,6 +732,7 @@
       "category": "composite_replacement",
       "question": "У меня сломался отвод COMP-SYN-008, составь полный комплект замены и план работ",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -726,6 +757,7 @@
       "category": "composite_replacement",
       "question": "Задвижка COMP-SYN-010 сломалась, собери комплект для ее замены вместе с соединительными деталями",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -750,6 +782,7 @@
       "category": "composite_replacement",
       "question": "Поврежден переход COMP-SYN-009 и часть соседней трубы, предложи единый комплект для ремонта",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -774,6 +807,7 @@
       "category": "composite_replacement",
       "question": "Заглушка COMP-SYN-011 повреждена, подготовь список деталей и проверок для безопасной замены",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -798,6 +832,7 @@
       "category": "composite_replacement",
       "question": "Нужно заменить шесть метров трубы 108 на 6 на участке H2S, собери комплект ремонта со склада",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -822,6 +857,7 @@
       "category": "composite_replacement",
       "question": "На участке с H2S одновременно сломались отвод и задвижка, предложи общий план замены и проверь склад",
       "intent": "maintenance",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "maintenance_planner",
@@ -846,6 +882,7 @@
       "category": "impact_analysis",
       "question": "Хотим поставить задвижку DN200 вместо DN150, покажи какие соседние детали придется заменить или проверить",
       "intent": "impact_analysis",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -869,6 +906,7 @@
       "category": "impact_analysis",
       "question": "Участок UNIT-SYN-GAS-001 переводят с природного газа на H2S, перечисли что нужно перепроверить",
       "intent": "impact_analysis",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -892,6 +930,7 @@
       "category": "impact_analysis",
       "question": "Нужно заменить трубу из стали 20 на 09Г2С, покажи что изменится для сварки и соседних деталей",
       "intent": "impact_analysis",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -915,6 +954,7 @@
       "category": "document_search",
       "question": "Найди паспорта и ТУ для всех деталей участка UNIT-SYN-H2S-001 и покажи чего не хватает",
       "intent": "document_search",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",
@@ -937,6 +977,7 @@
       "category": "document_search",
       "question": "Покажи откуда взяты ГОСТы для отвода KSM-SYN-REG-000242 и что каждый из них подтверждает",
       "intent": "document_search",
+      "intent_match": true,
       "tools": [
         "graph_search",
         "catalog_search",

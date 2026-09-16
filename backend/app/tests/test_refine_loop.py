@@ -60,7 +60,7 @@ class _FakeLLM:
         self.calls: List[str] = []
         self._total_tokens = 0
 
-    def invoke(self, prompt):
+    def invoke(self, prompt, **kwargs):
         self.calls.append(prompt)
         if self._idx >= len(self._actions):
             raise RuntimeError("_FakeLLM: все действия исчерпаны")
@@ -79,7 +79,7 @@ class _RaiseOnFirstLLM:
     def __init__(self):
         self.calls: List[str] = []
 
-    def invoke(self, prompt):
+    def invoke(self, prompt, **kwargs):
         self.calls.append(prompt)
         raise RuntimeError("LLM недоступен")
 
@@ -234,7 +234,7 @@ class TestRefineLoopBlockedActions:
         original_invoke = llm.invoke
         calls_made = [0]
 
-        def _bad_invoke(prompt):
+        def _bad_invoke(prompt, **kwargs):
             calls_made[0] += 1
             if calls_made[0] == 1:
                 return "Это не JSON, просто текст."
@@ -320,7 +320,7 @@ class TestRefineLoopTokensAndTime:
         class _NoMetricsLLM:
             def __init__(self):
                 self.calls = []
-            def invoke(self, prompt):
+            def invoke(self, prompt, **kwargs):
                 self.calls.append(prompt)
                 return json.dumps({"action": "finish", "final_answer": "pass"})
 
@@ -360,7 +360,7 @@ class TestRefineLoopLlmError:
         first_invoke = llm.invoke
 
         call_count = [0]
-        def _flaky(prompt):
+        def _flaky(prompt, **kwargs):
             call_count[0] += 1
             if call_count[0] == 1:
                 return first_invoke(prompt)

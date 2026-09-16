@@ -40,7 +40,7 @@ class _E2ELFake:
     def __init__(self):
         self.calls = []
 
-    def invoke(self, prompt):
+    def invoke(self, prompt, **kwargs):
         self.calls.append(prompt)
         if len(self.calls) % 2 == 1:
             return json.dumps({

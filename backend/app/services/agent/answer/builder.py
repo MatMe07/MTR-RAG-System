@@ -82,6 +82,7 @@ class AnswerBuilder:
             warnings=warnings,
             errors=result.get("errors"),
             recommendations=recommendations,
+            intent=intent,
         )
         # LLM/refine final text (head_answer) — осмысленный пользовательский
         # текст; подставляем его в explanation, если генератор его не дал.

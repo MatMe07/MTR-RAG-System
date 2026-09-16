@@ -11,64 +11,9 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from .json_utils import extract_json_object
+from .prompts import REFINE_PROMPT_TEMPLATE, format_gaps, format_structured_answer
 
 log = logging.getLogger("mtr.agent.llm.refine")
-
-_REFINE_PROMPT_TEMPLATE = """\
-Ты — инженерный агент MTR. Детерминированный пайплайн уже собрал структурированный \
-ответ, но он не полностью отвечает на запрос пользователя. \
-Твоя задача — дооформить текст ответа и explanation, НЕ ИЗМЕНЯЯ components/sources/warnings.
-
-Исходный запрос пользователя:
-{query}
-
-Структурированный ответ (components, warnings, sources):
-{structured_answer}
-
-Недостатки, которые нужно исправить:
-{gaps}
-
-Верни строго JSON:
-{{
-  "answer_text": "исправленный пользовательский текст ответа",
-  "explanation": "краткое обоснование",
-  "extra_recommendations": ["рекомендация 1", "рекомендация 2"],
-  "confidence_gate": "pass" | "still_unclear"
-}}
-
-Правила:
-- answer_text должен явно отвечать на запрос ( verdict-строки для «хватает ли», списки для «покажи все»).
-- Не повторяй сухие данные components — переформулируй.
-- Используй ТОЛЬКО данные из структурированного ответа и недостатков: не добавляй позиции,
-  коды, остатки или факты, которых нет в этих данных.
-- Если данных критически не хватает — confidence_gate = "still_unclear".
-"""
-
-
-def _format_gaps(gaps: List[Dict[str, Any]]) -> str:
-    lines = []
-    for g in gaps:
-        lines.append(f"- [{g.get('severity', '?')}] {g.get('type', '?')}: {g.get('detail', '')}")
-    return "\n".join(lines) if lines else "- неизвестные недостатки"
-
-
-def _format_structured_answer(answer: Any) -> str:
-    parts = []
-    for c in (answer.components or [])[:10]:
-        name = getattr(c, "name", None) or c.get("name", "?") if isinstance(c, dict) else "?"
-        status = getattr(c, "status", "") or (c.get("status", "") if isinstance(c, dict) else "")
-        qty = getattr(c, "quantity", None) or (c.get("quantity") if isinstance(c, dict) else None)
-        parts.append(f"  - {name}: {status} (кол-во: {qty})")
-    if hasattr(answer, "review_verdict") and answer.review_verdict:
-        issues = getattr(answer, "review_issues", None) or []
-        parts.append(
-            f"  Проверка качества: {answer.review_verdict} "
-            + (f"({'; '.join(issues[:3])})" if issues else "")
-        )
-    warnings = getattr(answer, "warnings", []) or []
-    if warnings:
-        parts.append(f"  Предупреждения: {'; '.join(warnings[:5])}")
-    return "\n".join(parts) if parts else "  (пусто)"
 
 
 class RefineResult:
@@ -101,10 +46,10 @@ def refine_answer(
         log.warning("[Refine] LLM client unavailable, skipping refine")
         return None
 
-    prompt = _REFINE_PROMPT_TEMPLATE.format(
+    prompt = REFINE_PROMPT_TEMPLATE.format(
         query=query,
-        structured_answer=_format_structured_answer(answer),
-        gaps=_format_gaps(gaps),
+        structured_answer=format_structured_answer(answer),
+        gaps=format_gaps(gaps),
     )
 
     try:

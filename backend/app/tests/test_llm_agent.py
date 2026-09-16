@@ -19,7 +19,7 @@ class FakeScriptedLLM:
         self.responses = list(responses)
         self.calls = []
 
-    def invoke(self, prompt):
+    def invoke(self, prompt, **kwargs):
         self.calls.append(prompt)
         if len(self.responses) <= len(self.calls) - 1:
             return json.dumps({"action": "finish", "final_answer": "завершено по умолчанию"})
@@ -150,7 +150,7 @@ def test_agent_reuse_resets_iterations(dal):
             self.responses = list(rs)
             self.calls = []
 
-        def invoke(self, prompt):
+        def invoke(self, prompt, **kwargs):
             self.calls.append(prompt)
             return self.responses[(len(self.calls) - 1) % len(self.responses)]
 

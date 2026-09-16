@@ -7,13 +7,18 @@ from typing import Any, Dict, List, Optional
 
 from langgraph.errors import GraphRecursionError
 
-from app.schemas import AgentAnswer, ParsedQuery
+from app.schemas import AgentAnswer, LLMCallRecord, LLMDiagnostics, ParsedQuery, RefineIterationRecord
 
 from .answer.builder import build_answer
 from .core.config import DEFAULT_CONFIG, AgentConfig
 from .core.state import create_initial_state
 from .graph.agent_graph import get_graph
-from .llm.client import LLMClient
+from .llm.client import (
+    LLMClient,
+    get_llm_client,
+    reset_llm_request_context,
+    set_llm_request_context,
+)
 from .parsing.hybrid_parser import HybridParser
 from .repository.repository_factory import get_repository
 
@@ -56,6 +61,7 @@ class AgentExecutor:
         self._repository = None
         self._llm = None
         self._llm_agent = llm_agent
+        self._active_refine_iterations: Optional[list] = None
 
     @property
     def graph(self):
@@ -84,29 +90,45 @@ class AgentExecutor:
         request_id: Optional[str] = None,
     ) -> AgentAnswer:
         start = time.time()
+        request_id = request_id or str(uuid.uuid4())
         log.info("[Executor] Execute query=%r mode=%s request_id=%s", query, mode, request_id)
 
-        if mode == "llm":
-            if not self.config.use_llm and self._llm_agent is None:
-                log.warning(
-                    "[Executor] mode='llm' запрошен, но AGENT_LLM_MODE != 'on' "
-                    "и LLM-агент не инжектирован. Откат к deterministic."
+        # LLM-вызовы внутри запроса привязываются к request_id (для diagnostics)
+        set_llm_request_context(request_id, mode)
+
+        answer: Optional[AgentAnswer] = None
+        try:
+            if mode == "llm":
+                if not self.config.use_llm and self._llm_agent is None:
+                    log.warning(
+                        "[Executor] mode='llm' запрошен, но AGENT_LLM_MODE != 'on' "
+                        "и LLM-агент не инжектирован. Откат к deterministic."
+                    )
+                else:
+                    answer = self._execute_llm(query, parsed, start, request_id=request_id)
+
+            if answer is None and mode == "auto":
+                answer = self._execute_auto(query, parsed, start, request_id=request_id)
+
+            if answer is None:
+                if parsed is None:
+                    parsed = self._parse_query(query)
+                answer = self._execute_deterministic(
+                    query, parsed, start, thread_id=thread_id, request_id=request_id
                 )
-            else:
-                return self._execute_llm(query, parsed, start, request_id=request_id)
-
-        if mode == "auto":
-            return self._execute_auto(query, parsed, start, request_id=request_id)
-
-        if parsed is None:
-            parsed = self._parse_query(query)
-
-        return self._execute_deterministic(query, parsed, start, thread_id=thread_id,
-                                           request_id=request_id)
+        finally:
+            try:
+                if answer is not None:
+                    self._finalize_llm_diagnostics(answer, request_id)
+            finally:
+                reset_llm_request_context()
+        return answer
 
     def _parse_query(self, query: str) -> ParsedQuery:
         log.info("[Executor] No parsed query, running HybridParser...")
         parser_start = time.time()
+        global_llm = self._global_llm()
+        metrics_before = self._llm_metrics_snapshot(global_llm)
         parser = HybridParser()
         parsed = parser.parse(query)
         log.info(
@@ -120,6 +142,12 @@ class AgentExecutor:
             (time.time() - parser_start) * 1000,
         )
         self._enrich_parsed(parsed)
+        metrics_after = self._llm_metrics_snapshot(global_llm)
+        if parsed.parser_diagnostics is not None:
+            # LLM-доизвлечение §1F происходит в _enrich_parsed — считаем дельту
+            parsed.parser_diagnostics.llm_extractor = self._extractor_delta(
+                metrics_before, metrics_after
+            )
         return parsed
 
     def _execute_deterministic(
@@ -232,6 +260,7 @@ class AgentExecutor:
             repository=self.repository,
             request_id=request_id,
         )
+        self._active_refine_iterations = self._loop_details(loop)
         answer.llm_tokens_used = loop.llm_tokens_used or (self._llm_tokens_used() - tokens_before)
 
         self._log_loop_iterations(query, request_id, loop, verification, start)
@@ -334,6 +363,124 @@ class AgentExecutor:
             except Exception:  # noqa: BLE001
                 return 0
         return 0
+
+    # ---------------------------------------------------------------- диагностика LLM
+    @staticmethod
+    def _global_llm():
+        """Глобальный LLM-клиент (модульный синглтон) — его зовёт LLMExtractor §1F."""
+        try:
+            return get_llm_client()
+        except Exception:  # noqa: BLE001
+            return None
+
+    @staticmethod
+    def _llm_metrics_snapshot(client) -> Optional[Dict[str, Any]]:
+        if client is None or not hasattr(client, "get_metrics"):
+            return None
+        try:
+            return dict(client.get_metrics())
+        except Exception:  # noqa: BLE001
+            return None
+
+    @staticmethod
+    def _extractor_delta(before: Optional[dict], after: Optional[dict]) -> Dict[str, Any]:
+        """Дельта метрик LLM-экстрактора (§1F) на время парсинга."""
+        if not before or not after:
+            return {"enabled": bool(after), "calls": 0, "hits": 0, "errors": 0, "tokens": 0}
+        return {
+            "enabled": True,
+            "calls": max(0, int(after.get("extractor_calls", 0)) - int(before.get("extractor_calls", 0))),
+            "hits": max(0, int(after.get("extractor_hits", 0)) - int(before.get("extractor_hits", 0))),
+            "errors": max(0, int(after.get("extractor_errors", 0)) - int(before.get("extractor_errors", 0))),
+            "tokens": max(0, int(after.get("total_tokens", 0)) - int(before.get("total_tokens", 0))),
+        }
+
+    @staticmethod
+    def _estimate_cost(model: Optional[str], prompt_tokens: int, completion_tokens: int) -> Optional[float]:
+        """Оценка стоимости в USD для диагностики (бесплатные модели — 0, иначе неизвестно)."""
+        if not isinstance(model, str) or not model:
+            return None
+        if ":free" in model:
+            return 0.0
+        return None
+
+    def _finalize_llm_diagnostics(self, answer: AgentAnswer, request_id: Optional[str]) -> None:
+        """Собирает answer.llm: вызовы LLM по запросу, токены, кэш, итерации C1+."""
+        clients: List[Any] = []
+        if getattr(self, "_llm", None) is not None:
+            clients.append(self._llm)
+        global_llm = self._global_llm()
+        if global_llm is not None and global_llm not in clients:
+            clients.append(global_llm)
+
+        use_llm = bool(getattr(self.config, "use_llm", False))
+        model_cfg = getattr(self.config, "llm_model", None)
+        model = model_cfg if isinstance(model_cfg, str) else None
+        diag = LLMDiagnostics(available=use_llm or bool(clients), model=model)
+
+        raw_calls: List[Dict[str, Any]] = []
+        for client in clients:
+            if hasattr(client, "request_calls"):
+                try:
+                    raw_calls.extend(client.request_calls(request_id) or [])
+                except Exception:  # noqa: BLE001
+                    pass
+            if hasattr(client, "reset_request"):
+                try:
+                    client.reset_request(request_id)
+                except Exception:  # noqa: BLE001
+                    pass
+
+        for rec in raw_calls:
+            if not isinstance(rec, dict):
+                continue
+            try:
+                diag.calls.append(LLMCallRecord(**rec))
+            except Exception:  # noqa: BLE001
+                continue
+
+        for c in diag.calls:
+            diag.total_calls += 1
+            diag.cache_hits += 1 if c.cache_hit else 0
+            diag.cache_misses += 1 if (not c.cache_hit and not c.error) else 0
+            diag.prompt_tokens += c.prompt_tokens
+            diag.completion_tokens += c.completion_tokens
+            diag.total_tokens += c.total_tokens
+            diag.duration_ms += c.duration_ms
+
+        refine = getattr(self, "_active_refine_iterations", None) or []
+        diag.refine_iterations = [
+            RefineIterationRecord(**it) for it in refine if isinstance(it, dict)
+        ]
+        self._active_refine_iterations = None
+
+        diag.used = bool(diag.calls) or bool(diag.refine_iterations)
+
+        if not diag.available:
+            diag.reason = "LLM отключён (AGENT_LLM_MODE != 'on' / клиент недоступен)"
+        elif not diag.used:
+            mode_now = getattr(answer, "mode", None)
+            verdict = getattr(answer, "verification_verdict", None)
+            if mode_now == "auto" and verdict == "pass":
+                diag.reason = (
+                    "LLM не вызывался: детерминированный auto-ответ прошёл quality gate "
+                    "(verdict=pass)"
+                )
+            elif mode_now == "auto" and getattr(answer, "offer_full_llm", False):
+                diag.reason = "LLM-вызовы C1+ не дали результата — предложено C2 пользователю"
+            else:
+                diag.reason = "LLM не вызывался в рамках запроса"
+        else:
+            diag.reason = (
+                f"LLM использовался: {len(diag.calls)} вызовов, "
+                f"{diag.prompt_tokens}+{diag.completion_tokens} токенов "
+                f"(всего {diag.total_tokens}), cache {diag.cache_hits}/{diag.cache_misses}"
+            )
+
+        diag.cost_estimate_usd = self._estimate_cost(
+            model, diag.prompt_tokens, diag.completion_tokens
+        )
+        answer.llm = diag
 
     def _apply_refine(self, query: str, answer: AgentAnswer, gaps: List) -> bool:
         """Выполняет LLM-дооформление (С1). Возвращает True если успешно.

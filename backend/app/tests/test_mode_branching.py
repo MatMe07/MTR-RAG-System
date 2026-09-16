@@ -16,7 +16,7 @@ class _FakeLLM:
         self.responses = list(responses)
         self.calls = []
 
-    def invoke(self, prompt):
+    def invoke(self, prompt, **kwargs):
         self.calls.append(prompt)
         idx = min(len(self.calls) - 1, len(self.responses) - 1)
         return self.responses[idx]

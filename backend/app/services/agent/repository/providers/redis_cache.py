@@ -30,6 +30,7 @@ _PREFIX_VERSION = "dictionaries:version"
 DEFAULT_TTLS = {
     "catalog:": 3600,        # каталог/компоненты — 1 час
     "stock:": 300,           # остатки — 5 минут
+    "llm:": 300,             # LLM-кеш — 5 минут
     "graph:": 1800,          # граф — 30 минут
     "neighbors:": 900,       # соседи — 15 минут
     "norms:": 86400,         # нормы — 24 часа

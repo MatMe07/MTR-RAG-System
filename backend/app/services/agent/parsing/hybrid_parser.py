@@ -1,5 +1,6 @@
 # query_parser/hybrid_parser.py
 
+import time
 from typing import Dict, List, Optional
 
 from app.schemas import (
@@ -10,6 +11,7 @@ from app.schemas import (
     Material,
     Normative,
     ParsedQuery,
+    ParserDiagnostics,
     Pressure,
     Source,
 )
@@ -21,6 +23,11 @@ from .dictionaries import get_operations, refresh_dictionaries
 from .enhanced.natasha_parser import NatashaParser
 from .parser import QueryParser
 from .parsers.operation_parser import OperationParser
+
+
+def _natasha_has_data(natasha: Dict) -> bool:
+    """Есть ли от Natasha что-то непустое (операции/параметры/типы/ID и т.п.)."""
+    return any(v for v in (natasha or {}).values())
 
 
 class HybridParser:
@@ -50,18 +57,40 @@ class HybridParser:
         # Алиасы из БД подтягиваются перед парсингом (TTL-кэш, дешёво)
         refresh_dictionaries()
 
+        start = time.time()
+        stages: Dict[str, float] = {}
+
         # 1. Rule-based парсинг
+        t_rule = time.time()
         rule_result = self.rule_parser.parse(text)
+        stages["rule"] = (time.time() - t_rule) * 1000
 
         # 2. Natasha парсинг (всегда запускаем, но используем по-разному)
+        t_nat = time.time()
         natasha_result = self.natasha_parser.parse(text)
+        stages["natasha"] = (time.time() - t_nat) * 1000
 
         # 3. Если rule уже хороший - только дополняем
         if rule_result.confidence >= self.RULE_CONFIDENCE_THRESHOLD:
-            return self._enrich_result(rule_result, natasha_result, text)
+            t_merge = time.time()
+            parsed = self._enrich_result(rule_result, natasha_result, text)
+            stages["merge"] = (time.time() - t_merge) * 1000
+            strategy = "enrich"
+        else:
+            # 4. Иначе - полноценное объединение
+            t_merge = time.time()
+            parsed = self._merge_results(rule_result, natasha_result, text)
+            stages["merge"] = (time.time() - t_merge) * 1000
+            strategy = "merge"
 
-        # 4. Иначе - полноценное объединение
-        return self._merge_results(rule_result, natasha_result, text)
+        parsed.parser_diagnostics = ParserDiagnostics(
+            parse_ms=(time.time() - start) * 1000,
+            strategy=strategy,
+            rule_confidence=rule_result.confidence,
+            natasha_used=_natasha_has_data(natasha_result),
+            stages_ms=stages,
+        )
+        return parsed
 
     # =========================================================
     # СТРАТЕГИИ ОБЪЕДИНЕНИЯ
