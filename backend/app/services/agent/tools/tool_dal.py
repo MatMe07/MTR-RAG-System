@@ -60,6 +60,15 @@ def _sample_lnd_path() -> Path:
     return d / "lnd_extract.md"
 
 
+_LND_SECTION_HEAD_NORM = {
+    "раздел": "раздел", "раздела": "раздел", "разделу": "раздел", "разделы": "раздел",
+    "глава": "глава", "главе": "глава", "главу": "глава", "главы": "глава",
+    "пункт": "пункт", "пункта": "пункт", "пункте": "пункт", "пункты": "пункт",
+    "параграф": "параграф", "параграфа": "параграф", "параграфе": "параграф",
+    "часть": "часть", "части": "часть",
+}
+
+
 class ToolDAL:
     """Адаптер DAL над IRepository для инструментов ЭТАПА 3."""
 
@@ -538,7 +547,7 @@ class ToolDAL:
             except Exception:
                 result = None
             if result is not None:
-                return result
+                return self._decorate_lnd_fragments(list(result))
 
         tokens = self._tokens(query)
         scored: List[Dict[str, Any]] = []
@@ -550,7 +559,35 @@ class ToolDAL:
             if hits:
                 scored.append({**frag, "score": hits})
         scored.sort(key=lambda x: x["score"], reverse=True)
-        return scored[: limit]
+        return self._decorate_lnd_fragments(scored[: limit])
+
+    @staticmethod
+    def _lnd_section_label(frag: Dict[str, Any]) -> str:
+        """Метка раздела ЛНД: «раздел 4/глава 2/пункт 3» из текста фрагмента.
+
+        P1-14: типизированный lnd_section для источников kind=lnd. Если
+        в строке ЛНД раздела нет — запасной идентификатор фрагмента.
+        """
+        text = f"{frag.get('title') or ''} {frag.get('text') or ''}"
+        m = re.search(
+            r"\b(?:раздел\w*|главе?\w*|пункт\w*|параграф\w*|част\w*)\s+[\d\.\-]+",
+            text,
+            re.IGNORECASE,
+        )
+        if m:
+            label = m.group(0).strip().lower()
+            head, _, tail = label.partition(" ")
+            norm = _LND_SECTION_HEAD_NORM.get(head, head)
+            return f"{norm} {tail}".strip()
+        return str(frag.get("fragment_id") or "")
+
+    @classmethod
+    def _decorate_lnd_fragments(cls, fragments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Проставляет lnd_section ЛНД-фрагментам (search_norms, P1-14)."""
+        for frag in fragments:
+            if frag.get("document_type") == "ЛНД" and "lnd_section" not in frag:
+                frag["lnd_section"] = cls._lnd_section_label(frag)
+        return fragments
 
     def _norm_fragments(self) -> List[Dict[str, Any]]:
         fragments: List[Dict[str, Any]] = []

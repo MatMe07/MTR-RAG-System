@@ -5,6 +5,7 @@
 import unittest
 
 from app.schemas import ParsedQuery
+from app.services.agent.llm.refine_loop import run_refine_loop  # noqa: F401,E402  # порядок импорта (circular import)
 from app.services.agent.tools.analytic_tools import sufficiency_check
 
 
@@ -80,6 +81,56 @@ class SufficiencyTest(unittest.TestCase):
         self.assertEqual(verdicts, {"труба": "хватает", "задвижка": "не хватает"})
         deficit = {c["item_type"]: c["deficit"] for c in result["components"]}
         self.assertEqual(deficit["задвижка"], 1)
+        self.assertTrue(result["review"])
+
+    def test_no_deficit_verdict_and_residual_table(self):
+        """P1-10/P2-26: при полной достаточности verdict=no_deficit + residual_table."""
+        state = {
+            "parsed": _parsed(item_types=["задвижка"], units_count=2),
+            "ksm_targets": [_target("задвижка", "KS1")],
+            "stock_rows": [
+                {"ksm_code": "KS1", "quantity": 5},
+                {"ksm_code": "KS2", "quantity": 10},
+            ],
+        }
+        result = sufficiency_check(state)
+        self.assertEqual(result["verdict"], "no_deficit")
+        self.assertFalse(result["review"])
+        table = result["residual_table"]
+        codes = {r["ksm_code"]: r for r in table}
+        self.assertEqual(codes["KS1"]["current_qty"], 5)
+        self.assertEqual(codes["KS1"]["item_type"], "задвижка")
+        self.assertEqual(codes["KS2"]["current_qty"], 10)
+        self.assertTrue(all(r["threshold"] >= 2 for r in table))
+
+    def test_deficit_verdict(self):
+        """P1-10: при дефиците verdict=deficit, а residual_table всё равно строится."""
+        state = {
+            "parsed": _parsed(item_types=["задвижка"], units_count=2),
+            "ksm_targets": [_target("задвижка", "KS1")],
+            "stock_rows": [{"ksm_code": "KS1", "quantity": 1}],
+        }
+        result = sufficiency_check(state)
+        self.assertEqual(result["verdict"], "deficit")
+        self.assertTrue(result["review"])
+        self.assertEqual(result["residual_table"][0]["current_qty"], 1)
+
+    def test_quantity_min_threshold_applies(self):
+        """P1-10: порог quantity_min (≥N) учитывается даже если потребность закрыта."""
+        state = {
+            "parsed": _parsed(
+                item_types=["задвижка"],
+                units_count=2,
+                stock_filters={"quantity_min": 5},
+            ),
+            "ksm_targets": [_target("задвижка", "KS1")],
+            "stock_rows": [{"ksm_code": "KS1", "quantity": 3}],
+        }
+        result = sufficiency_check(state)
+        comp = result["components"][0]
+        self.assertEqual(comp["verdict"], "не хватает")
+        self.assertEqual(comp["threshold"], 5)
+        self.assertEqual(result["verdict"], "deficit")
         self.assertTrue(result["review"])
 
 

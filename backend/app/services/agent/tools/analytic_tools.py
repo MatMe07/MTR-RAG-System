@@ -3,7 +3,7 @@
 import logging
 import time
 from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from ..core.state import AgentState
 from .core_tools import _empty_result, _source
@@ -215,6 +215,7 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
     """Расчёт рекомендуемого запаса с фильтрацией по наличию и ранжированием по срочности."""
     start = time.time()
     result = _empty_result()
+    result["excluded_due_to_medium"] = []
 
     targets = state.get("ksm_targets", [])
     stock_rows = state.get("stock_rows", [])
@@ -240,6 +241,23 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
     for target in targets[:20]:
         card = target.get("card")
         if not card:
+            continue
+
+        # P1-11: из инвентарного расчёта с активной H2S/CO2-средой исключаем
+        # позиции с ЯВНЫМ «пригодность не подтверждена» — но не молча, а с
+        # явным списком excluded_due_to_medium для аудита ответа.
+        excluded_reason = _excluded_due_to_medium(card, parsed)
+        if excluded_reason:
+            ksm = (card.get("codes") or {}).get("ksm_code")
+            comp = target.get("component", {})
+            result.setdefault("excluded_due_to_medium", []).append({
+                "ksm_code": ksm,
+                "mtr_code": (card.get("codes") or {}).get("mtr_code"),
+                "name": card.get("name"),
+                "item_type": card.get("item_type"),
+                "unit_id": comp.get("unit_id"),
+                "reason": excluded_reason,
+            })
             continue
 
         ksm = (card.get("codes") or {}).get("ksm_code")
@@ -363,11 +381,18 @@ def inventory_calculator(state: AgentState) -> Dict[str, Any]:
         result["purchase_recommendation"] = purchase_rec
 
     result["warnings"] = ["Расчёт — черновик: нормы запаса требуют утверждения"]
+    excluded = result.get("excluded_due_to_medium") or []
+    if excluded:
+        result["warnings"].append(
+            "Исключено из-за среды: "
+            f"{len(excluded)} позиций с явным «пригодность к H2S/CO2 не подтверждена»"
+        )
     result["review"] = True
     result["text"] = (
         f"Рассчитано {len(result['components'])} позиций"
         + (" (только отсутствующие на складе)" if out_of_stock_only else "")
         + (" — нет позиций ниже порога" if no_purchase_needed else "")
+        + (f" — исключено из-за среды: {len(excluded)}" if excluded else "")
     )
     result["duration_ms"] = (time.time() - start) * 1000
     return result
@@ -407,6 +432,62 @@ def _aggregate_stock_by_type(targets: List[Dict], stock_rows: List[Dict]) -> Dic
     return by_type
 
 
+def _item_type_for_ksm(targets: List[Dict], ksm) -> Optional[str]:
+    """Тип детали по ksm_code из карточек-целей (для residual-строк без item_type)."""
+    if not ksm:
+        return None
+    for target in targets:
+        card = target.get("card") or {}
+        if (card.get("codes") or {}).get("ksm_code") == ksm:
+            return card.get("item_type")
+    return None
+
+
+def _card_prop(card: Dict[str, Any], key: str, default: Any = None) -> Any:
+    """Значение свойства карточки (плоский или properties-слой)."""
+    if card is None:
+        return default
+    v = card.get(key)
+    if v is None:
+        p = (card.get("properties") or {}).get(key)
+        if p is not None:
+            v = p.get("value", default)
+    return v if v is not None else default
+
+
+def _active_safety_mediums(parsed: Any) -> List[str]:
+    """Активные среды запроса, требующие подтверждения пригодности (H2S/CO2)."""
+    tf = dict(getattr(parsed, "technical_filters", None) or {})
+    active: List[str] = []
+    if tf.get("h2s_confirmed"):
+        active.append("H2S")
+    if tf.get("co2_confirmed"):
+        active.append("CO2")
+    med = str(tf.get("medium") or "").lower()
+    if "h2s" in med or "сероводород" in med:
+        active.append("H2S")
+    if "co2" in med or "углекисл" in med or "co₂" in med:
+        active.append("CO2")
+    return sorted(set(active))
+
+
+def _excluded_due_to_medium(card: Dict[str, Any], parsed: Any) -> Optional[str]:
+    """Причина исключения из-за среды, иначе None.
+
+    Единая с P0 (search_catalog) семантика filter-only-false: исключаются
+    позиции с ЯВНЫМ отказом пригодности (h2s_confirmed=false / co2_confirmed=false).
+    unknown/null остаются в расчёте — их покрывает verifier gap safety_unconfirmed.
+    """
+    for medium in _active_safety_mediums(parsed):
+        key = "h2s_confirmed" if medium == "H2S" else "co2_confirmed"
+        if _card_prop(card, key) is False:
+            return (
+                f"{medium}: {key}=false — пригодность к среде не подтверждена, "
+                "позиция исключена"
+            )
+    return None
+
+
 @register_tool("sufficiency_check", "Проверка достаточности запаса «хватает ли по N штук»")
 def sufficiency_check(state: AgentState) -> Dict[str, Any]:
     """Агрегирует остаток по типу и сравнивает с потребностью N (units_count).
@@ -422,7 +503,17 @@ def sufficiency_check(state: AgentState) -> Dict[str, Any]:
 
     needed = getattr(parsed, "units_count", None) or 1
 
+    # Реальный минимальный порог = потребность N, но не ниже quantity_min
+    # из stock_filters («остаток ≥ X») — суффишенность считается по большему.
+    stock_filters = getattr(parsed, "stock_filters", None) or {}
+    quantity_min = stock_filters.get("quantity_min")
+
     by_type = _aggregate_stock_by_type(targets, stock_rows)
+
+    def _min_required(item_type: str) -> float:
+        if quantity_min is None:
+            return float(needed)
+        return max(float(needed), float(quantity_min))
 
     # Гарантируем verdict для КАЖДОГО запрошенного типа (в т.ч. нулевой остаток),
     # чтобы ответ явно говорил, каких типов не хватает (DoD п.3).
@@ -440,39 +531,64 @@ def sufficiency_check(state: AgentState) -> Dict[str, Any]:
     for item_type in sorted(by_type):
         bucket = by_type[item_type]
         sum_stock = bucket["sum_stock"]
-        sufficient = sum_stock >= needed
-        deficit = max(0, needed - sum_stock)
+        threshold = _min_required(item_type)
+        sufficient = sum_stock >= threshold
+        deficit = max(0, int(threshold - sum_stock))
         if not sufficient:
             all_sufficient = False
 
         verdict = "хватает" if sufficient else "не хватает"
         status_parts = [f"потребность {needed} шт.", f"остаток {sum_stock:.0f} шт."]
         if not sufficient:
-            status_parts.append(f"дефицит {deficit:.0f} шт.")
+            status_parts.append(f"дефицит {deficit} шт.")
 
         result["components"].append({
             "item_type": item_type,
             "quantity": sum_stock,
             "needed": needed,
+            "threshold": threshold,
             "deficit": deficit,
             "status": f"{verdict}: {item_type} — {'; '.join(status_parts)}",
             "verdict": verdict,
-            "detail": "хватает" if sufficient else f"не хватает {deficit:.0f} шт.",
+            "detail": "хватает" if sufficient else f"не хватает {deficit} шт.",
         })
 
         result["sources"].append(_source("stock", f"type:{item_type}",
                                          f"суммарный остаток по типу: {sum_stock:.0f}"))
 
+    # Таблица фактических остатков (residual): строка-компонент склада ↔ порог.
+    # Нужна как подтверждение проверки «хватает/дефицит» (P2-26: residual_table).
+    residual_table = []
+    seen_ksm: set = set()
+    for row in stock_rows:
+        ksm = row.get("ksm_code")
+        if not ksm or ksm in seen_ksm:
+            continue
+        seen_ksm.add(ksm)
+        qty = row.get("quantity")
+        row_type = row.get("item_type") or _item_type_for_ksm(targets, ksm)
+        residual_table.append({
+            "ksm_code": ksm,
+            "item_type": row_type or "неизвестно",
+            "current_qty": qty,
+            "threshold": _min_required(row_type) if row_type else float(needed),
+        })
+
     if all_sufficient:
         result["text"] = "Все запрошенные типы в достаточном количестве"
         result["review"] = False
+        result["verdict"] = "no_deficit"
     else:
         result["text"] = "Есть типы, которых не хватает"
         result["review"] = True
+        result["verdict"] = "deficit"
+
+    if residual_table:
+        result["residual_table"] = residual_table
 
     log.info(
-        "[sufficiency_check] needed=%s types=%d all_sufficient=%s",
-        needed, len(by_type), all_sufficient,
+        "[sufficiency_check] needed=%s types=%d all_sufficient=%s residual=%d",
+        needed, len(by_type), all_sufficient, len(residual_table),
     )
     result["duration_ms"] = (time.time() - start) * 1000
     return result

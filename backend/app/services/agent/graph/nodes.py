@@ -191,6 +191,7 @@ def answer_node(state: AgentState) -> Dict[str, Any]:
         "review": state.get("review_required", False),
         "normative_detail": state.get("normative_detail", ""),
         "purchase_recommendation": state.get("purchase_recommendation"),
+        "excluded_due_to_medium": state.get("excluded_due_to_medium", []),
         "answers": [state.get("context", {}).get("last_text", "")],
         "mode": state.get("context", {}).get("mode", "offline_rules"),
         "tools_used": state.get("context", {}).get("tools_used", []),
@@ -295,6 +296,8 @@ def _merge_result(state: AgentState, result: Dict[str, Any]) -> Dict[str, Any]:
         state["normative_detail"] = result["normative_detail"]
     if result.get("purchase_recommendation"):
         state["purchase_recommendation"] = result["purchase_recommendation"]
+    if result.get("excluded_due_to_medium"):
+        state.setdefault("excluded_due_to_medium", []).extend(result["excluded_due_to_medium"])
     if result.get("_tool_name"):
         state.setdefault("context", {}).setdefault("tools_used", []).append(result["_tool_name"])
 
@@ -305,6 +308,7 @@ def _merge_result(state: AgentState, result: Dict[str, Any]) -> Dict[str, Any]:
         "missing": state.get("missing", []),
         "normative_detail": state.get("normative_detail", ""),
         "purchase_recommendation": state.get("purchase_recommendation"),
+        "excluded_due_to_medium": state.get("excluded_due_to_medium", []),
         "review_required": state.get("review_required", False),
     }
 

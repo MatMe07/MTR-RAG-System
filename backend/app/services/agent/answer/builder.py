@@ -60,6 +60,10 @@ class AnswerBuilder:
         )))
         warning_categories = group_warnings(warnings)
         missing = list(dict.fromkeys(result.get("missing", [])))
+        excluded_due_to_medium = [
+            dict(e) for e in (result.get("excluded_due_to_medium") or [])
+            if isinstance(e, dict)
+        ]
 
         status = determine_status(
             components,
@@ -125,6 +129,7 @@ class AnswerBuilder:
             warnings=warnings,
             warning_categories=warning_categories,
             purchase_recommendation=purchase_recommendation,
+            excluded_due_to_medium=excluded_due_to_medium,
             sources=sources,
             missing_parameters=missing,
             human_review_required=review,
@@ -492,6 +497,7 @@ class AnswerBuilder:
                 kind=r.get("kind"),
                 id=r.get("id"),
                 fragment=r.get("fragment"),
+                lnd_section=r.get("lnd_section"),
             )
             for r in rows
             if isinstance(r, dict)

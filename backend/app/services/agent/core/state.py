@@ -22,6 +22,7 @@ class AgentState(TypedDict, total=False):
     results: Dict[str, Any]
     normative_detail: str
     purchase_recommendation: Optional[str]
+    excluded_due_to_medium: List[Dict[str, Any]]
 
     context: Dict[str, Any]  # Только простые типы
     review_required: bool
@@ -53,6 +54,7 @@ def create_initial_state(
         "results": {},
         "normative_detail": "",
         "purchase_recommendation": None,
+        "excluded_due_to_medium": [],
         "review_required": False,
         "completed": False,
         "current_node": "",

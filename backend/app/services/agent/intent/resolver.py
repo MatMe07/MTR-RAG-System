@@ -38,6 +38,7 @@ _INTENT_TOP: Dict[str, str] = {
     "CHECK_MINIMUM_STOCK": "inventory",
     "LIST_OUT_OF_STOCK": "inventory",
     "FIND_UNUSED_STOCK": "inventory",
+    "CHECK_SUFFICIENCY": "inventory",
     # РЕМОНТ / ТОиР
     "PLAN_REPAIR": "maintenance",
     "BUILD_REPAIR_KIT": "maintenance",

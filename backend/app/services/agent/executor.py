@@ -107,6 +107,8 @@ class AgentExecutor:
                     )
                 else:
                     answer = self._execute_llm(query, parsed, start, request_id=request_id)
+                    if answer is not None:
+                        answer.mode_refined = "auto_llm_full"
 
             if answer is None and mode == "auto":
                 answer = self._execute_auto(query, parsed, start, request_id=request_id)

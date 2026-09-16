@@ -321,10 +321,12 @@ def format_sources(sources: List[AgentSource]) -> List[Dict[str, Any]]:
             kind = s.get("kind")
             sid = s.get("id")
             frag = s.get("fragment")
+            lnd_section = s.get("lnd_section")
         else:
             kind = getattr(s, "kind", None)
             sid = getattr(s, "id", None)
             frag = getattr(s, "fragment", None)
+            lnd_section = getattr(s, "lnd_section", None)
         if kind is None:
             continue
         t = SOURCE_TYPE_MAP.get(kind, kind)
@@ -336,7 +338,8 @@ def format_sources(sources: List[AgentSource]) -> List[Dict[str, Any]]:
         if t == "passport":
             item["document_id"] = sid
         elif t == "lnd":
-            item["lnd_section"] = sid
+            # Типизированная lnd_section (P1-14); при отсутствии — строковая секция.
+            item["lnd_section"] = lnd_section or sid
         elif t in ("excel", "object_graph"):
             item["row"] = sid
         elif t == "standard":

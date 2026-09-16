@@ -59,6 +59,7 @@ class Source(BaseModel):
     file: Optional[str] = Field(None, description="Имя файла")
     page: Optional[int] = Field(None, description="Номер страницы")
     row: Optional[int] = Field(None, description="Номер строки Excel")
+    lnd_section: Optional[str] = Field(None, description="Раздел ЛНД (для источников type=lnd)")
     fragment: Optional[str] = Field(None, description="Фрагмент текста-источника")
 
 
@@ -446,6 +447,7 @@ class AgentSource(BaseModel):
     kind: str = Field(..., description="catalog, stock, object_graph, passport, tu, lnd, standard, regulation, expert_decisions")
     id: Optional[str] = Field(None, description="Идентификатор источника (card_id, unit_id, source_id и т.п.)")
     fragment: Optional[str] = Field(None, description="Фрагмент/краткое описание источника")
+    lnd_section: Optional[str] = Field(None, description="Раздел ЛНД (для kind=lnd)")
 
 
 class AgentComponent(BaseModel):
@@ -488,6 +490,10 @@ class AgentAnswer(BaseModel):
     purchase_recommendation: Optional[str] = Field(
         None,
         description="Итоговая рекомендация по закупке (для инвентаризации: что срочно, что можно позже)",
+    )
+    excluded_due_to_medium: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Позиции, исключённые из расчёта из-за среды H2S/CO2 (явное «пригодность не подтверждена»)",
     )
     sources: List[AgentSource] = Field(default_factory=list, description="Источники")
     missing_parameters: List[str] = Field(default_factory=list, description="Чего не хватает для полного ответа")
