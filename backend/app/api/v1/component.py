@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import get_current_user
 from app.core.exceptions import AppException
 from app.db.session import get_db
 from app.services.component_service import ComponentService
@@ -12,6 +13,7 @@ router = APIRouter()
 def get_component(
     ksm_code: str,
     detail_level: str = Query("full", pattern="^(basic|with_stock|full)$"),
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     try:

@@ -242,33 +242,77 @@ class TestContinueService:
 
 # ----------------------------------------------------------------- compare
 class TestCompare:
-    def test_compare_ok(self, client):
+    def test_compare_requires_auth(self, client):
+        body = {"ksm_code_1": "KSM-0001", "ksm_code_2": "KSM-0002"}
+        assert client.post("/api/v1/compare/", json=body).status_code == 401
+        hdr = {"Authorization": "Bearer garbage"}
+        assert client.post("/api/v1/compare/", json=body, headers=hdr).status_code == 401
+
+    def test_compare_ok(self, client, user_token):
         r = client.post("/api/v1/compare/",
-                        json={"ksm_code_1": "KSM-0001", "ksm_code_2": "KSM-0002"})
+                        json={"ksm_code_1": "KSM-0001", "ksm_code_2": "KSM-0002"},
+                        headers=_auth(user_token))
         assert r.status_code == 200, r.text
         body = r.json()
         assert body["ksm1"] == "KSM-0001"
         assert body["ksm2"] == "KSM-0002"
         assert body["match_count"] + body["mismatch_count"] >= 1
 
-    def test_compare_missing_404(self, client):
+    def test_compare_missing_404(self, client, user_token):
         r = client.post("/api/v1/compare/",
-                        json={"ksm_code_1": "KSM-0001", "ksm_code_2": "KSM-NOPE"})
+                        json={"ksm_code_1": "KSM-0001", "ksm_code_2": "KSM-NOPE"},
+                        headers=_auth(user_token))
         assert r.status_code == 404
 
 
 # ----------------------------------------------------------------- norms
 class TestNorms:
-    def test_search_finds_by_name_case_insensitive(self, client):
-        r = client.post("/api/v1/norms/search", json={"query": "отвод"})
+    def test_search_requires_auth(self, client):
+        assert client.post("/api/v1/norms/search", json={"query": "отвод"}).status_code == 401
+        hdr = {"Authorization": "Bearer garbage"}
+        assert client.post("/api/v1/norms/search", json={"query": "отвод"}, headers=hdr).status_code == 401
+
+    def test_search_finds_by_name_case_insensitive(self, client, user_token):
+        r = client.post("/api/v1/norms/search", json={"query": "отвод"}, headers=_auth(user_token))
         assert r.status_code == 200, r.text
         names = [item["name"] for item in r.json()]
         assert any("Отвод" in n for n in names)
 
-    def test_search_filters_by_document_type(self, client):
-        r = client.post("/api/v1/norms/search", json={"query": "отвод", "document_type": "задвижка"})
+    def test_search_filters_by_document_type(self, client, user_token):
+        r = client.post("/api/v1/norms/search", json={"query": "отвод", "document_type": "задвижка"}, headers=_auth(user_token))
         assert r.status_code == 200
         assert r.json() == []
+
+
+# ----------------------------------------------------------------- component
+class TestComponent:
+    def test_get_component_requires_auth(self, client):
+        assert client.get("/api/v1/component/KSM-0001").status_code == 401
+        hdr = {"Authorization": "Bearer garbage"}
+        assert client.get("/api/v1/component/KSM-0001", headers=hdr).status_code == 401
+
+    def test_get_component_ok(self, client, user_token):
+        r = client.get("/api/v1/component/KSM-0001", headers=_auth(user_token))
+        assert r.status_code == 200, r.text
+        assert r.json()["ksm_code"] == "KSM-0001"
+
+
+# ----------------------------------------------------------------- passport
+class TestPassport:
+    def test_status_requires_auth(self, client):
+        assert client.get("/api/v1/passport/status/123").status_code == 401
+        hdr = {"Authorization": "Bearer garbage"}
+        assert client.get("/api/v1/passport/status/123", headers=hdr).status_code == 401
+
+    def test_extracted_requires_auth(self, client):
+        assert client.get("/api/v1/passport/extracted/123").status_code == 401
+
+    def test_upload_requires_auth(self, client):
+        files = {"file": ("passport.pdf", b"%PDF-1.4 fake", "application/pdf")}
+        assert client.post("/api/v1/passport/upload", files=files).status_code == 401
+
+    def test_reprocess_requires_auth(self, client):
+        assert client.post("/api/v1/passport/reprocess/123").status_code == 401
 
 
 # ----------------------------------------------------------------- expert

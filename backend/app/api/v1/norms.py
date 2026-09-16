@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import get_current_user
 from app.core.exceptions import AppException
 from app.db.session import get_db
 from app.services.norms_service import NormsService
@@ -32,7 +33,11 @@ class NormItem(BaseModel):
 
 
 @router.post("/search", response_model=list[NormItem])
-def search_norms(body: NormSearchRequest, db: Session = Depends(get_db)):
+def search_norms(
+    body: NormSearchRequest,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     try:
         svc = NormsService(db)
         return svc.search_norms(

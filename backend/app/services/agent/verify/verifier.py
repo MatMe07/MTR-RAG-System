@@ -333,6 +333,79 @@ _STOCK_ABSENT_KWS = (
     "нет на складе", "нет в наличии", "нет остатка",
     "отсутствует", "не числится", "снят с учёта",
 )
+
+
+def _query_safety_mediums(parsed: Any) -> List[str]:
+    """Активные среды, требующие подтверждения пригодности (H2S/CO2).
+
+    Сигналы берутся из technical_filters парсера: флаг h2s_confirmed /
+    co2_confirmed или ключевые слова среды (латиница/кириллица).
+    Возвращает список активных сред (['H2S'], ['CO2'] или оба).
+    """
+    tf = dict(getattr(parsed, "technical_filters", None) or {})
+    active: List[str] = []
+    if tf.get("h2s_confirmed"):
+        active.append("H2S")
+    if tf.get("co2_confirmed"):
+        active.append("CO2")
+    med = str(tf.get("medium") or "").lower()
+    if "h2s" in med or "сероводород" in med:
+        active.append("H2S")
+    if "co2" in med or "углекисл" in med or "co₂" in med:
+        active.append("CO2")
+    return sorted(set(active))
+
+
+def _component_safety_confirmed(component: Dict[str, Any], medium: str) -> bool:
+    """Есть ли в позиции подтверждение пригодности к среде medium.
+
+    Источники подтверждения:
+      - matched_params с «H2S/CO2-совместимость стали» (как в AQ010);
+      - текст status/detail с явной фразой «пригодность к X подтверждена».
+    Негативная формулировка («не подтверждена») подтверждением НЕ считается.
+    """
+    for p in (component.get("matched_params") or []):
+        p_str = str(p)
+        if (medium == "H2S" and "H2S-совместимость стали" in p_str) or (
+            medium == "CO2" and "CO2-совместимость стали" in p_str
+        ):
+            return True
+    d = f"{component.get('status') or ''} {component.get('detail') or ''}".lower()
+    if "пригодност" in d and "подтвержд" in d and "не подтвержд" not in d:
+        return True
+    return False
+
+
+def _check_safety_unconfirmed(
+    parsed: Any, components: List[Dict[str, Any]]
+) -> Optional[Gap]:
+    """P0: пригодность к активной H2S/CO2-среде не подтверждена.
+
+    Если запрос подразумевает H2S/CO2-среду (technical_filters) и в ответе есть
+    позиции БЕЗ подтверждения пригодности — gap severity=high. Это гарантирует
+    человеческий контроль до окончательного ответа по опасным средам.
+    """
+    mediums = _query_safety_mediums(parsed)
+    if not mediums:
+        return None
+    if not components:
+        return None
+
+    unconfirmed = []
+    for c in components:
+        for medium in mediums:
+            if not _component_safety_confirmed(c, medium):
+                unconfirmed.append(medium)
+                break
+
+    if not unconfirmed:
+        return None
+
+    detail = (
+        f"пригодность к {', '.join(set(unconfirmed))} не подтверждена "
+        f"для {len(unconfirmed)} позиций ответа; требуется сертификат/ТУ"
+    )
+    return Gap(type="safety_unconfirmed", detail=detail, severity="high")
 # Негативные маркеры: текст может упоминать типы/verdict, но в отрицательном
 # контексте («нет информации о типах переход и отвод»). Такое покрытие НЕ закрывает gap.
 _NEGATIVE_MARKERS = (
@@ -385,6 +458,8 @@ def _recheck_with_explanation(
                 closed = any(kw in text for kw in _STOCK_ABSENT_KWS)
             elif g.type == "inventory_reply_missing":
                 closed = any(kw in text for kw in _INVENTORY_VERDICT_KWS)
+            elif g.type == "safety_unconfirmed":
+                closed = _safety_confirmed_in_text(text)
 
         if closed:
             resolved.append(g.type)
@@ -414,6 +489,7 @@ def verify_answer(parsed: Any, answer: Any) -> VerificationResult:
         lambda: _check_zero_stock_missing(parsed, components),
         lambda: _check_parameter_miss(parsed, components),
         lambda: _check_empty_or_expert_silent(parsed, components, answer_text, warnings),
+        lambda: _check_safety_unconfirmed(parsed, components),
     ]:
         gap = check()
         if gap is not None:
@@ -432,6 +508,19 @@ def verify_answer(parsed: Any, answer: Any) -> VerificationResult:
     )
 
     return VerificationResult(verdict=verdict, reasons=reasons, gaps=gaps)
+
+
+def _safety_confirmed_in_text(text: str) -> bool:
+    """Текст закрывает safety_unconfirmed ТОЛЬКО при явном положительном
+    подтверждении пригодности. Негативные формулировки («не подтверждена»,
+    «не подходит») закрытием не являются — без данных о сертификате/ТУ gap
+    не снимается даже после C1/C2."""
+    if any(m in text for m in ("не подтвержд", "не подходит", "не пригодна", "не сертифицирован")):
+        return False
+    if "подходит для h2s" in text or "подходит для co2" in text:
+        return True
+    has_medium = ("h2s" in text) or ("co2" in text) or ("сероводород" in text) or ("углекисл" in text)
+    return has_medium and ("пригодност" in text and "подтвержд" in text)
 
 
 def _max_severity(gaps: List[Gap]) -> str:

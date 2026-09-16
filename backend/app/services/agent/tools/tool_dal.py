@@ -180,6 +180,24 @@ class ToolDAL:
             parts.append(str(params["gost_tu"]))
         return " ".join(parts).strip()
 
+    @staticmethod
+    def _query_needs_safety_confirmation(params: Dict[str, Any], marker: str) -> bool:
+        """Активна ли в запросе среда, требующая подтверждения пригодности.
+
+        marker: h2s | co2. Признаки H2S/CO2 — флаг confirmed или ключевое
+        слово в medium (кириллица и латиница).
+        """
+        if marker == "h2s" and params.get("h2s_confirmed"):
+            return True
+        if marker == "co2" and params.get("co2_confirmed"):
+            return True
+        med = str(params.get("medium") or "").lower()
+        if marker == "h2s":
+            return bool(med) and ("h2s" in med or "сероводород" in med)
+        if marker == "co2":
+            return bool(med) and ("co2" in med or "углекисл" in med)
+        return False
+
     def _extra_filters_ok(self, card: Dict[str, Any], params: Dict[str, Any]) -> bool:
         for key, propkey in (
             ("steel_grade", "steel_grade"),
@@ -192,6 +210,13 @@ class ToolDAL:
                 got = _prop(card, propkey)
                 if not _contains(got, str(want)):
                     return False
+        # P0 безопасность: из запроса с H2S/CO2-средой исключаем карточки с
+        # ЯВНЫМ «не подтверждено» (h2s_confirmed=false / co2_confirmed=false).
+        # unknown/null остаются в поиске — их помечает verifier (safety_unconfirmed).
+        if self._query_needs_safety_confirmation(params, "h2s") and _prop(card, "h2s_confirmed") is False:
+            return False
+        if self._query_needs_safety_confirmation(params, "co2") and _prop(card, "co2_confirmed") is False:
+            return False
         mtr = params.get("mtr_code")
         if mtr and (card.get("codes") or {}).get("mtr_code") != mtr:
             return False

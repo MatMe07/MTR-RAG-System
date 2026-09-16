@@ -22,12 +22,14 @@ import app.db.session as db_session  # noqa: E402
 # passport.process/passport.reprocess регистрируются на нашем приложении.
 import app.workers.passport_worker as pw  # noqa: E402,F401
 from app.config import settings
+from app.core.security import hash_password
 from app.main import app
 from app.models.sqlalchemy.all_models import (
     Base,
     Document,
     DocumentLink,
     ExtractedCharacteristic,
+    User,
 )
 from app.services.agent.repository import db_repository  # noqa: E402
 from app.workers.celery_app import celery_app  # noqa: F401,E402
@@ -75,7 +77,21 @@ def passport_db(engine_url, monkeypatch):
 @pytest.fixture
 def client(passport_db, tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "DOCUMENT_UPLOAD_DIR", str(tmp_path / "uploads"))
+    db = passport_db()
+    try:
+        db.add(User(username="user", hashed_password=hash_password("user123"),
+                    role="user", is_active=True))
+        db.commit()
+    finally:
+        db.close()
     return TestClient(app)
+
+
+@pytest.fixture
+def auth_headers(client):
+    r = client.post("/api/v1/auth/login", json={"username": "user", "password": "user123"})
+    assert r.status_code == 200, r.text
+    return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
 
 def _fake_pages(*args, **kwargs):
@@ -132,12 +148,13 @@ def test_eager_and_test_db_configured():
 
 
 # ------------------------------------------------------------------- B.8.1 флоу
-def test_upload_status_extract(client, passport_db, monkeypatch):
+def test_upload_status_extract(client, passport_db, monkeypatch, auth_headers):
     monkeypatch.setattr(pw, "_default_ocr_runner", _fake_pages)
 
     r = client.post(
         "/api/v1/passport/upload",
         files={"file": ("pass001.pdf", b"%PDF-1.4 test bytes", "application/pdf")},
+        headers=auth_headers,
     )
     assert r.status_code == 200, r.text
     body = r.json()
@@ -145,7 +162,7 @@ def test_upload_status_extract(client, passport_db, monkeypatch):
     doc_id = body["document_id"]
     assert body["task_id"], "eager-задача должна вернуть task_id"
 
-    r = client.get(f"/api/v1/passport/status/{doc_id}")
+    r = client.get(f"/api/v1/passport/status/{doc_id}", headers=auth_headers)
     assert r.status_code == 200, r.text
     st = r.json()
     assert st["ocr_status"] == "completed"
@@ -153,7 +170,7 @@ def test_upload_status_extract(client, passport_db, monkeypatch):
     assert st["page_count"] == 1
     assert st["needs_review"] is False
 
-    r = client.get(f"/api/v1/passport/extracted/{doc_id}")
+    r = client.get(f"/api/v1/passport/extracted/{doc_id}", headers=auth_headers)
     assert r.status_code == 200, r.text
     fields = {p["field_name"]: p for p in r.json()["params"]}
     assert set(fields) >= {"dn", "pn", "material", "medium"}
@@ -171,13 +188,13 @@ def test_upload_status_extract(client, passport_db, monkeypatch):
         db.close()
 
 
-def test_status_not_found(client):
-    r = client.get("/api/v1/passport/status/does-not-exist")
+def test_status_not_found(client, auth_headers):
+    r = client.get("/api/v1/passport/status/does-not-exist", headers=auth_headers)
     assert r.status_code == 404
 
 
 # --------------------------------------------------- B.8.1 автосвязь (> 0.8)
-def test_pipeline_auto_link_above_threshold(client, passport_db, monkeypatch):
+def test_pipeline_auto_link_above_threshold(client, passport_db, monkeypatch, auth_headers):
     monkeypatch.setattr(pw, "_default_ocr_runner", _fake_pages)
     _register_fake_repo(
         monkeypatch,
@@ -187,10 +204,11 @@ def test_pipeline_auto_link_above_threshold(client, passport_db, monkeypatch):
     r = client.post(
         "/api/v1/passport/upload",
         files={"file": ("pass002.pdf", b"%PDF-1.4 test", "application/pdf")},
+        headers=auth_headers,
     )
     doc_id = r.json()["document_id"]
 
-    st = client.get(f"/api/v1/passport/status/{doc_id}").json()
+    st = client.get(f"/api/v1/passport/status/{doc_id}", headers=auth_headers).json()
     assert st["ocr_status"] == "completed"
     assert st["needs_review"] is False
 
@@ -208,7 +226,7 @@ def test_pipeline_auto_link_above_threshold(client, passport_db, monkeypatch):
 
 
 # ----------------------------------------------- B.8.2 review-зона (0.6–0.8)
-def test_reprocess_review_band_sets_needs_review(client, passport_db, monkeypatch):
+def test_reprocess_review_band_sets_needs_review(client, passport_db, monkeypatch, auth_headers):
     monkeypatch.setattr(pw, "_default_ocr_runner", _fake_pages)
     _register_fake_repo(
         monkeypatch,
@@ -218,11 +236,11 @@ def test_reprocess_review_band_sets_needs_review(client, passport_db, monkeypatc
     doc_id = "doc-review-01"
     _seed_document(passport_db, doc_id)
 
-    r = client.post(f"/api/v1/passport/reprocess/{doc_id}")
+    r = client.post(f"/api/v1/passport/reprocess/{doc_id}", headers=auth_headers)
     assert r.status_code == 200, r.text
     assert r.json()["status"] == "pending"
 
-    st = client.get(f"/api/v1/passport/status/{doc_id}").json()
+    st = client.get(f"/api/v1/passport/status/{doc_id}", headers=auth_headers).json()
     assert st["ocr_status"] == "completed", st.get("error_message")
     assert st["needs_review"] is True
 
@@ -241,7 +259,7 @@ def test_reprocess_review_band_sets_needs_review(client, passport_db, monkeypatc
         db.close()
 
 
-def test_reprocess_below_review_leaves_no_link(client, passport_db, monkeypatch):
+def test_reprocess_below_review_leaves_no_link(client, passport_db, monkeypatch, auth_headers):
     monkeypatch.setattr(pw, "_default_ocr_runner", _fake_pages)
     _register_fake_repo(
         monkeypatch,
@@ -251,9 +269,9 @@ def test_reprocess_below_review_leaves_no_link(client, passport_db, monkeypatch)
     doc_id = "doc-low-01"
     _seed_document(passport_db, doc_id)
 
-    client.post(f"/api/v1/passport/reprocess/{doc_id}")
+    client.post(f"/api/v1/passport/reprocess/{doc_id}", headers=auth_headers)
 
-    st = client.get(f"/api/v1/passport/status/{doc_id}").json()
+    st = client.get(f"/api/v1/passport/status/{doc_id}", headers=auth_headers).json()
     assert st["ocr_status"] == "completed"
     assert st["needs_review"] is False
 

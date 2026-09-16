@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import get_current_user
 from app.core.exceptions import AppException
 from app.db.session import get_db
 from app.models.pydantic.schemas import ExtractedParam
@@ -37,7 +38,11 @@ class ExtractedResponse(BaseModel):
 
 
 @router.post("/upload")
-def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
+def upload(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     try:
         svc = PassportService(db)
         return svc.upload_document(file)
@@ -50,7 +55,11 @@ def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
 
 @router.post("/reprocess/{document_id}")
-def reprocess(document_id: str, db: Session = Depends(get_db)):
+def reprocess(
+    document_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     try:
         svc = PassportService(db)
         return svc.reprocess(document_id)
@@ -63,7 +72,11 @@ def reprocess(document_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/status/{document_id}", response_model=StatusResponse)
-def status(document_id: str, db: Session = Depends(get_db)):
+def status(
+    document_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     try:
         svc = PassportService(db)
         return svc.get_status(document_id)
@@ -76,7 +89,11 @@ def status(document_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/extracted/{document_id}")
-def extracted(document_id: str, db: Session = Depends(get_db)):
+def extracted(
+    document_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     try:
         svc = PassportService(db)
         return svc.get_extracted_params(document_id)

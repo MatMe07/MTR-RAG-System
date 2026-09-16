@@ -14,7 +14,7 @@ from .verifier import Gap
 
 log = logging.getLogger("mtr.agent.verify.policy")
 
-FULL_LLM_TYPES = {"intent_mismatch", "quantity_unmet", "scope_mismatch"}
+FULL_LLM_TYPES = {"intent_mismatch", "quantity_unmet", "scope_mismatch", "safety_unconfirmed"}
 
 
 def should_full_llm(gaps: List[Gap]) -> bool:

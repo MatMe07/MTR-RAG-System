@@ -3,6 +3,7 @@
 import logging
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from typing import Any, Dict, List, Optional
 
 from langgraph.errors import GraphRecursionError
@@ -168,24 +169,54 @@ class AgentExecutor:
         }
         graph_start = time.time()
         log.info("[Executor] Invoking graph...")
+        pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="graph-invoke")
         try:
-            result = self.graph.invoke(state, config=config)
-        except GraphRecursionError:
-            log.warning("[Executor] Recursion limit exceeded (limit=%d) for query=%r",
-                        self.config.recursion_limit, query)
-            answer = self._build_answer_from_result(parsed, {
-                "components": [],
-                "sources": [],
-                "warnings": ["Не удалось завершить анализ: превышен лимит шагов анализа."],
-                "missing": [],
-                "review": True,
-                "answers": ["Анализ не завершён из-за сложности запроса. Обратитесь к эксперту."],
-                "mode": "offline_rules",
-                "tools_used": [],
-            })
-            log.info("[Executor] Total execution (recursion fallback): %.0fms",
-                     (time.time() - start) * 1000)
-            return answer
+            future = pool.submit(self.graph.invoke, state, config=config)
+            try:
+                result = future.result(timeout=self.config.tool_timeout)
+            except GraphRecursionError:
+                log.warning("[Executor] Recursion limit exceeded (limit=%d) for query=%r",
+                            self.config.recursion_limit, query)
+                answer = self._build_answer_from_result(parsed, {
+                    "components": [],
+                    "sources": [],
+                    "warnings": ["Не удалось завершить анализ: превышен лимит шагов анализа."],
+                    "missing": [],
+                    "review": True,
+                    "answers": ["Анализ не завершён из-за сложности запроса. Обратитесь к эксперту."],
+                    "mode": "offline_rules",
+                    "tools_used": [],
+                })
+                log.info("[Executor] Total execution (recursion fallback): %.0fms",
+                         (time.time() - start) * 1000)
+                return answer
+            except TimeoutError:
+                future.cancel()
+                log.warning(
+                    "[Executor] Graph timeout after %.0fs (limit=%.0fs) for query=%r",
+                    time.time() - graph_start, self.config.tool_timeout, query,
+                )
+                answer = self._build_answer_from_result(parsed, {
+                    "components": [],
+                    "sources": [],
+                    "warnings": [
+                        "Превышен лимит времени на анализ запроса "
+                        f"({self.config.tool_timeout:.0f} сек). Результат требует проверки экспертом."
+                    ],
+                    "missing": [],
+                    "review": True,
+                    "answers": [
+                        "Анализ превысил допустимое время. Запрос передан на ручную проверку."
+                    ],
+                    "mode": "offline_rules",
+                    "tools_used": [],
+                })
+                self._mark_review(answer, "quality_gate")
+                log.info("[Executor] Total execution (timeout fallback): %.0fms",
+                         (time.time() - start) * 1000)
+                return answer
+        finally:
+            pool.shutdown(wait=False)
         graph_elapsed = (time.time() - graph_start) * 1000
 
         log.info(
