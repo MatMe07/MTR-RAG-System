@@ -163,6 +163,48 @@ class QdrantCollectionIndex:
                 self._unavailable = True
                 return False
 
+    def upsert_payloads(
+        self,
+        points_payload: List[Dict[str, Any]],
+        id_for: Optional[Callable[[Dict[str, Any]], int]] = None,
+    ) -> bool:
+        """Добавить/обновить точки в существующей коллекции без recreate.
+
+        Если коллекции нет или она пуста — переиспользуется ensure_index
+        (полное создание с этими же payloads). id_for возвращает стабильный
+        целочисленный id точки (для идемпотентного обновления по ключу);
+        по умолчанию id нумеруются от текущего count.
+        """
+        if not points_payload:
+            return False
+        client = self._get_client()
+        if client is None:
+            return False
+        try:
+            info = client.count(self._collection)
+            count = int(info.count) if info is not None else 0
+        except Exception:
+            count = 0
+        if count == 0:
+            return self.ensure_index(points_payload)
+        with self._index_lock:
+            points = []
+            for i, payload in enumerate(points_payload):
+                vec = embed_text(payload.get("text", ""), is_query=False)
+                if vec is None:
+                    self._unavailable = True
+                    return False
+                pid = id_for(payload) if id_for is not None else count + i + 1
+                points.append({"id": pid, "vector": vec, "payload": payload})
+            try:
+                client.upsert(collection_name=self._collection, points=points)
+                self._indexed = True
+                log.info("QdrantCollectionIndex(%s): upsert %d точек", self._collection, len(points))
+                return True
+            except Exception as e:
+                log.warning("QdrantCollectionIndex(%s): upsert не удался: %s", self._collection, e)
+                return False
+
     # ---------------------------------------------------------------- search
     def search_payload(
         self,

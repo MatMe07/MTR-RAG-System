@@ -393,6 +393,11 @@ def _check_safety_unconfirmed(
 
     unconfirmed = []
     for c in components:
+        # Служебные/вспомогательные строки (вердикт «нет позиций ниже порога»,
+        # «Проверка», «Расходные материалы») не имеют кодов и не являются
+        # реальными позициями — пригодность к среде к ним неприменима.
+        if not (c.get("ksm_code") or c.get("mtr_code")):
+            continue
         for medium in mediums:
             if not _component_safety_confirmed(c, medium):
                 unconfirmed.append(medium)

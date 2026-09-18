@@ -8,6 +8,7 @@ data/sample/documents/passport_*.md. В агент-контур пока не п
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from zlib import crc32
 
 from .qdrant_common import QdrantCollectionIndex
 
@@ -74,6 +75,30 @@ class DocumentsProvider:
     def ensure_index(self, paths: Optional[List[Path]] = None) -> bool:
         payloads = build_document_points(paths) if paths is not None else None
         return self._index.ensure_index(payloads)
+
+    def upsert_document(self, document_id: str, pages: List[Dict[str, Any]]) -> bool:
+        """Добавить/обновить страницы паспорта в коллекцию documents.
+
+        Стабильные id (crc32 от document_id:page_number) делают повторную
+        обработку документа идемпотентной — те же точки перезаписываются.
+        None при недоступности Qdrant — не роняет конвейер.
+        """
+        payloads = [
+            {
+                "document_id": document_id,
+                "page_number": int(p.get("page_number", idx + 1)),
+                "text": str(p.get("text") or "")[:4000],
+                "ocr_confidence": float(p.get("ocr_confidence") or 1.0),
+            }
+            for idx, p in enumerate(pages or [])
+        ]
+        if not payloads:
+            return False
+
+        def _pid(payload: Dict[str, Any]) -> int:
+            return crc32(f"{payload['document_id']}:{payload['page_number']}".encode("utf-8"))
+
+        return self._index.upsert_payloads(payloads, id_for=_pid)
 
     def search(self, query: str, limit: int = 5) -> Optional[List[Dict[str, Any]]]:
         """Поиск по текстам паспортов. None — провайдер недоступен/пуст."""

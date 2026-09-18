@@ -243,6 +243,16 @@ class AnswerBuilder:
                 and r.get("quantity") is not None
                 and passes_stock_filter(r.get("quantity"), parsed)
             ]
+            # Установленные компоненты (unit_aux) фильтруем по порогу так же,
+            # как кандидатов: residual-строки с остатком выше порога не должны
+            # попадать в заявку (иначе «нет позиций ниже порога» противоречило
+            # бы списку позиций с остатками 20+). Строки без остатка (граф)
+            # остаются — по ним порог неприменим.
+            unit_aux = [
+                r for r in unit_aux
+                if r.get("quantity") is None
+                or passes_stock_filter(r.get("quantity"), parsed)
+            ]
             candidates.sort(key=lambda r: r.get("quantity") or 0, reverse=True)
             rows = candidates + verdict_aux + unit_aux
         else:

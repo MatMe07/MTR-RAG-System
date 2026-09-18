@@ -49,6 +49,7 @@ class DbRepository(IRepository):
         norms_provider: Optional[Any] = None,
         passport_provider: Optional[Any] = None,
         catalog_provider: Optional[Any] = None,
+        documents_provider: Optional[Any] = None,
         redis_cache: Optional[Any] = None,
         access_logger: Optional[Any] = None,
     ):
@@ -61,6 +62,7 @@ class DbRepository(IRepository):
 
         from .providers.access_logger import get_data_access_logger
         from .providers.catalog_semantic_provider import CatalogSemanticProvider
+        from .providers.documents_provider import DocumentsProvider
         from .providers.neo4j_provider import Neo4jGraphProvider
         from .providers.norms_provider import NormsProvider
         from .providers.passport_provider import PassportProvider
@@ -79,8 +81,23 @@ class DbRepository(IRepository):
         )
         # Семантический индекс каталога (Qdrant mtr_descriptions) — ленивый
         # fallback поиска; подключается только когда детерминированный поиск пуст.
+        # Семантический индекс каталога (Qdrant mtr_descriptions) — ленивый
+        # fallback поиска; подключается только когда детерминированный поиск пуст.
         self._catalog_provider = (
             catalog_provider if catalog_provider is not None else CatalogSemanticProvider()
+        )
+
+        # Векторный индекс паспортов (Qdrant documents) — для поиска по текстам
+        # документов (P2-16). Ленивый провайдер; None/недоступность не роняют конвейер.
+        self._documents_provider = (
+            documents_provider if documents_provider is not None else DocumentsProvider()
+        )
+
+        # Векторный индекс паспортов (Qdrant documents) — для search_documents
+        # (P2-16). Ленивый: клиент поднимается при первом поиске; None-провайдер
+        # не должен ломать конвейер.
+        self._documents_provider = (
+            documents_provider if documents_provider is not None else DocumentsProvider()
         )
 
     @contextmanager
@@ -253,6 +270,24 @@ class DbRepository(IRepository):
             return result
         return None
 
+    def search_documents(self, query: str, limit: int = 5) -> Optional[List[Dict[str, Any]]]:
+        """Векторный поиск по текстам паспортов (Qdrant documents).
+
+        Кеш только непустых результатов, иначе теряется полнотекстовый
+        token-matcher fallback в ToolDAL. None — провайдер недоступен/пуст.
+        """
+        cache_key = f"documents:{query.strip()[:140]}"
+        cached = self._cache.get(cache_key)
+        if cached is not None:
+            self._log("search_documents", "qdrant_documents", cache_hit=True)
+            return cached
+        if self._documents_provider is not None:
+            result = self._documents_provider.search(query, limit=limit)
+            if result:
+                self._cache.set(cache_key, result)
+            return result
+        return None
+
     # ==================================================================== ПАСПОРТА (PG)
     def get_passport_params(self, document_id: str) -> Optional[Dict[str, Any]]:
         if not document_id:
@@ -289,7 +324,7 @@ class DbRepository(IRepository):
             card = self.get_card_by_ksm(ksm) if ksm else None
             if card is None:
                 continue
-            out.append({"card": card, "score": h.get("score", 0.0)})
+            out.append({"card": card, "score": h.get("score", 0.0), "source": "vector_fallback"})
         return out or None
 
     # ==================================================================== ИСТОРИЯ (PG)

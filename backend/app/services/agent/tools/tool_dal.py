@@ -113,8 +113,26 @@ class ToolDAL:
             except Exception:
                 hits = None
             if hits:
+                for hit in hits:
+                    hit["source"] = "vector_fallback"
+                    hit["card"] = self._ensure_full_card(hit.get("card"))
                 return hits
         return []
+
+    def _ensure_full_card(self, card: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Достроить карточку хита semantic-fallback через get_component.
+
+        Репозиторий уже возвращает полноценные карточки (get_card_by_ksm);
+        защитный довод на случай partial-payload от провайдера.
+        """
+        if not card or card.get("codes") or card.get("properties"):
+            return card
+        ksm = card.get("ksm_code") or (card.get("codes") or {}).get("ksm_code")
+        if ksm:
+            full = self.get_component(ksm)
+            if full is not None:
+                return full
+        return card
 
     def get_component(self, identifier: str) -> Optional[Dict[str, Any]]:
         """Карточка по KSM, card_id или MTR-коду."""

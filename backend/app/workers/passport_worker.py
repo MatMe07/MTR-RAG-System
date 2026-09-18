@@ -147,6 +147,20 @@ def _run_pipeline(
         doc.page_count = len(pages)
         db.commit()
 
+        # ------------------------------------------------ векторный индекс (P2-16)
+        # Инкрементальный upsert текстов паспорта в Qdrant documents.
+        # Не роняет конвейер: Qdrant недоступен/пуст — просто пропускаем.
+        try:
+            from app.services.agent.repository.providers.documents_provider import DocumentsProvider
+
+            if not DocumentsProvider().upsert_document(document_id, pages):
+                log.warning(
+                    "passport %s: documents-индекс не обновлён (Qdrant недоступен/пуст)",
+                    document_id,
+                )
+        except Exception as e:  # noqa: BLE001
+            log.warning("passport %s: documents-индекс не обновлён: %s", document_id, e)
+
         # ------------------------------------------------------------ параметры
         set_progress(0.4, "extract")
         text = "\n".join(str(p.get("text", "")) for p in pages)
